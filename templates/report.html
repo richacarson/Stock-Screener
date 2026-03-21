@@ -25,6 +25,7 @@
             --dn: #F87171;
             --accent: #8FA878;
             --accent-soft: rgba(143,168,120,0.10);
+            --accent-glow: rgba(143,168,120,0.25);
             --shadow: 0 2px 8px rgba(0,0,0,0.3);
             --rec-buy: #34D399; --rec-hold: #FBBF24; --rec-sell: #F87171; --rec-watch: #60A5FA;
         }
@@ -36,9 +37,10 @@
             -webkit-font-smoothing: antialiased;
             line-height: 1.5;
         }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(110,132,80,0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(110,132,80,0.2); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(110,132,80,0.35); }
         ::selection { background: rgba(110,132,80,0.4); color: var(--t1); }
 
         .container {
@@ -47,17 +49,21 @@
             padding: 24px 24px 40px;
         }
 
+        /* Embedded mode — hide branding, reduce padding */
+        body.embedded { background: transparent; }
+        body.embedded .container { padding: 0 4px 20px; }
+        body.embedded header { display: none; }
+        body.embedded footer { display: none; }
+
         header {
             padding: 20px 0;
             border-bottom: 1px solid var(--border);
             margin-bottom: 24px;
             text-align: center;
         }
-        .logo-text {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--t1);
-            letter-spacing: 6px;
+        .logo-img {
+            height: 48px;
+            margin-bottom: 4px;
         }
         .logo-sub {
             font-size: 10px;
@@ -79,7 +85,7 @@
 
         /* Search */
         .search-wrap {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         .search-input {
             width: 100%;
@@ -89,23 +95,23 @@
             font-weight: 600;
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             color: var(--t1);
             outline: none;
             transition: border-color 0.15s;
         }
         .search-input::placeholder { color: var(--t4); }
-        .search-input:focus { border-color: var(--accent); }
+        .search-input:focus { border-color: rgba(143,168,120,0.30); }
 
         /* Stock cards */
-        .stock-list { display: flex; flex-direction: column; gap: 8px; }
+        .stock-list { display: flex; flex-direction: column; gap: 6px; }
         .stock-card {
             display: flex;
             align-items: center;
-            padding: 16px 20px;
+            padding: 14px 18px;
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             text-decoration: none;
             color: var(--t1);
             transition: border-color 0.15s, background 0.15s;
@@ -120,7 +126,7 @@
             min-width: 0;
         }
         .stock-card-ticker {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 800;
             color: var(--accent);
         }
@@ -134,23 +140,23 @@
         .stock-card-meta {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
         .sleeve-tag {
             font-size: 10px;
             font-weight: 700;
             color: var(--t3);
             background: var(--accent-soft);
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 3px 10px;
+            border-radius: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .rec-tag {
             font-size: 10px;
             font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 3px 10px;
+            border-radius: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -163,7 +169,7 @@
             text-align: right;
         }
         .score-big {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
             color: var(--t1);
             line-height: 1;
@@ -199,11 +205,12 @@
 
         @media (max-width: 640px) {
             .container { padding: 16px; }
-            .logo-text { font-size: 28px; }
+            body.embedded .container { padding: 0 2px 16px; }
+            .logo-img { height: 36px; }
             .header-stats { flex-direction: column; gap: 4px; align-items: center; }
-            .stock-card { padding: 12px 16px; }
-            .stock-card-ticker { font-size: 16px; }
-            .score-big { font-size: 22px; }
+            .stock-card { padding: 12px 14px; }
+            .stock-card-ticker { font-size: 15px; }
+            .score-big { font-size: 20px; }
         }
 
         @keyframes fadeIn {
@@ -216,7 +223,7 @@
 <body>
 <div class="container fade-in">
     <header>
-        <div class="logo-text">IOWN</div>
+        <img class="logo-img" src="https://richacarson.github.io/Dashboard/iown-logo-dark.png" alt="IOWN">
         <div class="logo-sub">Return on Intention &middot; Stock Screener</div>
         <div class="header-stats">
             <span><strong>{{ total_reports }}</strong> stocks screened</span>
@@ -255,17 +262,30 @@
 </div>
 
 <script>
-    const search = document.getElementById('search');
-    const cards = document.querySelectorAll('.stock-card');
-    const noResults = document.getElementById('no-results');
+    // Detect embedded mode
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('embed') === '1' || window.self !== window.top) {
+            document.body.classList.add('embedded');
+            // Propagate embed param to stock card links
+            document.querySelectorAll('.stock-card').forEach(function(card) {
+                card.href += '?embed=1';
+            });
+        }
+    })();
+
+    // Search filtering
+    var search = document.getElementById('search');
+    var cards = document.querySelectorAll('.stock-card');
+    var noResults = document.getElementById('no-results');
 
     search.addEventListener('input', function() {
-        const q = this.value.toLowerCase().trim();
-        let visible = 0;
-        cards.forEach(card => {
-            const ticker = card.dataset.ticker;
-            const name = card.dataset.name;
-            const match = !q || ticker.includes(q) || name.includes(q);
+        var q = this.value.toLowerCase().trim();
+        var visible = 0;
+        cards.forEach(function(card) {
+            var ticker = card.dataset.ticker;
+            var name = card.dataset.name;
+            var match = !q || ticker.includes(q) || name.includes(q);
             card.style.display = match ? '' : 'none';
             if (match) visible++;
         });
