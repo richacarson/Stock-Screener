@@ -1,13 +1,17 @@
-"""Stock screening filters."""
+"""Stock screening filters — IOWN-aligned criteria.
+
+Relaxed to allow high-growth innovation stocks that may have elevated P/E
+ratios or temporarily negative revenue growth during reinvestment phases.
+"""
 
 
 # Default screening criteria
 DEFAULT_CRITERIA = {
     "min_market_cap": 1_000_000_000,      # $1B minimum
     "min_avg_volume": 500_000,             # 500K average daily volume
-    "pe_range": (5, 40),                   # P/E between 5 and 40
-    "min_revenue_growth": 0,               # Positive YoY revenue growth
-    "above_sma_50": True,                  # Price above 50-day SMA
+    "pe_range": (0, 200),                  # Widened — high-growth stocks often have elevated P/E
+    "min_revenue_growth": -0.10,           # Allow up to -10% — reinvestment phases
+    "above_sma_50": False,                 # Disabled — Social Arbitrage may find undervalued dips
 }
 
 
