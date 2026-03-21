@@ -1,4 +1,4 @@
-# Stock Screener — Claude Code Workflow 
+# Stock Screener — Claude Code Workflow  
 
 ## Overview
 
