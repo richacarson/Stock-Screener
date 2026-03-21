@@ -103,12 +103,16 @@ Each `reports/{TICKER}.json` follows this structure:
 
 ## Generating Reports
 
-Claude Code generates each report by analyzing the stock against all IOWN dimensions. To add a new stock:
+See **SCREENING.md** for the complete step-by-step workflow. In short:
 
-1. Research the company thoroughly
-2. Create `reports/{TICKER}.json` following the schema above
-3. Run `python3 main.py` to rebuild the site
-4. Deploy
+1. Pull yfinance data
+2. Web research: financials, culture/leadership, AI/innovation, faith/ESG + Inspire score
+3. Score all six IOWN dimensions with specific evidence
+4. Calculate overall score (0-100), assign recommendation (80+ BUY, 60-79 HOLD, 40-59 WATCH, <40 SELL)
+5. Assign sleeve (Dividend / Growth / Prospect)
+6. Write `reports/{TICKER}.json`
+7. Run `python3 main.py` to rebuild the site
+8. Deploy
 
 ## Project Structure
 
