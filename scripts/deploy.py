@@ -57,6 +57,7 @@ def deploy():
     # Initialize git in temp dir and push to gh-pages
     os.chdir(tmp_dir)
     run("git init")
+    run("git config commit.gpgsign false")
     run("git checkout -b gh-pages")
     run("git add -A")
     run('git commit -m "Deploy screener results"')
