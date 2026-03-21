@@ -201,6 +201,38 @@
             line-height: 1.5;
         }
 
+        /* Infrastructure Metrics Table */
+        .metrics-table {
+            width: 100%;
+            margin: 12px 0 20px;
+            border-collapse: collapse;
+        }
+        .metrics-table td {
+            padding: 5px 0;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .metrics-table td:first-child {
+            color: var(--t3);
+            font-weight: 600;
+            width: 55%;
+        }
+        .metrics-table td:last-child {
+            color: var(--t1);
+            font-weight: 800;
+            text-align: right;
+        }
+        .metrics-table tr:last-child td { border-bottom: none; }
+        .metrics-divider td {
+            padding: 8px 0 4px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--t4);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--accent-gold) !important;
+        }
+
         .ig-summary {
             display: flex;
             align-items: baseline;
@@ -229,6 +261,7 @@
         .inspire-num { font-size: 28px; font-weight: 800; }
         .inspire-num.positive { color: var(--bar-green); }
         .inspire-num.negative { color: var(--bar-red); }
+        .inspire-num.pending { color: var(--t4); }
 
         .thesis-text {
             font-size: 13px;
@@ -300,6 +333,9 @@
 {# Score color helper #}
 {% macro score_color(score) %}{% if score >= 7 %}green{% elif score >= 4 %}gold{% else %}red{% endif %}{% endmacro %}
 
+{# Format metric value #}
+{% macro fmt(val, suffix="", prefix="", decimals=1) %}{% if val is not none and val != "" %}{{ prefix }}{{ "%.{}f".format(decimals)|format(val) }}{{ suffix }}{% else %}&mdash;{% endif %}{% endmacro %}
+
 {# Score row component #}
 {% macro score_row(title, score, label, analysis) %}
 <div class="score-row">
@@ -335,8 +371,10 @@
             <span>{{ a.sleeve|upper }} SLEEVE</span>
             <span class="sep">&middot;</span>
             <span>{{ a.screen_date }}</span>
+            {% if a.faith_alignment.inspire_impact_score is not none %}
             <span class="sep">&middot;</span>
             <span class="inspire-score {{ 'negative' if a.faith_alignment.inspire_impact_score < 0 }}">Inspire: {{ a.faith_alignment.inspire_impact_score }}</span>
+            {% endif %}
             <span class="sep">&middot;</span>
             <span class="mindset-label">{{ a.infinite_game.mindset }}</span>
         </div>
@@ -354,14 +392,35 @@
     {{ score_row("Inspiration", ee.inspiration.score, ee.inspiration.label, ee.inspiration.analysis) }}
     {{ score_row("Infrastructure", ee.infrastructure.score, ee.infrastructure.label, ee.infrastructure.analysis) }}
 
-    <div class="section-header">Risk, Moat & Erosion</div>
-    {% set rm = a.risk_moat_erosion %}
-    {{ score_row("AI Resilience", rm.ai_resilience.score, rm.ai_resilience.label, rm.ai_resilience.analysis) }}
-    {{ score_row("Moat Strength", rm.moat_strength.score, rm.moat_strength.label, rm.moat_strength.analysis) }}
-    {{ score_row("Erosion Protection", rm.erosion_protection.score, rm.erosion_protection.label, rm.erosion_protection.analysis) }}
+    {# Infrastructure Metrics Table #}
+    {% if ee.infrastructure.metrics %}
+    {% set m = ee.infrastructure.metrics %}
+    <table class="metrics-table">
+        <tr class="metrics-divider"><td colspan="2">Valuation &amp; Growth</td></tr>
+        <tr><td>P/E (Trailing)</td><td>{{ fmt(m.pe_ratio, "x") }}</td></tr>
+        <tr><td>P/E (Forward)</td><td>{{ fmt(m.forward_pe, "x") }}</td></tr>
+        <tr><td>PEG Ratio</td><td>{{ fmt(m.peg_ratio, "x") }}</td></tr>
+        <tr><td>EPS Growth (YoY)</td><td>{{ fmt(m.eps_growth_yoy, "%") }}</td></tr>
+        <tr><td>EPS Growth (5yr CAGR)</td><td>{{ fmt(m.eps_growth_5yr_cagr, "%") }}</td></tr>
+        <tr><td>Revenue Growth (YoY)</td><td>{{ fmt(m.revenue_growth_yoy, "%") }}</td></tr>
+        <tr><td>Revenue Growth (5yr CAGR)</td><td>{{ fmt(m.revenue_growth_5yr_cagr, "%") }}</td></tr>
+        <tr class="metrics-divider"><td colspan="2">Financial Health</td></tr>
+        <tr><td>Debt-to-Equity</td><td>{{ fmt(m.debt_to_equity, "%") }}</td></tr>
+        <tr><td>Return on Equity</td><td>{{ fmt(m.return_on_equity, "%") }}</td></tr>
+        <tr><td>Avg Daily Volume</td><td>{{ "{:,.0f}".format(m.avg_daily_volume) }}</td></tr>
+        {% if m.dividend and m.dividend.yield %}
+        <tr class="metrics-divider"><td colspan="2">Dividend</td></tr>
+        <tr><td>Dividend Yield</td><td>{{ fmt(m.dividend.yield, "%") }}</td></tr>
+        <tr><td>Payout Ratio</td><td>{{ fmt(m.dividend.payout_ratio, "%") }}</td></tr>
+        <tr><td>Consecutive Years Paid</td><td>{{ m.dividend.consecutive_years_paid }}</td></tr>
+        <tr><td>Consecutive Years Growth</td><td>{{ m.dividend.consecutive_years_growth }}</td></tr>
+        <tr><td>Dividend Growth (5yr CAGR)</td><td>{{ fmt(m.dividend.dividend_growth_5yr_cagr, "%") }}</td></tr>
+        {% endif %}
+    </table>
+    {% endif %}
 
-    <div class="section-header">Social Arbitrage &mdash; Camillo Lens</div>
-    {{ score_row("Social Arbitrage", a.social_arbitrage.score, a.social_arbitrage.label, a.social_arbitrage.analysis) }}
+    <div class="section-header">AI Resilience</div>
+    {{ score_row("AI Resilience", a.ai_resilience.score, a.ai_resilience.label, a.ai_resilience.analysis) }}
 
     <div class="section-header">Income Quality</div>
     {{ score_row("Dividend Safety", a.income_quality.dividend_safety.score, a.income_quality.dividend_safety.label, a.income_quality.dividend_safety.analysis) }}
@@ -398,9 +457,13 @@
     <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
     <div class="inspire-block">
         <span>Inspire Impact Score:</span>
+        {% if a.faith_alignment.inspire_impact_score is not none %}
         <span class="inspire-num {{ 'positive' if a.faith_alignment.inspire_impact_score >= 0 else 'negative' }}">
             {{ a.faith_alignment.inspire_impact_score }}
         </span>
+        {% else %}
+        <span class="inspire-num pending">PENDING</span>
+        {% endif %}
     </div>
 
     <div class="section-header">Investment Thesis</div>
