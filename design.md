@@ -1,4 +1,4 @@
-# Stock Screener — Design System
+# Stock Screener — Design System 
 
 This document defines the visual design system for the IOWN Stock Screener. **All UI changes must follow these specifications exactly** to maintain consistency with the parent IOWN Dashboard.
 
