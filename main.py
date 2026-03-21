@@ -1,85 +1,103 @@
 #!/usr/bin/env python3
-"""IOWN Stock Screener — Entry point."""
+"""IOWN Stock Screener — Generates static site from report JSON files.
+
+Reads pre-generated IOWN analysis reports from reports/*.json,
+builds an index page with search, and individual stock report pages.
+"""
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 
-from data.fetcher import fetch_stock_data
-from screener.filters import apply_filters
-from screener.rankings import rank_stocks
-
-# Default universe — S&P 500 large-caps + IOWN holdings
-DEFAULT_TICKERS = [
-    # IOWN Dividend Sleeve
-    "ABT", "A", "ADI", "ATO", "ADP", "BKH", "CAT", "CHD", "CL", "FAST",
-    "GD", "GPC", "LRCX", "LMT", "MATX", "NEE", "ORI", "PCAR", "QCOM", "DGX",
-    "SSNC", "STLD", "SYK", "TEL", "VLO",
-    # IOWN Growth Sleeve
-    "AMD", "AEM", "ATAT", "CVX", "CWAN", "CNX", "COIN", "EIX", "FINV", "FTNT",
-    "GFI", "SUPV", "HRMY", "HUT", "KEYS", "MARA", "NVDA", "NXPI", "OKE", "PDD",
-    "HOOD", "SYF", "TSM", "TOL",
-    # Additional large-caps for screening
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "BRK-B", "JPM", "V", "MA",
-    "UNH", "HD", "PG", "JNJ", "XOM", "AVGO", "COST", "ABBV", "WMT", "CRM",
-    "MRK", "LLY", "PEP", "KO", "TMO", "ACN", "ORCL", "MCD", "DHR", "CSCO",
-]
+from jinja2 import Environment, FileSystemLoader
 
 
-def run_screener(tickers: list[str] | None = None) -> dict:
-    """Run the full screening pipeline."""
-    tickers = tickers or DEFAULT_TICKERS
-    print(f"[{datetime.now():%H:%M:%S}] Fetching data for {len(tickers)} tickers...")
-
-    # Fetch
-    raw_data = fetch_stock_data(tickers)
-    print(f"[{datetime.now():%H:%M:%S}] Got data for {len(raw_data)} stocks")
-
-    # Filter
-    passed = apply_filters(raw_data)
-    print(f"[{datetime.now():%H:%M:%S}] {len(passed)} stocks passed filters")
-
-    # Rank
-    ranked = rank_stocks(passed)
-    print(f"[{datetime.now():%H:%M:%S}] Ranking complete")
-
-    results = {
-        "generated_at": datetime.now().isoformat(),
-        "total_screened": len(raw_data),
-        "total_passed": len(ranked),
-        "stocks": ranked,
-    }
-
-    # Save results
-    output_dir = Path("output")
-    output_dir.mkdir(exist_ok=True)
-
-    with open(output_dir / "results.json", "w") as f:
-        json.dump(results, f, indent=2, default=str)
-    print(f"[{datetime.now():%H:%M:%S}] Results saved to output/results.json")
-
-    # Generate HTML report
-    generate_html_report(results, output_dir / "index.html")
-    print(f"[{datetime.now():%H:%M:%S}] Report saved to output/index.html")
-
-    return results
+REPORTS_DIR = Path("reports")
+OUTPUT_DIR = Path("output")
 
 
-def generate_html_report(results: dict, output_path: Path) -> None:
-    """Generate HTML report from screening results."""
-    from jinja2 import Environment, FileSystemLoader
+def build_site() -> None:
+    """Build the full static site from report JSON files."""
+    OUTPUT_DIR.mkdir(exist_ok=True)
 
     env = Environment(loader=FileSystemLoader("templates"))
+
+    # Load all reports
+    reports = _load_reports()
+    print(f"[{datetime.now():%H:%M:%S}] Loaded {len(reports)} stock reports")
+
+    if not reports:
+        print("No reports found in reports/. Nothing to build.")
+        return
+
+    # Sort by overall score descending
+    reports.sort(key=lambda r: r.get("overall_score", 0), reverse=True)
+
+    # Build index page
+    _build_index(env, reports)
+    print(f"[{datetime.now():%H:%M:%S}] Built index.html")
+
+    # Build individual stock pages
+    for report in reports:
+        _build_stock_page(env, report)
+    print(f"[{datetime.now():%H:%M:%S}] Built {len(reports)} stock pages")
+
+    # Copy reports as JSON for frontend use
+    reports_out = OUTPUT_DIR / "reports"
+    reports_out.mkdir(exist_ok=True)
+    for report in reports:
+        ticker = report["ticker"]
+        with open(reports_out / f"{ticker}.json", "w") as f:
+            json.dump(report, f, indent=2, default=str)
+
+    # Build manifest for search
+    manifest = [
+        {
+            "ticker": r["ticker"],
+            "name": r["name"],
+            "sleeve": r.get("sleeve", ""),
+            "recommendation": r.get("recommendation", ""),
+            "overall_score": r.get("overall_score", 0),
+            "screen_date": r.get("screen_date", ""),
+        }
+        for r in reports
+    ]
+    with open(OUTPUT_DIR / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    print(f"[{datetime.now():%H:%M:%S}] Build complete — {len(reports)} reports")
+
+
+def _load_reports() -> list[dict]:
+    """Load all report JSON files from reports/."""
+    reports = []
+    for path in sorted(REPORTS_DIR.glob("*.json")):
+        try:
+            with open(path) as f:
+                reports.append(json.load(f))
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  Warning: Failed to load {path.name}: {e}")
+    return reports
+
+
+def _build_index(env: Environment, reports: list[dict]) -> None:
+    """Build the index/search page."""
     template = env.get_template("report.html")
     html = template.render(
-        results=results,
-        generated_at=results["generated_at"],
-        total_screened=results["total_screened"],
-        total_passed=results["total_passed"],
+        reports=reports,
+        total_reports=len(reports),
+        generated_at=datetime.now().isoformat(),
     )
-    output_path.write_text(html)
+    (OUTPUT_DIR / "index.html").write_text(html)
+
+
+def _build_stock_page(env: Environment, report: dict) -> None:
+    """Build an individual stock report page."""
+    template = env.get_template("stock_report.html")
+    html = template.render(stock=report, a=report)
+    ticker = report["ticker"]
+    (OUTPUT_DIR / f"{ticker}.html").write_text(html)
 
 
 if __name__ == "__main__":
-    run_screener()
+    build_site()

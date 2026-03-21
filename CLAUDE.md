@@ -2,32 +2,146 @@
 
 ## Overview
 
-This is IOWN's stock screening application. It screens stocks based on fundamental and technical criteria, generates an HTML report, and deploys to GitHub Pages at https://richacarson.github.io/Stock-Screener/.
+This is IOWN's stock screening application. It uses the **Return on Intention** framework to analyze stocks across six dimensions, generates detailed per-stock HTML reports, and deploys to GitHub Pages at https://richacarson.github.io/Stock-Screener/.
+
+## Architecture
+
+**Claude Code generates the analysis** — not a runtime API. The workflow:
+
+1. Claude Code analyzes each stock using the IOWN framework
+2. Analysis stored as JSON in `reports/` (e.g., `reports/AAPL.json`)
+3. `python3 main.py` builds static HTML from those JSON files
+4. Deploy pushes `output/` to GitHub Pages
 
 ## Quick Start
 
 ```bash
-# Load environment
-source .env && export GITHUB_PUSH_TOKEN
-
-# Run the screener
+# Build the static site from existing reports
 python3 main.py
 
 # Deploy to GitHub Pages
+source .env && export GITHUB_PUSH_TOKEN
 python3 scripts/deploy.py
 ```
 
-## Workflow
+## IOWN Scoring Framework
 
-1. **Screen**: Run `python3 main.py` — fetches data, applies screening filters, outputs results to `output/results.json`
-2. **Report**: The screener auto-generates `output/index.html` from the results
-3. **Deploy**: Run `python3 scripts/deploy.py` — commits output to the `gh-pages` branch and pushes
+Each stock is scored across six dimensions (overall /100):
 
-## Git Operations
+### Excellence Evaluation — Think Like an Owner (30%)
+- **Innovation** (/10): AI adoption, digital transformation, R&D
+- **Inspiration** (/10): Mission clarity, purpose, employee engagement
+- **Infrastructure** (/10): Operational durability, balance sheet, legacy adaptation
 
-- Always commit with clear, descriptive messages
-- Push using: `git push -u origin <branch-name>`
-- The `.env` file contains `GITHUB_PUSH_TOKEN` for authenticated pushes. Always `source .env && export GITHUB_PUSH_TOKEN` before pushing.
+### Risk, Moat & Erosion (25%)
+- **AI Resilience** (/10): Is AI a threat or enabler?
+- **Moat Strength** (/10): Brand, distribution, scale advantages
+- **Erosion Protection** (/10): Payout sustainability, margin trajectory
+
+### Infinite Game — Sinek (20%)
+- **Overall Mindset**: INFINITE / MIXED / FINITE
+- Sub-scores: Just Cause, Trusting Teams, Worthy Rivals, Existential Flexibility, Courage to Lead (each /10)
+
+### Income Quality (10%)
+- **Dividend Safety** (/10): Yield, payout ratio, FCF coverage
+
+### Social Arbitrage — Camillo Lens (10%)
+- **Social Arbitrage** (/10): Market mispricing, sentiment vs fundamentals
+
+### Faith Alignment — Inspire Insight (5%)
+- **Inspire Impact Score**: -100 to +100
+
+Plus: Recommendation (BUY/HOLD/SELL/WATCH), Investment Thesis, Key Catalysts, Key Risks.
+
+## Report JSON Schema
+
+Each `reports/{TICKER}.json` follows this structure:
+
+```json
+{
+  "ticker": "GIS",
+  "name": "General Mills, Inc.",
+  "sleeve": "Prospect",
+  "recommendation": "HOLD",
+  "screen_date": "2026-03-09",
+  "overall_score": 62,
+  "excellence_evaluation": {
+    "innovation": { "score": 7, "label": "STRONG", "analysis": "..." },
+    "inspiration": { "score": 6, "label": "DEVELOPING", "analysis": "..." },
+    "infrastructure": { "score": 6, "label": "DEVELOPING", "analysis": "..." }
+  },
+  "risk_moat_erosion": {
+    "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
+    "moat_strength": { "score": 7, "label": "STRONG", "analysis": "..." },
+    "erosion_protection": { "score": 5, "label": "MODERATE", "analysis": "..." }
+  },
+  "social_arbitrage": { "score": 4, "label": "NEUTRAL", "analysis": "..." },
+  "income_quality": {
+    "dividend_safety": { "score": 7, "label": "SAFE", "analysis": "..." }
+  },
+  "infinite_game": {
+    "mindset": "MIXED",
+    "overall": 6,
+    "summary": "...",
+    "just_cause": { "score": 5, "analysis": "..." },
+    "trusting_teams": { "score": 5, "analysis": "..." },
+    "worthy_rivals": { "score": 6, "analysis": "..." },
+    "existential_flexibility": { "score": 7, "analysis": "..." },
+    "courage_to_lead": { "score": 5, "analysis": "..." }
+  },
+  "faith_alignment": { "inspire_impact_score": -49, "label": "MIXED" },
+  "investment_thesis": "...",
+  "thesis_continued": "...",
+  "key_catalysts": ["...", "...", "..."],
+  "key_risks": ["...", "...", "..."]
+}
+```
+
+### Score Labels
+- Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3
+- Sleeve: **Dividend**, **Growth**, or **Prospect**
+
+## Generating Reports
+
+Claude Code generates each report by analyzing the stock against all IOWN dimensions. To add a new stock:
+
+1. Research the company thoroughly
+2. Create `reports/{TICKER}.json` following the schema above
+3. Run `python3 main.py` to rebuild the site
+4. Deploy
+
+## Project Structure
+
+```
+Stock-Screener/
+├── CLAUDE.md              # This file — workflow instructions
+├── main.py                # Builds static site from reports/ JSON
+├── requirements.txt       # Python dependencies
+├── .env                   # GITHUB_PUSH_TOKEN (not committed)
+├── reports/               # Pre-generated IOWN analysis (one JSON per stock)
+│   ├── GIS.json
+│   └── ...
+├── screener/
+│   ├── __init__.py
+│   ├── filters.py         # Screening criteria and filters
+│   └── rankings.py        # Sorting logic
+├── data/
+│   ├── __init__.py
+│   └── fetcher.py         # Data fetching from Yahoo Finance
+├── templates/
+│   ├── report.html        # Index page — searchable stock list
+│   └── stock_report.html  # Per-stock detailed IOWN report
+├── output/                # Generated static site (gitignored on main)
+│   ├── index.html
+│   ├── {TICKER}.html
+│   ├── manifest.json
+│   └── reports/{TICKER}.json
+├── scripts/
+│   └── deploy.py          # GitHub Pages deployment script
+└── .github/
+    └── workflows/
+        └── screen.yml     # GitHub Actions workflow
+```
 
 ## Deploying to GitHub Pages
 
@@ -77,62 +191,21 @@ curl -s -X PATCH -H "Authorization: token $TOKEN" \
 
 Live site: https://richacarson.github.io/Stock-Screener/
 
-## Project Structure
-
-```
-Stock-Screener/
-├── CLAUDE.md              # This file — workflow instructions
-├── main.py                # Entry point — runs the screener
-├── requirements.txt       # Python dependencies
-├── .env                   # GITHUB_PUSH_TOKEN (not committed)
-├── .env.example           # Template for .env
-├── screener/
-│   ├── __init__.py
-│   ├── filters.py         # Screening criteria and filters
-│   └── rankings.py        # Scoring and ranking logic
-├── data/
-│   ├── __init__.py
-│   └── fetcher.py         # Data fetching from APIs
-├── templates/
-│   └── report.html        # Jinja2 HTML report template
-├── output/                # Generated output (gitignored on main)
-│   ├── results.json
-│   └── index.html
-├── scripts/
-│   └── deploy.py          # GitHub Pages deployment script
-└── .github/
-    └── workflows/
-        └── screen.yml     # GitHub Actions workflow
-```
-
-## Screening Criteria
-
-Default filters (configurable in `screener/filters.py`):
-- **Market cap**: Minimum $1B
-- **Volume**: Minimum 500K average daily volume
-- **P/E ratio**: Between 5 and 40
-- **Revenue growth**: Positive YoY
-- **Relative strength**: Above 50-day moving average
-
-Filters can be customized by modifying `screener/filters.py` or passing criteria to `main.py`.
-
-## Data Sources
-
-The screener uses `yfinance` (Yahoo Finance) by default — free, no API key needed. To add other sources (Finnhub, Alpha Vantage), extend `data/fetcher.py`.
-
 ## Code Style
 
 - Python 3.10+
 - Follow PEP 8
 - Use type hints for function signatures
 - Keep functions focused and under 50 lines where practical
-- Handle API rate limits and network errors gracefully
 
 ## Development
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Build site
+python3 main.py
 
 # Run tests
 pytest
