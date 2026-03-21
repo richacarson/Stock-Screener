@@ -210,6 +210,10 @@ curl -s -X PATCH -H "Authorization: token $TOKEN" \
 
 Live site: https://richacarson.github.io/Stock-Screener/
 
+## UI Changes
+
+Before making any UI changes to Stock-Screener, read `design.md` in the repo root. It defines the design system — follow it exactly.
+
 ## Code Style
 
 - Python 3.10+
