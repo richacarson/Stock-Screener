@@ -26,29 +26,27 @@ python3 scripts/deploy.py
 
 ## IOWN Scoring Framework
 
-Each stock is scored across six dimensions (overall /100):
+Each stock is scored across five dimensions (overall /100, equally weighted at 20% each):
 
-### Excellence Evaluation — Think Like an Owner (30%)
+### Excellence Evaluation — Think Like an Owner (20%)
 - **Innovation** (/10): AI adoption, digital transformation, R&D
 - **Inspiration** (/10): Mission clarity, purpose, employee engagement
 - **Infrastructure** (/10): Operational durability, balance sheet, legacy adaptation
+  - Includes metrics table: P/E, Forward P/E, PEG, D/E, ROE, EPS/Revenue growth (YoY + 5yr CAGR), avg daily volume, dividend stats (for income stocks)
+  - **HARD RULE — Liquidity Floor**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = **0** (stock is too illiquid for IOWN to trade)
 
-### Risk, Moat & Erosion (25%)
+### AI Resilience (20%)
 - **AI Resilience** (/10): Is AI a threat or enabler?
-- **Moat Strength** (/10): Brand, distribution, scale advantages
-- **Erosion Protection** (/10): Payout sustainability, margin trajectory
 
 ### Infinite Game — Sinek (20%)
 - **Overall Mindset**: INFINITE / MIXED / FINITE
 - Sub-scores: Just Cause, Trusting Teams, Worthy Rivals, Existential Flexibility, Courage to Lead (each /10)
 
-### Income Quality (10%)
+### Income Quality (20%)
 - **Dividend Safety** (/10): Yield, payout ratio, FCF coverage
+- **RULE**: If the company does **not** pay a dividend, this section is scored as **N/A** (excluded from overall score calculation, and the remaining 4 sections are weighted 25% each)
 
-### Social Arbitrage — Camillo Lens (10%)
-- **Social Arbitrage** (/10): Market mispricing, sentiment vs fundamentals
-
-### Faith Alignment — Inspire Insight (5%)
+### Faith Alignment — Inspire Insight (20%)
 - **Inspire Impact Score**: -100 to +100
 
 Plus: Recommendation (BUY/HOLD/SELL/WATCH), Investment Thesis, Key Catalysts, Key Risks.
@@ -68,14 +66,24 @@ Each `reports/{TICKER}.json` follows this structure:
   "excellence_evaluation": {
     "innovation": { "score": 7, "label": "STRONG", "analysis": "..." },
     "inspiration": { "score": 6, "label": "DEVELOPING", "analysis": "..." },
-    "infrastructure": { "score": 6, "label": "DEVELOPING", "analysis": "..." }
+    "infrastructure": {
+      "score": 6, "label": "DEVELOPING", "analysis": "...",
+      "metrics": {
+        "stock_price": 55.20,
+        "pe_ratio": 9.7, "forward_pe": 13.2, "peg_ratio": 2.1,
+        "debt_to_equity": 147.0, "return_on_equity": 26.8,
+        "eps_growth_yoy": -4.0, "eps_growth_5yr_cagr": 2.1,
+        "revenue_growth_yoy": -1.2, "revenue_growth_5yr_cagr": 3.4,
+        "avg_daily_volume": 4200000,
+        "dividend": {
+          "yield": 5.47, "payout_ratio": 52.0,
+          "consecutive_years_paid": 127, "consecutive_years_growth": 5,
+          "dividend_growth_5yr_cagr": 3.8
+        }
+      }
+    }
   },
-  "risk_moat_erosion": {
-    "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
-    "moat_strength": { "score": 7, "label": "STRONG", "analysis": "..." },
-    "erosion_protection": { "score": 5, "label": "MODERATE", "analysis": "..." }
-  },
-  "social_arbitrage": { "score": 4, "label": "NEUTRAL", "analysis": "..." },
+  "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
   "income_quality": {
     "dividend_safety": { "score": 7, "label": "SAFE", "analysis": "..." }
   },
@@ -94,6 +102,13 @@ Each `reports/{TICKER}.json` follows this structure:
   "thesis_continued": "...",
   "key_catalysts": ["...", "...", "..."],
   "key_risks": ["...", "...", "..."]
+}
+```
+
+**Non-dividend companies**: Set `income_quality.dividend_safety` to `null` (not scored):
+```json
+"income_quality": {
+  "dividend_safety": null
 }
 ```
 
