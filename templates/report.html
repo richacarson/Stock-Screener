@@ -49,7 +49,7 @@
             padding: 24px 24px 40px;
         }
 
-        /* Embedded mode — hide branding, reduce padding, transparent bg */
+        /* Embedded mode */
         body.embedded { background: transparent; }
         body.embedded .container { padding: 12px 16px 20px; }
         body.embedded header { display: none; }
@@ -61,10 +61,7 @@
             margin-bottom: 24px;
             text-align: center;
         }
-        .logo-img {
-            height: 48px;
-            margin-bottom: 4px;
-        }
+        .logo-img { height: 48px; margin-bottom: 4px; }
         .logo-sub {
             font-size: 10px;
             font-weight: 700;
@@ -83,10 +80,65 @@
         }
         .header-stats strong { color: var(--accent); }
 
-        /* Search */
-        .search-wrap {
-            margin-bottom: 16px;
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 4px;
+            box-shadow: var(--shadow);
         }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tab-btn:hover {
+            background: var(--accent-soft);
+            color: var(--t2);
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: #FFFFFF;
+        }
+        .tab-count {
+            font-size: 10px;
+            font-weight: 800;
+            opacity: 0.7;
+            margin-left: 4px;
+        }
+
+        /* Tab panels */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Section header */
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #B8860B;
+            margin-bottom: 12px;
+        }
+
+        /* Search */
+        .search-wrap { margin-bottom: 16px; }
         .search-input {
             width: 100%;
             padding: 14px 20px;
@@ -127,10 +179,7 @@
             background: var(--card-hover);
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .stock-card-left {
-            flex: 1;
-            min-width: 0;
-        }
+        .stock-card-left { flex: 1; min-width: 0; }
         .stock-card-ticker {
             font-size: 17px;
             font-weight: 800;
@@ -171,19 +220,14 @@
         .rec-tag.sell { background: rgba(220,38,38,0.10); color: var(--rec-sell); }
         .rec-tag.watch { background: rgba(37,99,235,0.10); color: var(--rec-watch); }
 
-        .stock-card-score {
-            text-align: right;
-        }
+        .stock-card-score { text-align: right; }
         .score-big {
             font-size: 26px;
             font-weight: 800;
             color: var(--t1);
             line-height: 1;
         }
-        .score-denom {
-            font-size: 12px;
-            color: var(--t4);
-        }
+        .score-denom { font-size: 12px; color: var(--t4); }
         .stock-card-date {
             font-size: 10px;
             color: var(--t4);
@@ -196,6 +240,13 @@
             color: var(--t4);
             font-size: 14px;
             display: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--t4);
+            font-size: 13px;
         }
 
         footer {
@@ -214,6 +265,8 @@
             body.embedded .container { padding: 8px 10px 16px; }
             .logo-img { height: 36px; }
             .header-stats { flex-direction: column; gap: 4px; align-items: center; }
+            .tabs { flex-direction: column; gap: 2px; }
+            .tab-btn { padding: 10px 14px; font-size: 11px; }
             .stock-card { padding: 12px 14px; }
             .stock-card-ticker { font-size: 15px; }
             .score-big { font-size: 20px; }
@@ -237,30 +290,91 @@
         </div>
     </header>
 
-    <div class="search-wrap">
-        <input type="text" class="search-input" id="search" placeholder="Search by ticker or company name..." autocomplete="off" autofocus>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="dividend">Dividend Strategy<span class="tab-count">({{ dividend_reports|length }})</span></button>
+        <button class="tab-btn" data-tab="growth">Growth Strategy<span class="tab-count">({{ growth_reports|length }})</span></button>
+        <button class="tab-btn" data-tab="search">Search<span class="tab-count">({{ total_reports }})</span></button>
     </div>
 
-    <div class="stock-list" id="stock-list">
-        {% for r in reports %}
-        <a href="{{ r.ticker }}.html" class="stock-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}">
-            <div class="stock-card-left">
-                <div class="stock-card-ticker">{{ r.ticker }}</div>
-                <div class="stock-card-name">{{ r.name }}</div>
-            </div>
-            <div class="stock-card-meta">
-                <span class="sleeve-tag">{{ r.sleeve }}</span>
-                <span class="rec-tag {{ r.recommendation|lower }}">{{ r.recommendation }}</span>
-            </div>
-            <div class="stock-card-score">
-                <span class="score-big">{{ r.overall_score }}</span><span class="score-denom">/100</span>
-                <div class="stock-card-date">{{ r.screen_date }}</div>
-            </div>
-        </a>
-        {% endfor %}
+    <!-- Dividend Strategy -->
+    <div class="tab-panel active" id="panel-dividend">
+        <div class="section-header">Dividend Strategy &mdash; Current Holdings</div>
+        {% if dividend_reports %}
+        <div class="stock-list">
+            {% for r in dividend_reports %}
+            <a href="{{ r.ticker }}.html" class="stock-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}">
+                <div class="stock-card-left">
+                    <div class="stock-card-ticker">{{ r.ticker }}</div>
+                    <div class="stock-card-name">{{ r.name }}</div>
+                </div>
+                <div class="stock-card-meta">
+                    <span class="sleeve-tag">{{ r.sleeve }}</span>
+                    <span class="rec-tag {{ r.recommendation|lower }}">{{ r.recommendation }}</span>
+                </div>
+                <div class="stock-card-score">
+                    <span class="score-big">{{ r.overall_score }}</span><span class="score-denom">/100</span>
+                    <div class="stock-card-date">{{ r.screen_date }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">Dividend portfolio reports are being generated.</div>
+        {% endif %}
     </div>
 
-    <div class="no-results" id="no-results">No stocks match your search.</div>
+    <!-- Growth Strategy -->
+    <div class="tab-panel" id="panel-growth">
+        <div class="section-header">Growth Hybrid Strategy &mdash; Current Holdings</div>
+        {% if growth_reports %}
+        <div class="stock-list">
+            {% for r in growth_reports %}
+            <a href="{{ r.ticker }}.html" class="stock-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}">
+                <div class="stock-card-left">
+                    <div class="stock-card-ticker">{{ r.ticker }}</div>
+                    <div class="stock-card-name">{{ r.name }}</div>
+                </div>
+                <div class="stock-card-meta">
+                    <span class="sleeve-tag">{{ r.sleeve }}</span>
+                    <span class="rec-tag {{ r.recommendation|lower }}">{{ r.recommendation }}</span>
+                </div>
+                <div class="stock-card-score">
+                    <span class="score-big">{{ r.overall_score }}</span><span class="score-denom">/100</span>
+                    <div class="stock-card-date">{{ r.screen_date }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">Growth portfolio reports are being generated.</div>
+        {% endif %}
+    </div>
+
+    <!-- Search -->
+    <div class="tab-panel" id="panel-search">
+        <div class="search-wrap">
+            <input type="text" class="search-input" id="search" placeholder="Search by ticker or company name..." autocomplete="off">
+        </div>
+        <div class="stock-list" id="search-list">
+            {% for r in reports %}
+            <a href="{{ r.ticker }}.html" class="stock-card search-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}">
+                <div class="stock-card-left">
+                    <div class="stock-card-ticker">{{ r.ticker }}</div>
+                    <div class="stock-card-name">{{ r.name }}</div>
+                </div>
+                <div class="stock-card-meta">
+                    <span class="sleeve-tag">{{ r.sleeve }}</span>
+                    <span class="rec-tag {{ r.recommendation|lower }}">{{ r.recommendation }}</span>
+                </div>
+                <div class="stock-card-score">
+                    <span class="score-big">{{ r.overall_score }}</span><span class="score-denom">/100</span>
+                    <div class="stock-card-date">{{ r.screen_date }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="no-results" id="no-results">No stocks match your search.</div>
+    </div>
 
     <footer>
         Intentional Ownership &middot; For Investment Committee Use Only &middot; Not Investment Advice
@@ -273,22 +387,40 @@
         var params = new URLSearchParams(window.location.search);
         if (params.get('embed') === '1' || window.self !== window.top) {
             document.body.classList.add('embedded');
-            // Propagate embed param to stock card links
             document.querySelectorAll('.stock-card').forEach(function(card) {
                 card.href += '?embed=1';
             });
         }
     })();
 
+    // Tab switching
+    var tabBtns = document.querySelectorAll('.tab-btn');
+    var panels = document.querySelectorAll('.tab-panel');
+
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = btn.dataset.tab;
+            tabBtns.forEach(function(b) { b.classList.remove('active'); });
+            panels.forEach(function(p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            document.getElementById('panel-' + target).classList.add('active');
+
+            // Auto-focus search input when switching to search tab
+            if (target === 'search') {
+                document.getElementById('search').focus();
+            }
+        });
+    });
+
     // Search filtering
     var search = document.getElementById('search');
-    var cards = document.querySelectorAll('.stock-card');
+    var searchCards = document.querySelectorAll('.search-card');
     var noResults = document.getElementById('no-results');
 
     search.addEventListener('input', function() {
         var q = this.value.toLowerCase().trim();
         var visible = 0;
-        cards.forEach(function(card) {
+        searchCards.forEach(function(card) {
             var ticker = card.dataset.ticker;
             var name = card.dataset.name;
             var match = !q || ticker.includes(q) || name.includes(q);

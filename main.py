@@ -80,11 +80,43 @@ def _load_reports() -> list[dict]:
     return reports
 
 
+def _load_portfolios() -> dict:
+    """Load portfolio holdings from data/portfolios.json."""
+    portfolio_path = Path("data/portfolios.json")
+    if portfolio_path.exists():
+        with open(portfolio_path) as f:
+            return json.load(f)
+    return {"dividend": [], "growth": []}
+
+
 def _build_index(env: Environment, reports: list[dict]) -> None:
-    """Build the index/search page."""
+    """Build the index/search page with portfolio sections."""
     template = env.get_template("report.html")
+    portfolios = _load_portfolios()
+    reports_by_ticker = {r["ticker"]: r for r in reports}
+
+    dividend_reports = [
+        reports_by_ticker[t]
+        for t in portfolios["dividend"]
+        if t in reports_by_ticker
+    ]
+    dividend_reports.sort(
+        key=lambda r: r.get("overall_score", 0), reverse=True
+    )
+
+    growth_reports = [
+        reports_by_ticker[t]
+        for t in portfolios["growth"]
+        if t in reports_by_ticker
+    ]
+    growth_reports.sort(
+        key=lambda r: r.get("overall_score", 0), reverse=True
+    )
+
     html = template.render(
         reports=reports,
+        dividend_reports=dividend_reports,
+        growth_reports=growth_reports,
         total_reports=len(reports),
         generated_at=datetime.now().isoformat(),
     )
