@@ -1,30 +1,62 @@
 # IOWN Stock Screener — Daily Screening Task
 
-You are running a scheduled daily task for the IOWN Stock Screener project at `/home/user/Stock-Screener`. Your job is to generate IOWN Return on Intention stock analysis reports for the next batch of unscreened stocks.
+You are running a scheduled daily task for the IOWN Stock Screener project at `/home/user/Stock-Screener`. Your job is to generate IOWN Return on Intention stock analysis reports for the next batch of stocks.
+
+**Two modes:** If unscreened stocks remain in the queue, screen those first. Once the entire queue is screened, cycle back and **re-screen the oldest reports** (by `screen_date`) to keep data fresh.
 
 ## Step 1: Determine What to Screen
 
-Run this Python script to find the next 100 unscreened stocks from the queue:
+Run this Python script to find the next 100 stocks to screen:
 
 ```bash
 python3 -c "
 import csv, os, json
+from datetime import datetime
 
 # Load queue (sorted by avg daily volume descending)
 with open('data/screening_queue.csv') as f:
     queue = list(csv.DictReader(f))
+queue_tickers = {r['ticker'] for r in queue}
+queue_lookup = {r['ticker']: r for r in queue}
 
 # Find which tickers already have reports
-done = {f.replace('.json','') for f in os.listdir('reports') if f.endswith('.json')}
+report_files = [f for f in os.listdir('reports') if f.endswith('.json')]
+done = {f.replace('.json','') for f in report_files}
 
-# Get next unscreened tickers
+# Mode 1: Unscreened stocks remain
 remaining = [r for r in queue if r['ticker'] not in done]
-batch = remaining[:100]
 
-print(f'Total in queue: {len(queue)}')
-print(f'Already screened: {len(done)}')
-print(f'Remaining: {len(remaining)}')
-print(f'This batch: {len(batch)} stocks')
+if remaining:
+    batch_tickers = [r['ticker'] for r in remaining[:100]]
+    mode = 'NEW'
+    print(f'MODE: Screening NEW stocks')
+    print(f'Total in queue: {len(queue)}')
+    print(f'Already screened: {len(done)}')
+    print(f'Remaining unscreened: {len(remaining)}')
+else:
+    # Mode 2: All screened — re-screen oldest reports
+    report_dates = []
+    for rf in report_files:
+        ticker = rf.replace('.json','')
+        if ticker not in queue_tickers:
+            continue
+        with open(f'reports/{rf}') as fh:
+            try:
+                data = json.load(fh)
+                sd = data.get('screen_date', '2000-01-01')
+                report_dates.append((ticker, sd))
+            except:
+                report_dates.append((ticker, '2000-01-01'))
+    report_dates.sort(key=lambda x: x[1])  # oldest first
+    batch_tickers = [t for t, _ in report_dates[:100]]
+    oldest_date = report_dates[0][1] if report_dates else 'N/A'
+    newest_in_batch = report_dates[min(99, len(report_dates)-1)][1] if report_dates else 'N/A'
+    mode = 'REFRESH'
+    print(f'MODE: Re-screening OLDEST reports (all {len(queue)} stocks already screened)')
+    print(f'Oldest report in batch: {oldest_date}')
+    print(f'Newest report in batch: {newest_in_batch}')
+
+print(f'This batch: {len(batch_tickers)} stocks')
 print()
 
 # Load inspire data
@@ -32,21 +64,21 @@ with open('data/inspire_insight_scores.csv', encoding='utf-8-sig') as f:
     inspire = {r['ticker']: r for r in csv.DictReader(f)}
 
 # Print batches of 20 with inspire data
-for i in range(0, len(batch), 20):
-    chunk = batch[i:i+20]
+for i in range(0, len(batch_tickers), 20):
+    chunk = batch_tickers[i:i+20]
     print(f'=== BATCH {i//20 + 1} ({len(chunk)} stocks) ===')
-    for stock in chunk:
-        t = stock['ticker']
+    for t in chunk:
+        stock = queue_lookup.get(t, {})
+        name = stock.get('name', 'Unknown')
+        vol = stock.get('avg_daily_volume', 'N/A')
         insp = inspire.get(t, {})
         score = insp.get('score', '0')
         neg = insp.get('negative_attributions', '').strip()
         pos = insp.get('positive_attributions', '').strip()
-        print(f'{t} | {stock[\"name\"]} | vol={stock[\"avg_daily_volume\"]} | inspire={score} | neg=[{neg}] | pos=[{pos}]')
+        print(f'{t} | {name} | vol={vol} | inspire={score} | neg=[{neg}] | pos=[{pos}]')
     print()
 "
 ```
-
-If the output says "Remaining: 0", all stocks are screened — skip to Step 4 (build and deploy).
 
 ## Step 2: Screen Each Batch
 
@@ -240,12 +272,22 @@ Once all 5 agents have finished (or however many batches were needed for this ru
 # Rebuild the static site from all reports
 python3 main.py
 
-# Stage and commit new reports
+# Stage and commit
 git add reports/*.json
+
+# Use appropriate commit message based on mode (NEW or REFRESH)
+# Replace N with actual count and adjust message accordingly:
+# For NEW mode:
 git commit -m "Daily screening: add N new IOWN reports
 
 Screened next batch from screening queue. Reports include
 web-researched analysis with Inspire Insight scores from CSV."
+
+# For REFRESH mode:
+git commit -m "Daily screening: refresh N oldest IOWN reports
+
+Re-screened oldest reports with updated financials and research.
+All queue stocks already covered — cycling through for freshness."
 
 # Push to remote
 git push
@@ -256,14 +298,36 @@ git push
 After committing, print a summary:
 ```bash
 python3 -c "
-import csv, os
+import csv, os, json
+from datetime import datetime
+
 with open('data/screening_queue.csv') as f:
     queue = list(csv.DictReader(f))
+queue_tickers = {r['ticker'] for r in queue}
 done = {f.replace('.json','') for f in os.listdir('reports') if f.endswith('.json')}
 remaining = [r for r in queue if r['ticker'] not in done]
+
+# Find oldest report date
+oldest_date = None
+for rf in os.listdir('reports'):
+    if not rf.endswith('.json'): continue
+    t = rf.replace('.json','')
+    if t not in queue_tickers: continue
+    try:
+        with open(f'reports/{rf}') as fh:
+            sd = json.load(fh).get('screen_date','')
+            if oldest_date is None or sd < oldest_date:
+                oldest_date = sd
+    except: pass
+
 print(f'Reports total: {len(done)}')
-print(f'Queue remaining: {len(remaining)}')
-print(f'Estimated days to complete: {len(remaining) // 100 + (1 if len(remaining) % 100 else 0)}')
+print(f'Queue remaining (unscreened): {len(remaining)}')
+if remaining:
+    print(f'Estimated days to finish first pass: {len(remaining) // 100 + (1 if len(remaining) % 100 else 0)}')
+else:
+    print(f'All stocks screened! Now in REFRESH mode (re-screening oldest first)')
+print(f'Oldest report date: {oldest_date or \"N/A\"}')
+print(f'Full refresh cycle: ~{len(queue) // 100 + 1} days')
 "
 ```
 
