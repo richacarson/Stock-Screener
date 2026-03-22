@@ -137,6 +137,37 @@
             margin-bottom: 12px;
         }
 
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .filter-btn {
+            padding: 7px 16px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filter-btn:hover {
+            background: var(--accent-soft);
+            color: var(--t2);
+            border-color: var(--border-hover);
+        }
+        .filter-btn.active {
+            background: var(--accent);
+            color: #FFFFFF;
+            border-color: var(--accent);
+        }
+
         /* Search */
         .search-wrap { margin-bottom: 16px; }
         .search-input {
@@ -242,6 +273,13 @@
             display: none;
         }
 
+        .search-hint {
+            text-align: center;
+            padding: 40px;
+            color: var(--t4);
+            font-size: 13px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -265,11 +303,12 @@
             body.embedded .container { padding: 8px 10px 16px; }
             .logo-img { height: 36px; }
             .header-stats { flex-direction: column; gap: 4px; align-items: center; }
-            .tabs { flex-direction: column; gap: 2px; }
+            .tabs { flex-wrap: wrap; gap: 2px; }
             .tab-btn { padding: 10px 14px; font-size: 11px; }
             .stock-card { padding: 12px 14px; }
             .stock-card-ticker { font-size: 15px; }
             .score-big { font-size: 20px; }
+            .filter-bar { flex-wrap: wrap; }
         }
 
         @keyframes fadeIn {
@@ -291,9 +330,10 @@
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" data-tab="dividend">Dividend Strategy<span class="tab-count">({{ dividend_reports|length }})</span></button>
-        <button class="tab-btn" data-tab="growth">Growth Strategy<span class="tab-count">({{ growth_reports|length }})</span></button>
-        <button class="tab-btn" data-tab="search">Search<span class="tab-count">({{ total_reports }})</span></button>
+        <button class="tab-btn active" data-tab="dividend">Dividend<span class="tab-count">({{ dividend_reports|length }})</span></button>
+        <button class="tab-btn" data-tab="growth">Growth<span class="tab-count">({{ growth_reports|length }})</span></button>
+        <button class="tab-btn" data-tab="screen">Screen<span class="tab-count">({{ total_reports }})</span></button>
+        <button class="tab-btn" data-tab="search">Search</button>
     </div>
 
     <!-- Dividend Strategy -->
@@ -350,14 +390,18 @@
         {% endif %}
     </div>
 
-    <!-- Search -->
-    <div class="tab-panel" id="panel-search">
-        <div class="search-wrap">
-            <input type="text" class="search-input" id="search" placeholder="Search by ticker or company name..." autocomplete="off">
+    <!-- Screen (all reports with sleeve filter) -->
+    <div class="tab-panel" id="panel-screen">
+        <div class="section-header">All Screened Stocks</div>
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">All<span class="tab-count">({{ total_reports }})</span></button>
+            <button class="filter-btn" data-filter="dividend">Dividend</button>
+            <button class="filter-btn" data-filter="growth">Growth</button>
+            <button class="filter-btn" data-filter="prospect">Prospect</button>
         </div>
-        <div class="stock-list" id="search-list">
+        <div class="stock-list" id="screen-list">
             {% for r in reports %}
-            <a href="{{ r.ticker }}.html" class="stock-card search-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}">
+            <a href="{{ r.ticker }}.html" class="stock-card screen-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}" data-sleeve="{{ r.sleeve|lower }}">
                 <div class="stock-card-left">
                     <div class="stock-card-ticker">{{ r.ticker }}</div>
                     <div class="stock-card-name">{{ r.name }}</div>
@@ -373,7 +417,17 @@
             </a>
             {% endfor %}
         </div>
+    </div>
+
+    <!-- Search -->
+    <div class="tab-panel" id="panel-search">
+        <div class="section-header">Search Reports</div>
+        <div class="search-wrap">
+            <input type="text" class="search-input" id="search" placeholder="Search by ticker or company name..." autocomplete="off">
+        </div>
+        <div class="stock-list" id="search-results"></div>
         <div class="no-results" id="no-results">No stocks match your search.</div>
+        <div class="search-hint" id="search-hint">Type a ticker or company name to find a report.</div>
     </div>
 
     <footer>
@@ -382,7 +436,7 @@
 </div>
 
 <script>
-    // Detect embedded mode
+    // Embedded mode detection
     (function() {
         var params = new URLSearchParams(window.location.search);
         if (params.get('embed') === '1' || window.self !== window.top) {
@@ -392,6 +446,16 @@
             });
         }
     })();
+
+    var isEmbedded = document.body.classList.contains('embedded');
+    var embedSuffix = isEmbedded ? '?embed=1' : '';
+
+    // Search data (all reports, pre-sorted by score descending)
+    var allReports = [
+        {% for r in reports %}
+        { ticker: "{{ r.ticker }}", name: "{{ r.name|e }}", sleeve: "{{ r.sleeve }}", rec: "{{ r.recommendation }}", score: {{ r.overall_score }}, date: "{{ r.screen_date }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
     // Tab switching
     var tabBtns = document.querySelectorAll('.tab-btn');
@@ -404,30 +468,74 @@
             panels.forEach(function(p) { p.classList.remove('active'); });
             btn.classList.add('active');
             document.getElementById('panel-' + target).classList.add('active');
-
-            // Auto-focus search input when switching to search tab
             if (target === 'search') {
                 document.getElementById('search').focus();
             }
         });
     });
 
-    // Search filtering
-    var search = document.getElementById('search');
-    var searchCards = document.querySelectorAll('.search-card');
-    var noResults = document.getElementById('no-results');
+    // Screen tab — sleeve filter
+    var filterBtns = document.querySelectorAll('.filter-btn');
+    var screenCards = document.querySelectorAll('.screen-card');
 
-    search.addEventListener('input', function() {
-        var q = this.value.toLowerCase().trim();
-        var visible = 0;
-        searchCards.forEach(function(card) {
-            var ticker = card.dataset.ticker;
-            var name = card.dataset.name;
-            var match = !q || ticker.includes(q) || name.includes(q);
-            card.style.display = match ? '' : 'none';
-            if (match) visible++;
+    filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var filter = btn.dataset.filter;
+            filterBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            screenCards.forEach(function(card) {
+                if (filter === 'all' || card.dataset.sleeve === filter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         });
-        noResults.style.display = visible === 0 ? 'block' : 'none';
+    });
+
+    // Search tab — dynamic results
+    var searchInput = document.getElementById('search');
+    var searchResults = document.getElementById('search-results');
+    var noResults = document.getElementById('no-results');
+    var searchHint = document.getElementById('search-hint');
+
+    function buildCard(r) {
+        var recClass = r.rec.toLowerCase();
+        return '<a href="' + r.ticker + '.html' + embedSuffix + '" class="stock-card">' +
+            '<div class="stock-card-left">' +
+                '<div class="stock-card-ticker">' + r.ticker + '</div>' +
+                '<div class="stock-card-name">' + r.name + '</div>' +
+            '</div>' +
+            '<div class="stock-card-meta">' +
+                '<span class="sleeve-tag">' + r.sleeve + '</span>' +
+                '<span class="rec-tag ' + recClass + '">' + r.rec + '</span>' +
+            '</div>' +
+            '<div class="stock-card-score">' +
+                '<span class="score-big">' + r.score + '</span><span class="score-denom">/100</span>' +
+                '<div class="stock-card-date">' + r.date + '</div>' +
+            '</div>' +
+        '</a>';
+    }
+
+    searchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase().trim();
+        if (!q) {
+            searchResults.innerHTML = '';
+            noResults.style.display = 'none';
+            searchHint.style.display = 'block';
+            return;
+        }
+        searchHint.style.display = 'none';
+        var matches = allReports.filter(function(r) {
+            return r.ticker.toLowerCase().includes(q) || r.name.toLowerCase().includes(q);
+        });
+        if (matches.length === 0) {
+            searchResults.innerHTML = '';
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+            searchResults.innerHTML = matches.map(buildCard).join('');
+        }
     });
 </script>
 </body>
