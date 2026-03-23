@@ -74,10 +74,25 @@ def _load_reports() -> list[dict]:
     for path in sorted(REPORTS_DIR.glob("*.json")):
         try:
             with open(path) as f:
-                reports.append(json.load(f))
+                data = json.load(f)
+            _normalize_report(data)
+            reports.append(data)
         except (json.JSONDecodeError, OSError) as e:
             print(f"  Warning: Failed to load {path.name}: {e}")
     return reports
+
+
+def _normalize_report(data: dict) -> None:
+    """Normalize old report schemas to the current 3-dimension format."""
+    # Promote ai_resilience from risk_moat_erosion if needed
+    if "ai_resilience" not in data and "risk_moat_erosion" in data:
+        rme = data["risk_moat_erosion"]
+        if "ai_resilience" in rme:
+            data["ai_resilience"] = rme["ai_resilience"]
+
+    # Ensure ai_resilience exists with fallback
+    if "ai_resilience" not in data:
+        data["ai_resilience"] = {"score": 0, "label": "N/A", "analysis": ""}
 
 
 def _load_portfolios() -> dict:
