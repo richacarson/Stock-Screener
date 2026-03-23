@@ -111,11 +111,19 @@ Each `reports/{TICKER}.json` follows this structure:
   "investment_thesis": "...",
   "thesis_continued": "...",
   "key_catalysts": ["...", "...", "..."],
-  "key_risks": ["...", "...", "..."]
+  "key_risks": ["...", "...", "..."],
+  "sources": [
+    "Company Q1 FY2026 Earnings Release, January 2026",
+    "Yahoo Finance — TICKER key statistics, accessed March 2026",
+    "Analyst Report: Morgan Stanley, 'Company Name Initiation', February 2026"
+  ]
 }
 ```
 
 **Removed fields**: `risk_moat_erosion`, `social_arbitrage`, `income_quality` — these dimensions no longer exist. `ai_resilience` is now a top-level field.
+
+### Source References
+Analysis text should include bracketed superscript numbers like `[1]`, `[2]` to cite specific sources. The `sources` array is 1-indexed — `[1]` refers to `sources[0]`. Include sources for all key claims: financial data, analyst quotes, management commentary, product announcements. The template renders these as styled superscripts with a "Resources" page at the end of the PDF.
 
 ### Score Labels
 - Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE/NEUTRAL** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3

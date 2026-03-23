@@ -202,9 +202,16 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
     "Specific risk 1 with quantification",
     "Specific risk 2 with trigger scenario",
     "Specific risk 3 with impact assessment"
+  ],
+  "sources": [
+    "Company Q1 FY2026 Earnings Release, January 2026",
+    "Yahoo Finance — TICKER key statistics, accessed March 2026",
+    "Analyst Report: Morgan Stanley, February 2026"
   ]
 }
 ```
+
+**Source references:** Include `[1]`, `[2]`, etc. in analysis text to cite sources. The `sources` array is 1-indexed (`[1]` = `sources[0]`). Cite all key claims: financial data, analyst quotes, management commentary, product launches. Every web search result used should have a corresponding source entry.
 
 #### SCORING RULES
 

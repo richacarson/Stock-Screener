@@ -52,9 +52,12 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
   "faith_alignment": { "inspire_impact_score": -49, "label": "MISALIGNED", "negative_attributions": ["LGBT Activism"], "positive_attributions": ["Business Resilience", "..."], "source": "Inspire Insight" },
   "investment_thesis": "Bull case paragraph", "thesis_continued": "Bear case paragraph",
   "key_catalysts": ["specific catalyst 1", "specific catalyst 2", "specific catalyst 3"],
-  "key_risks": ["specific risk 1", "specific risk 2", "specific risk 3"]
+  "key_risks": ["specific risk 1", "specific risk 2", "specific risk 3"],
+  "sources": ["Company Q1 Earnings Release, Jan 2026", "Yahoo Finance — TICKER, Mar 2026", "Analyst Report, Feb 2026"]
 }
 ```
+
+**Source references:** Use `[1]`, `[2]` etc. in analysis text to cite sources. `sources` array is 1-indexed. Cite financial data, analyst quotes, management commentary.
 
 ### SCORING RULES
 - Labels: STRONG/SAFE/LOW RISK = 7+, DEVELOPING/MODERATE/NEUTRAL = 4-6, WEAK/AT RISK/HIGH RISK = 1-3

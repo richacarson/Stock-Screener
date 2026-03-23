@@ -6,14 +6,27 @@ builds an index page with search, and individual stock report pages.
 """
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup
 
 
 REPORTS_DIR = Path("reports")
 OUTPUT_DIR = Path("output")
+
+_SOURCE_RE = re.compile(r"\[(\d+)\]")
+
+
+def _sourceref_filter(text: str) -> Markup:
+    """Convert [1], [2] etc. in text to superscript source references."""
+    if not text:
+        return Markup("")
+    escaped = Markup.escape(text)
+    result = _SOURCE_RE.sub(r'<span class="source-ref">[\1]</span>', str(escaped))
+    return Markup(result)
 
 
 def build_site() -> None:
@@ -21,6 +34,7 @@ def build_site() -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     env = Environment(loader=FileSystemLoader("templates"))
+    env.filters["sourceref"] = _sourceref_filter
 
     # Load all reports
     reports = _load_reports()
