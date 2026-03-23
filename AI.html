@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen AI — C3.ai, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+<!-- PAGE 1 -->
+<div class="page fade-in">
+    <a href="index.html" class="back-link no-print">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Screener
+    </a>
+
+
+    <div class="stock-header">
+        <div class="stock-name">
+            AI
+            <span class="stock-name-full">C3.ai, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>PROSPECT SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-03-21</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 66</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">53</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Infrastructure</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">C3.ai provides enterprise AI software for building, deploying, and operating large-scale AI applications across industries including energy, manufacturing, financial services, and government. Founded by Tom Siebel, the company recently underwent a major restructuring with a 26% workforce reduction.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>850 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://c3.ai" target="_blank" rel="noopener">c3.ai</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">C3.ai is a pure-play enterprise AI company with genuine technological capabilities in agentic AI and strategic alliances with Microsoft, AWS, Google Cloud, and McKinsey QuantumBlack. Revenue growth of 25% in FY2025 across 19 industries demonstrates broad applicability. However, the catastrophic Q3 FY2026 miss (revenue of $53.3M vs $75.9M expected) raises questions about product-market fit.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Founder Tom Siebel has been compared to 'Logan Roy' by former employees, described as a 'tyrant' who 'humiliates people.' His diagnosis with an autoimmune disease forced transition to new CEO Stephen Ehikian. The 26% workforce reduction and stated anti-'woke' culture ('we don't do woke, we just work') suggest a demanding but divisive leadership approach.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Q3 FY2026 was disastrous: revenue of $53.3M missed estimates by 30%, EPS of -$0.40 missed by 38%, and non-GAAP gross margin collapsed to 37%. Free cash flow was negative $56.2M. Stock has declined 61% over the past year. The one bright spot is $621.9M in cash, providing a long runway. Revenue growth turned sharply negative at -46.1%.</div>
+</div>
+
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Paradoxically, an AI company faces AI resilience risk as larger hyperscalers (Microsoft, Google, AWS) build competing enterprise AI platforms that threaten C3.ai's relevance. The company's partnerships with these same hyperscalers could become competitive threats. Emergence of open-source AI tools further commoditizes C3.ai's offerings.</div>
+</div>
+
+
+    <div class="report-footer">
+        Intentional Ownership &middot; For Investment Committee Use Only &middot; Not Investment Advice
+    </div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page page-break">
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Despite Siebel's stated commitment to ethical AI, C3.ai's recent actions — massive layoffs, executive transition, catastrophic revenue miss — suggest a company scrambling for survival rather than building for the long term. The pivot to 'agentic AI' feels reactive rather than visionary.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">C3.ai articulates a mission around enterprise AI transformation and has advocated for AI governance regulation. Siebel's call for 'clear and internationally-binding governance' on AI shows principled thinking, but execution has not matched the vision.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">A 26% workforce reduction, leadership described as 'tyrannical,' and CEO transition due to health issues create significant organizational instability. The employee education program (covering MCS degrees with bonuses) was a positive initiative but may not survive restructuring.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">C3.ai acknowledges competition from hyperscalers but its strategic response has been unclear. The company's execution failures in North America and Europe while competitors gained ground suggest inability to learn from rivals effectively.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">The $621.9M cash position provides significant runway for strategic pivots. The restructuring targeting $135M in savings shows willingness to change, but the sharp revenue decline suggests the pivot may be too late.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Siebel's public stance on AI governance and anti-ESG-washing shows intellectual courage, but the company's inability to maintain revenue growth while competitors thrive in enterprise AI suggests strategic missteps rather than bold leadership.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            66
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Systemic Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">C3.ai has genuine enterprise AI technology, strategic partnerships with all major cloud providers, and $621.9M in cash providing a long runway to execute its turnaround. If the agentic AI pivot succeeds and the $135M cost restructuring restores margins, the company's current $1.2B market cap could prove a bargain for a pure-play AI platform company.</div>
+    <div class="thesis-text">The Q3 FY2026 implosion — revenue missing by 30%, gross margins collapsing to 37%, and a 26% workforce reduction — signals fundamental execution problems, not just cyclical headwinds. The stock has declined 61% in a year while the AI sector boomed, suggesting the market views C3.ai as an AI laggard despite the ticker symbol. Negative ROE of -55% and FCF burn of $56.2M/quarter will deplete the cash runway within 3 years.</div>
+
+    <div class="report-footer">
+        Intentional Ownership &middot; For Investment Committee Use Only &middot; Not Investment Advice
+    </div>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page page-break">
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Restructuring targeting $135M in non-GAAP operating expense savings by H2 FY2027</li>
+        
+        <li>Strategic pivot to agentic AI integration across core applications</li>
+        
+        <li>Federal bookings growth of 89% YoY could offset commercial weakness</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Revenue collapsed 30% below estimates in Q3 FY2026 suggesting fundamental demand issues</li>
+        
+        <li>Hyperscaler partners (Microsoft, AWS, Google) are building competing enterprise AI platforms</li>
+        
+        <li>Negative ROE of -55% and FCF burn of $56.2M/quarter depleting $621.9M cash reserves</li>
+        
+    </ol>
+
+    <hr class="section-divider">
+
+    <div class="report-footer">
+        Screened on 2026-03-21 using the IOWN Return on Intention Framework. For Investment Committee review only.
+    </div>
+</div>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            // Update back link to preserve embed param
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
