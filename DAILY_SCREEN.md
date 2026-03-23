@@ -83,15 +83,25 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 ## After All 5 Batches Complete
 
 ```bash
-python3 main.py                    # Rebuild site
+# Rebuild site
+python3 main.py
+
+# Commit reports to the current branch
 git add reports/*.json
 git commit -m "Daily screening: add {N} new reports"
-git push
+git push -u origin HEAD
+```
 
-# Deploy to GitHub Pages
+## Deploy to GitHub Pages
+
+**IMPORTANT:** Use the GitHub Git Data API to deploy — do NOT push directly to `gh-pages` or commit report files there. The `gh-pages` branch should only contain built output files (HTML, manifest.json, and copied report JSONs under `output/reports/`). Source report JSONs belong in `reports/` on the working branch.
+
+```bash
 source .env && export GITHUB_PUSH_TOKEN
 python3 scripts/deploy.py
 ```
+
+If `scripts/deploy.py` fails (e.g., in a sandboxed environment), use the Git Data API method documented in CLAUDE.md to deploy the contents of `output/` to `gh-pages`.
 
 ## Queue Management
 

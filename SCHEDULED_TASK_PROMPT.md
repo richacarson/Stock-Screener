@@ -286,18 +286,20 @@ git commit -m "Daily screening: refresh N oldest IOWN reports
 Re-screened oldest reports with updated financials and research.
 All queue stocks already covered — cycling through for freshness."
 
-# Push to remote
-git push
+# Push to the current branch
+git push -u origin HEAD
 ```
 
 ## Step 4: Deploy to GitHub Pages
 
-After committing, deploy the updated site:
+**IMPORTANT:** Use the GitHub Git Data API to deploy the `output/` directory to `gh-pages`. Do NOT commit report JSON files directly to `gh-pages` — that branch should only contain built output (HTML, manifest.json, and the `output/reports/` copies). Source reports belong in `reports/` on the working branch.
 
 ```bash
 source .env && export GITHUB_PUSH_TOKEN
 python3 scripts/deploy.py
 ```
+
+If `scripts/deploy.py` fails (e.g., in a sandboxed environment where `git push` to `gh-pages` is blocked), use the Git Data API method documented in CLAUDE.md to deploy the contents of `output/` to `gh-pages`.
 
 ## Step 5: Report Results
 
