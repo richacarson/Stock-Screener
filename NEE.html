@@ -716,92 +716,103 @@
     })();
 
     // Logo markup reused for each PDF section
-    var LOGO_HTML = '<div class="pdf-logo" style="display:block;text-align:center;padding:16px 0 16px;margin-bottom:20px;">' +
-        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:64px;" alt="IOWN">' +
+    var LOGO_HTML = '<div style="text-align:center;padding:8px 0 10px;margin-bottom:12px;">' +
+        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:80px;" alt="IOWN">' +
         '</div>';
 
-    function buildPDFSections() {
-        // Build discrete sections that each fit ~1 A4 page
-        var sections = [];
-        var a = document.querySelector('.page.fade-in') || document.querySelectorAll('.page')[0];
+    // Collect sibling elements starting from `el` until `stopFn` returns true
+    function collectUntil(el, stopFn) {
+        var html = '';
+        var sib = el;
+        while (sib) {
+            if (stopFn(sib)) break;
+            html += sib.outerHTML;
+            sib = sib.nextElementSibling;
+        }
+        return { html: html, next: sib };
+    }
 
-        // Section 1: Header + Company Profile
-        // Collect everything from stock-header up to (not including) the first .section-header.green
+    function buildPDFSections() {
+        var sections = [];
+        var page1 = document.querySelector('.page.fade-in') || document.querySelectorAll('.page')[0];
+        var page2 = document.querySelectorAll('.page')[1];
+        var page3 = document.querySelectorAll('.page')[2];
+
+        // PAGE 1: Header + Company Profile + Excellence Evaluation
         var s1 = '';
-        var children = a.children;
-        var hitGreen = false;
+        var children = page1.children;
         for (var i = 0; i < children.length; i++) {
             var c = children[i];
             if (c.classList.contains('no-print') || c.classList.contains('pdf-logo')) continue;
-            if (c.classList.contains('section-header') && c.classList.contains('green')) { hitGreen = true; break; }
+            // Stop before AI Resilience header (non-green section-header after the green one)
+            if (c.textContent.indexOf('AI Resilience') !== -1 && c.classList.contains('section-header')) break;
+            if (c.classList.contains('report-footer')) continue;
             s1 += c.outerHTML;
         }
         sections.push(s1);
 
-        // Section 2: Excellence Evaluation + AI Resilience
+        // PAGE 2: AI Resilience + Faith Alignment (Inspire)
         var s2 = '';
-        var excelHeader = a.querySelectorAll('.section-header.green')[0];
-        if (excelHeader) {
-            s2 += excelHeader.outerHTML;
-            var sib = excelHeader.nextElementSibling;
-            while (sib && !(sib.classList.contains('section-header') && !sib.classList.contains('green'))) {
-                s2 += sib.outerHTML;
-                sib = sib.nextElementSibling;
+        // AI Resilience from page1
+        var aiHeader = null;
+        for (var i = 0; i < children.length; i++) {
+            if (children[i].textContent.indexOf('AI Resilience') !== -1 && children[i].classList.contains('section-header')) {
+                aiHeader = children[i];
+                break;
             }
-            // AI Resilience header + content
-            if (sib && sib.classList.contains('section-header')) {
-                s2 += sib.outerHTML;
-                sib = sib.nextElementSibling;
-                while (sib && !sib.classList.contains('report-footer') && !sib.classList.contains('section-header')) {
-                    s2 += sib.outerHTML;
-                    sib = sib.nextElementSibling;
-                }
+        }
+        if (aiHeader) {
+            var r = collectUntil(aiHeader, function(el) { return el.classList.contains('report-footer'); });
+            s2 += r.html;
+        }
+        // Faith Alignment from page2
+        if (page2) {
+            var faithHeader = page2.querySelector('.section-header.red');
+            if (faithHeader) {
+                var r = collectUntil(faithHeader, function(el) {
+                    return el.classList.contains('section-header') && el.textContent.indexOf('Investment Thesis') !== -1;
+                });
+                s2 += r.html;
             }
         }
         sections.push(s2);
 
-        // Section 3: Infinite Game (all sub-scores)
-        var page2 = document.querySelectorAll('.page')[1];
+        // PAGE 3: Finite vs Infinite Game
         if (page2) {
             var s3 = '';
             var igHeader = page2.querySelector('.section-header.green');
             if (igHeader) {
-                s3 += igHeader.outerHTML;
-                var sib = igHeader.nextElementSibling;
-                while (sib && !sib.classList.contains('section-header')) {
-                    s3 += sib.outerHTML;
-                    sib = sib.nextElementSibling;
-                }
+                var r = collectUntil(igHeader, function(el) { return el.classList.contains('section-header') && !el.classList.contains('green'); });
+                s3 += r.html;
             }
             sections.push(s3);
-
-            // Section 4: Faith Alignment + Investment Thesis
-            var s4 = '';
-            var faithHeader = page2.querySelector('.section-header.red');
-            if (faithHeader) {
-                s4 += faithHeader.outerHTML;
-                var sib = faithHeader.nextElementSibling;
-                while (sib && !sib.classList.contains('report-footer')) {
-                    s4 += sib.outerHTML;
-                    sib = sib.nextElementSibling;
-                }
-            }
-            sections.push(s4);
         }
 
-        // Section 5: Key Catalysts + Key Risks
-        var page3 = document.querySelectorAll('.page')[2];
+        // PAGE 4: Investment Thesis + Key Catalysts + Key Risks
+        var s4 = '';
+        if (page2) {
+            var thesisHeader = null;
+            var p2kids = page2.children;
+            for (var i = 0; i < p2kids.length; i++) {
+                if (p2kids[i].textContent.indexOf('Investment Thesis') !== -1 && p2kids[i].classList.contains('section-header')) {
+                    thesisHeader = p2kids[i];
+                    break;
+                }
+            }
+            if (thesisHeader) {
+                var r = collectUntil(thesisHeader, function(el) { return el.classList.contains('report-footer'); });
+                s4 += r.html;
+            }
+        }
         if (page3) {
-            var s5 = '';
             var kids = page3.children;
             for (var i = 0; i < kids.length; i++) {
                 var c = kids[i];
-                if (!c.classList.contains('pdf-logo') && !c.classList.contains('no-print')) {
-                    s5 += c.outerHTML;
-                }
+                if (c.classList.contains('pdf-logo') || c.classList.contains('no-print')) continue;
+                s4 += c.outerHTML;
             }
-            sections.push(s5);
         }
+        sections.push(s4);
 
         return sections;
     }
