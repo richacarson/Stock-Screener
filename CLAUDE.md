@@ -26,28 +26,34 @@ python3 scripts/deploy.py
 
 ## IOWN Scoring Framework
 
-Each stock is scored across five dimensions (overall /100, equally weighted at 20% each):
+Each stock is scored across six dimensions (overall /100, weighted as shown):
 
-### Excellence Evaluation — Think Like an Owner (20%)
+### Excellence Evaluation — Think Like an Owner (30%)
 - **Innovation** (/10): AI adoption, digital transformation, R&D
 - **Inspiration** (/10): Mission clarity, purpose, employee engagement
 - **Infrastructure** (/10): Operational durability, balance sheet, legacy adaptation
   - Includes metrics table: P/E, Forward P/E, PEG, D/E, ROE, EPS/Revenue growth (YoY + 5yr CAGR), avg daily volume, dividend stats (for income stocks)
   - **HARD RULE — Liquidity Floor**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = **0** (stock is too illiquid for IOWN to trade)
 
-### AI Resilience (20%)
+### Risk, Moat & Erosion (25%)
 - **AI Resilience** (/10): Is AI a threat or enabler?
+- **Moat Strength** (/10): Durable competitive advantages (brand, scale, network effects, switching costs, patents)
+- **Erosion Protection** (/10): Margin trends, FCF sustainability, market share trajectory
 
 ### Infinite Game — Sinek (20%)
 - **Overall Mindset**: INFINITE / MIXED / FINITE
 - Sub-scores: Just Cause, Trusting Teams, Worthy Rivals, Existential Flexibility, Courage to Lead (each /10)
 
-### Income Quality (20%)
+### Income Quality (10%)
 - **Dividend Safety** (/10): Yield, payout ratio, FCF coverage
-- **RULE**: If the company does **not** pay a dividend, this section is scored as **N/A** (excluded from overall score calculation, and the remaining 4 sections are weighted 25% each)
+- For non-dividend-paying stocks: Score based on FCF generation quality and likelihood of future shareholder returns
 
-### Faith Alignment — Inspire Insight (20%)
+### Social Arbitrage — Camillo Lens (10%)
+- **Social Arbitrage** (/10): Mispricing gap between market sentiment and fundamentals
+
+### Faith Alignment — Inspire Insight (5%)
 - **Inspire Impact Score**: -100 to +100
+- Label: ALIGNED (>25), MIXED (-25 to 25), MISALIGNED (<-25)
 
 Plus: Recommendation (BUY/HOLD/SELL/WATCH), Investment Thesis, Key Catalysts, Key Risks.
 
@@ -83,7 +89,12 @@ Each `reports/{TICKER}.json` follows this structure:
       }
     }
   },
-  "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
+  "risk_moat_erosion": {
+    "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
+    "moat_strength": { "score": 6, "label": "MODERATE", "analysis": "..." },
+    "erosion_protection": { "score": 5, "label": "MODERATE", "analysis": "..." }
+  },
+  "social_arbitrage": { "score": 6, "label": "NEUTRAL", "analysis": "..." },
   "income_quality": {
     "dividend_safety": { "score": 7, "label": "SAFE", "analysis": "..." }
   },
@@ -105,15 +116,15 @@ Each `reports/{TICKER}.json` follows this structure:
 }
 ```
 
-**Non-dividend companies**: Set `income_quality.dividend_safety` to `null` (not scored):
+**Non-dividend companies**: Score `dividend_safety` based on FCF quality (not set to null):
 ```json
 "income_quality": {
-  "dividend_safety": null
+  "dividend_safety": { "score": 5, "label": "MODERATE", "analysis": "No dividend, but strong FCF generation..." }
 }
 ```
 
 ### Score Labels
-- Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3
+- Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE/NEUTRAL** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3
 - Sleeve: **Dividend**, **Growth**, or **Prospect**
 
 ## Generating Reports
