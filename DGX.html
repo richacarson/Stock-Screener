@@ -676,11 +676,15 @@
         btn.disabled = true;
 
         try {
+            // Hide no-print elements during capture
+            var noPrint = document.querySelectorAll('.no-print');
+            noPrint.forEach(function(el) { el.style.display = 'none'; });
+
             var pages = document.querySelectorAll('.page');
             var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             var pageWidth = 210;
             var pageHeight = 297;
-            var margin = 8;
+            var margin = 10;
             var contentWidth = pageWidth - margin * 2;
 
             for (var i = 0; i < pages.length; i++) {
@@ -689,13 +693,19 @@
                 var canvas = await html2canvas(pages[i], {
                     scale: 2,
                     useCORS: true,
-                    backgroundColor: '#F5F5F0',
+                    backgroundColor: '#FFFFFF',
                     logging: false,
-                    windowWidth: 800
+                    windowWidth: 800,
+                    onclone: function(clonedDoc) {
+                        // Force dark text colors in the clone for crisp PDF output
+                        clonedDoc.querySelectorAll('.no-print').forEach(function(el) { el.style.display = 'none'; });
+                        var root = clonedDoc.documentElement;
+                        root.style.setProperty('--bg', '#FFFFFF');
+                    }
                 });
 
                 var imgHeight = canvas.height * contentWidth / canvas.width;
-                var imgData = canvas.toDataURL('image/png');
+                var imgData = canvas.toDataURL('image/jpeg', 0.95);
 
                 // If content exceeds one PDF page, scale to fit
                 if (imgHeight > pageHeight - margin * 2) {
@@ -703,15 +713,20 @@
                     var scaledWidth = contentWidth * scale;
                     var scaledHeight = imgHeight * scale;
                     var xOffset = margin + (contentWidth - scaledWidth) / 2;
-                    pdf.addImage(imgData, 'PNG', xOffset, margin, scaledWidth, scaledHeight);
+                    pdf.addImage(imgData, 'JPEG', xOffset, margin, scaledWidth, scaledHeight);
                 } else {
-                    pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, imgHeight);
+                    pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, imgHeight);
                 }
             }
+
+            // Restore no-print elements
+            noPrint.forEach(function(el) { el.style.display = ''; });
 
             pdf.save('DGX_IOWN_Report.pdf');
         } catch (e) {
             console.error('PDF export failed:', e);
+            // Restore no-print elements on error too
+            document.querySelectorAll('.no-print').forEach(function(el) { el.style.display = ''; });
             alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
         }
 
