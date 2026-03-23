@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen PYPL — PayPal Holdings, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Export PDF
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            PYPL
+            <span class="stock-name-full">PayPal Holdings, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>PROSPECT SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-03-23</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -67</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">54</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Credit Services</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">PayPal operates a two-sided payment network connecting merchants and consumers globally, processing digital payments through PayPal, Venmo, Braintree, and Xoom. The company generated $33.2 billion in revenue in 2025 and serves hundreds of millions of active accounts across 200+ markets.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>23,800 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.paypal.com" target="_blank" rel="noopener">www.paypal.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Innovation Track Record (1/3): PayPal&#39;s product evolution over the past five years has been incremental — Venmo monetization (revenue grew 20% to $1.7B), checkout improvements, and BNPL expansion represent extensions rather than transformative pivots <span class="source-ref">[1]</span>. AI Deployment (1/2): PayPal uses AI for fraud detection, risk management, and personalized offers, but no specific quantified AI revenue or cost savings have been reported publicly <span class="source-ref">[2]</span>. Market Share (2/2): PayPal remains the world&#39;s largest digital payment platform by volume with hundreds of millions of active accounts, though market share is eroding to Apple Pay, Google Pay, and embedded payment solutions <span class="source-ref">[1]</span>. Pipeline (0/2): Under the new CEO Lores (effective March 2026), specific product roadmap and innovation plans have not yet been articulated beyond general AI commerce acceleration <span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): PayPal invests significantly in technology and engineering with 23,800 employees, above average for fintech <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): PayPal&#39;s mission to &#39;democratize financial services&#39; is clear and meaningful in connecting underbanked populations to the digital economy, but has become less distinctive as every fintech makes similar claims <span class="source-ref">[2]</span>. Community Impact (1/2): PayPal has general charitable and financial inclusion programs but no standout foundation or specific dollar commitments were identified in research <span class="source-ref">[3]</span>. Employee Retention (0/2): CEO transitions (Schulman to Chriss to interim Miller to Lores) create significant leadership instability; interim CEO Miller acknowledged execution was &#39;just too slow,&#39; suggesting organizational dysfunction <span class="source-ref">[2]</span>. Insider Buying (1/2): New CEO Lores served on PayPal&#39;s board for nearly five years and as Board Chair since 2024, demonstrating long-term alignment through equity <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">PayPal&#39;s financial profile is remarkably strong for a stock that has declined 21.6% on earnings. Forward P/E of 7.6x is deeply depressed, pricing in significant pessimism about 2026 guidance of flat transaction margin dollars and low single-digit EPS decline <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. ROE of 25.7% and profit margin of 15.8% are solid, and D/E of 60.7% is manageable <span class="source-ref">[6]</span>. Free cash flow of $3.3B provides substantial financial flexibility. Revenue growth of 3.7% YoY is decelerating but still positive, and EPS grew 39.4% in 2025 through operational efficiency <span class="source-ref">[1]</span>. P/E of 8.1x represents a historically low multiple for a company generating $33B+ revenue. Dividend yield of 1.27% with a 2.6% payout ratio is negligible. Liquidity is excellent: 23.4M avg vol x $44.01 = $1.03B daily <span class="source-ref">[6]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">PayPal is in transition, with the third CEO in three years (Lores starting March 2026) signaling that the company is searching for strategic direction rather than executing on a long-term vision. The massive installed base and brand create an infinite game foundation, but the execution struggles and competitive pressure suggest a company at risk of playing not to lose rather than playing to keep playing.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">PayPal&#39;s original cause of democratizing financial services and enabling anyone to participate in the digital economy is genuinely transformative and has been validated by hundreds of millions of active accounts <span class="source-ref">[2]</span>. The cause remains relevant as financial inclusion is a global need, but execution has not matched the aspiration in recent years.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Three CEO transitions in three years (Schulman to Chriss to interim Miller to Lores) is the clearest signal of organizational instability <span class="source-ref">[2]</span>. Interim CEO Miller admitted &#39;our execution is just too slow,&#39; and the Board acknowledged &#39;the pace of change and execution was not in line with expectations.&#39; This churn makes building trusting, empowered teams extremely difficult.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">PayPal faces worthy rivals in Apple Pay, Google Pay, Stripe, Block/Square, and Adyen, and the competition has pushed Venmo to $1.7B revenue (20% growth) and accelerated checkout innovation <span class="source-ref">[1]</span>. The Board&#39;s decision to hire Lores explicitly cited the need to compete more effectively in a rapidly evolving landscape.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">PayPal has attempted multiple pivots — super app strategy, BNPL, crypto, and now AI commerce — without fully committing to or executing any of them <span class="source-ref">[2]</span>. The hire of Lores from HP suggests an attempt at a more disciplined, execution-focused approach, but the company has yet to demonstrate the existential flexibility needed to thrive against native digital competitors.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">New CEO Lores&#39; stated commitment to &#39;faster decision-making, clear prioritization, more disciplined execution&#39; shows awareness of the problem <span class="source-ref">[2]</span>. However, PayPal&#39;s cautious 2026 guidance (flat transaction margin dollars, potential EPS decline) suggests the company is managing expectations rather than leading boldly into AI-powered commerce.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">PayPal trades at a historically cheap 7.6x forward P/E with $33.2B revenue, 25.7% ROE, 15.8% profit margins, and $3.3B free cash flow — a quality business priced for permanent decline <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. Venmo growing 20% to $1.7B demonstrates untapped monetization potential, and the new CEO Lores (March 2026 start) brings disciplined execution experience from HP where he delivered six consecutive quarters of revenue growth <span class="source-ref">[2]</span>. Analyst consensus target of $60.32 implies 45% upside from current levels, and if Lores can stabilize execution and articulate a clear AI commerce strategy, the multiple re-rating potential is significant.</div>
+    <div class="thesis-text">The bear case is real: PayPal&#39;s 2026 guidance of flat transaction margin dollars and potential low single-digit EPS decline signals stagnation, not growth <span class="source-ref">[1]</span>. The 21.6% stock decline on Q4 earnings reflects the market&#39;s loss of confidence in management execution. Three CEO changes in three years is a red flag for organizational dysfunction. Apple Pay, Google Pay, and Stripe/Adyen are embedding payments deeper into their ecosystems, eroding PayPal&#39;s checkout relevance. Revenue growth of 3.7% for a company valued at $41B suggests the platform may be ex-growth in its core business, and Lores&#39; HP background (hardware/printing) may not translate to fintech innovation <span class="source-ref">[2]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>New CEO Lores (effective March 2026) articulating a clear AI commerce strategy and demonstrating execution improvement in first 90 days</li>
+        
+        <li>Venmo revenue acceleration beyond 20% growth rate with expanded merchant acceptance and monetization features</li>
+        
+        <li>Multiple re-rating from 7.6x forward P/E toward fintech peers if execution stabilizes — consensus target of $60.32 implies 45% upside</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Third CEO transition in three years creating continued organizational instability and potential for strategic whiplash</li>
+        
+        <li>2026 guidance of flat transaction margin dollars and potential EPS decline signals core business stagnation</li>
+        
+        <li>Apple Pay, Google Pay, and embedded payment solutions eroding PayPal&#39;s checkout button relevance in e-commerce</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): Digital payments face meaningful AI disruption risk as AI-powered commerce platforms, conversational AI, and embedded payment solutions could disintermediate PayPal&#39;s checkout button <span class="source-ref">[2]</span>. Apple Pay and Google Pay with AI integration are reducing PayPal&#39;s relevance at point-of-sale. However, PayPal&#39;s massive data network, fraud detection capabilities, and merchant relationships create switching costs that provide partial protection. AI Opportunity (1/1): PayPal uses AI for fraud prevention, risk scoring, and personalized offers across its platform, generating value through AI-enhanced services embedded in its core payment processing <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -67
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Abortion Activism</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> PayPal Q4 2025 Earnings Report and FY2026 Guidance, February 2026</li>
+        
+        <li><span class="src-num">2.</span> PayPal CEO transition announcements — Enrique Lores appointment, February 2026</li>
+        
+        <li><span class="src-num">3.</span> PayPal ESG and controversy coverage, accessed March 2026</li>
+        
+        <li><span class="src-num">4.</span> Wall Street analyst estimates and price targets for PYPL, March 2026</li>
+        
+        <li><span class="src-num">5.</span> FinTech Magazine — PayPal CEO disciplined growth analysis, March 2026</li>
+        
+        <li><span class="src-num">6.</span> Yahoo Finance — PYPL key statistics, accessed March 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+
+    // Logo markup reused for each PDF section
+    var LOGO_HTML = '<div style="text-align:center;padding:0 0 6px;margin-bottom:10px;">' +
+        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:90px;" alt="IOWN">' +
+        '</div>';
+
+    var FOOTER_HTML = '<div style="text-align:center;font-size:9px;color:#9DAF88;letter-spacing:0.3px;margin-top:32px;padding-top:12px;border-top:1px solid rgba(80,100,60,0.12);">' +
+        'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.' +
+        '</div>';
+
+    // Collect sibling elements starting from `el` until `stopFn` returns true
+    function collectUntil(el, stopFn) {
+        var html = '';
+        var sib = el;
+        while (sib) {
+            if (stopFn(sib)) break;
+            html += sib.outerHTML;
+            sib = sib.nextElementSibling;
+        }
+        return { html: html, next: sib };
+    }
+
+    function buildPDFSections() {
+        // HTML pages now match PDF order exactly — just collect content from each .page
+        var sections = [];
+        var pages = document.querySelectorAll('.page');
+        for (var p = 0; p < pages.length; p++) {
+            var s = '';
+            var kids = pages[p].children;
+            for (var i = 0; i < kids.length; i++) {
+                var c = kids[i];
+                if (c.classList.contains('pdf-logo') || c.classList.contains('no-print') || c.classList.contains('report-footer') || c.tagName === 'HR') continue;
+                s += c.outerHTML;
+            }
+            if (s.trim()) sections.push(s);
+        }
+        return sections;
+    }
+
+    // Pre-load logo as base64 for PDF header
+    var logoLoaded = false;
+    var logoImgData = null;
+    var logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = function() {
+        var c = document.createElement('canvas');
+        c.width = logoImg.naturalWidth;
+        c.height = logoImg.naturalHeight;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        logoImgData = c.toDataURL('image/png');
+        logoLoaded = true;
+    };
+    logoImg.src = 'https://richacarson.github.io/Dashboard/iown-logo.png';
+
+    async function exportPDF() {
+        var btn = document.getElementById('pdf-btn');
+        var origText = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
+        btn.disabled = true;
+
+        try {
+            var sections = buildPDFSections();
+            var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            var pageWidth = 210;
+            var pageHeight = 297;
+            var margin = 10;
+            var contentWidth = pageWidth - margin * 2;
+
+            // Logo and footer dimensions
+            var logoH = 0, logoW = 0;
+            if (logoLoaded && logoImgData) {
+                logoW = 36;
+                logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
+            }
+            var logoGap = 4;
+            var footerHeight = 20;
+            var contentTop = margin + (logoH > 0 ? logoH + logoGap : 0);
+            var contentBottom = pageHeight - margin - footerHeight;
+            var usableHeight = contentBottom - contentTop;
+
+            var footerText = 'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.';
+
+            function addLogoAndFooter() {
+                if (logoLoaded && logoImgData) {
+                    pdf.addImage(logoImgData, 'PNG', (pageWidth - logoW) / 2, margin, logoW, logoH);
+                }
+                pdf.setFontSize(7);
+                pdf.setTextColor(157, 175, 136);
+                var footerLines = pdf.splitTextToSize(footerText, contentWidth);
+                pdf.text(footerLines, pageWidth / 2, pageHeight - margin - 10, { align: 'center' });
+            }
+
+            var isFirstPdfPage = true;
+            var styles = document.querySelector('style').textContent;
+
+            for (var i = 0; i < sections.length; i++) {
+                if (!sections[i].trim()) continue;
+
+                // Render section offscreen
+                var wrapper = document.createElement('div');
+                var styleEl = document.createElement('style');
+                styleEl.textContent = styles;
+                wrapper.appendChild(styleEl);
+                var inner = document.createElement('div');
+                inner.className = 'pdf-section';
+                inner.innerHTML = sections[i];
+                wrapper.appendChild(inner);
+                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
+                document.body.appendChild(wrapper);
+
+                var canvas = await html2canvas(inner, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: false,
+                    windowWidth: 800
+                });
+
+                document.body.removeChild(wrapper);
+
+                var pxPerMm = canvas.width / contentWidth;
+                var imgHeightMm = canvas.height / pxPerMm;
+
+                if (imgHeightMm <= usableHeight) {
+                    // Section fits on one page
+                    if (!isFirstPdfPage) pdf.addPage();
+                    isFirstPdfPage = false;
+                    addLogoAndFooter();
+                    var imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(imgData, 'JPEG', margin, contentTop, contentWidth, imgHeightMm);
+                } else {
+                    // Section overflows — slice across pages
+                    var sliceHeightPx = Math.floor(usableHeight * pxPerMm);
+                    var yOffset = 0;
+
+                    while (yOffset < canvas.height) {
+                        if (!isFirstPdfPage) pdf.addPage();
+                        isFirstPdfPage = false;
+                        addLogoAndFooter();
+
+                        var remaining = canvas.height - yOffset;
+                        var thisSlicePx = Math.min(sliceHeightPx, remaining);
+                        var thisSliceMm = thisSlicePx / pxPerMm;
+
+                        var slice = document.createElement('canvas');
+                        slice.width = canvas.width;
+                        slice.height = thisSlicePx;
+                        var ctx = slice.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, slice.width, slice.height);
+                        ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
+
+                        var sliceData = slice.toDataURL('image/jpeg', 0.95);
+                        pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
+
+                        yOffset += thisSlicePx;
+                    }
+                }
+            }
+
+            pdf.save('PYPL_IOWN_Report.pdf');
+        } catch (e) {
+            console.error('PDF export failed:', e);
+            alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
+        }
+
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>

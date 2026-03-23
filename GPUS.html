@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen GPUS — Hyperscale Data, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Export PDF
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            GPUS
+            <span class="stock-name-full">Hyperscale Data, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>PROSPECT SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-03-23</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 47</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge sell">SELL</span>
+            <div class="overall-score">
+                <span class="num">35</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Aerospace & Defense</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Hyperscale Data is a diversified holding company operating across AI data centers, Bitcoin mining, crane rental (Ballista Group), lending, and digital platforms. The company guided 2026 revenue of $180-200 million and holds 617 BTC (~$40.7 million) plus $42.2 million in cash.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>374 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://hyperscaledata.com" target="_blank" rel="noopener">hyperscaledata.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Hyperscale Data&#39;s 2026 revenue guidance of $180-200 million implies 80-100% growth, driven by AI data center expansion in Michigan, Ballista crane operations, and digital platform initiatives <span class="source-ref">[1]</span>. However, the company is a conglomerate of disparate businesses with no clear technological moat — crane rental, lending, Bitcoin mining, and AI data centers lack synergistic innovation. Revenue actually declined 21% in 2024, and the 2026 guidance relies heavily on the Ballista acquisition contribution.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Hyperscale Data&#39;s mission is unclear — the company spans AI infrastructure, crane rental, lending, and blockchain with no coherent narrative or purpose. The stock trades near its 52-week low of $0.16 at $0.17, reflecting negligible investor confidence. With 374 employees across disparate businesses and a history of losses, employee morale and culture are likely challenged. The conglomerate approach feels opportunistic rather than mission-driven.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">GPUS trades at $0.17 with a $65 million market cap, negative net margin (-38.8%), negative operating margin (-37.4%), and gross margin of only 20% <span class="source-ref">[2]</span>. D/E of 171% and current ratio of 0.5 indicate severe financial strain. Revenue declined 21% in 2024, the company is targeting profitability only by Q4 2026, and the stock sits near its 52-week low. Bitcoin treasury of ~$83 million provides some asset backing but is highly volatile.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Hyperscale Data exhibits predominantly finite game characteristics — the company is a grab-bag of unrelated businesses (cranes, lending, Bitcoin, AI data centers) with no coherent long-term vision, trading near its 52-week low with severe financial strain <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The focus on 2026 profitability targets and planned 2027 divestitures suggests survival-mode thinking rather than infinite game building.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">No coherent just cause exists — the company pursues whatever market trend appears profitable (AI, Bitcoin, crane rental, lending) without an articulated purpose beyond financial returns. The &#39;Hyperscale Data&#39; rebrand from &#39;Ault Global&#39; suggests identity uncertainty.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Managing 374 employees across crane rental, lending, Bitcoin mining, and AI data centers requires fragmented leadership. The conglomerate structure and financial strain likely create competing internal priorities and uncertain team dynamics.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Hyperscale Data is outmatched in every segment — by Equinix/CoreWeave in data centers, Marathon/CleanSpark in Bitcoin mining, and established crane companies in industrial services. No competitive position is defensible at current scale.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">The company demonstrates flexibility by pivoting between business lines, but this feels like aimless diversification rather than strategic agility <span class="source-ref">[1]</span>. The planned Ault Capital Group divestiture in Q1 2027 represents strategic narrowing, which is positive if executed.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Issuing $180-200 million revenue guidance while trading at $0.17 with a $65 million market cap requires either courage or delusion. The gap between ambition and resources is extreme, and leadership has not demonstrated the ability to deliver on promises.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Hyperscale Data offers extreme speculative upside at $0.17 with 2026 revenue guidance of $180-200 million (80-100% growth), $82.9 million in crypto and cash treasury, and exposure to multiple high-growth themes including AI infrastructure and Bitcoin <span class="source-ref">[1]</span>. The Ballista Group contribution of ~$40 million and new AI/blockchain initiatives adding $24-44 million could transform the revenue profile. If profitability is achieved by Q4 2026 as targeted, the stock could re-rate significantly from its 52-week low.</div>
+    <div class="thesis-text">The bear case is severe: GPUS has a history of declining revenue (-21% in 2024), negative margins across the board (-38.8% net, -37.4% operating), D/E of 171%, current ratio of 0.5, and trades near its 52-week low at $0.17 <span class="source-ref">[2]</span>. The conglomerate of cranes, lending, Bitcoin, and AI data centers lacks strategic coherence. Revenue guidance relies on unproven business lines and the Ballista acquisition that has not yet demonstrated full-year contributions. The $180-200 million target from a company with a $65 million market cap strains credibility, and the PE ratio of 0.10x reflects one-time gains rather than sustainable earnings. Dilution risk from potential share issuance to fund AI infrastructure expansion could further compress the stock price.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Achievement of profitability by Q4 2026 as targeted would validate the revenue diversification strategy and potentially trigger re-rating</li>
+        
+        <li>Michigan AI data center expansion could attract enterprise customers and demonstrate viable AI infrastructure revenue at higher margins</li>
+        
+        <li>Planned divestiture of Ault Capital Group in Q1 2027 would simplify the business and release capital for AI/data center focus</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Total capital loss risk — $65M market cap with -39% net margins, 171% D/E, 0.5 current ratio, and near 52-week low</li>
+        
+        <li>Revenue guidance of $180-200M from a company that generated ~$100M in 2025 relies on untested revenue streams and acquisition contributions</li>
+        
+        <li>Conglomerate discount and strategic incoherence make it impossible for investors to value the company on any single thesis</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Hyperscale Data positions itself as an AI infrastructure company through its Michigan data centers and HPC initiatives, making AI nominally an enabler <span class="source-ref">[1]</span>. However, the company lacks the scale, technology partnerships, or financial resources to compete meaningfully in AI infrastructure against well-capitalized players like Equinix, CoreWeave, or IREN. The AI data center strategy feels aspirational given the company&#39;s $65 million market cap and diverse non-AI business lines.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            47
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Hyperscale Data 2026 Revenue Guidance Announcement, March 2026</li>
+        
+        <li><span class="src-num">2.</span> Yahoo Finance — GPUS key statistics, accessed March 2026</li>
+        
+        <li><span class="src-num">3.</span> Benzinga — Hyperscale Data Projects 80-100% Revenue Growth, March 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+
+    // Logo markup reused for each PDF section
+    var LOGO_HTML = '<div style="text-align:center;padding:0 0 6px;margin-bottom:10px;">' +
+        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:90px;" alt="IOWN">' +
+        '</div>';
+
+    var FOOTER_HTML = '<div style="text-align:center;font-size:9px;color:#9DAF88;letter-spacing:0.3px;margin-top:32px;padding-top:12px;border-top:1px solid rgba(80,100,60,0.12);">' +
+        'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.' +
+        '</div>';
+
+    // Collect sibling elements starting from `el` until `stopFn` returns true
+    function collectUntil(el, stopFn) {
+        var html = '';
+        var sib = el;
+        while (sib) {
+            if (stopFn(sib)) break;
+            html += sib.outerHTML;
+            sib = sib.nextElementSibling;
+        }
+        return { html: html, next: sib };
+    }
+
+    function buildPDFSections() {
+        // HTML pages now match PDF order exactly — just collect content from each .page
+        var sections = [];
+        var pages = document.querySelectorAll('.page');
+        for (var p = 0; p < pages.length; p++) {
+            var s = '';
+            var kids = pages[p].children;
+            for (var i = 0; i < kids.length; i++) {
+                var c = kids[i];
+                if (c.classList.contains('pdf-logo') || c.classList.contains('no-print') || c.classList.contains('report-footer') || c.tagName === 'HR') continue;
+                s += c.outerHTML;
+            }
+            if (s.trim()) sections.push(s);
+        }
+        return sections;
+    }
+
+    // Pre-load logo as base64 for PDF header
+    var logoLoaded = false;
+    var logoImgData = null;
+    var logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = function() {
+        var c = document.createElement('canvas');
+        c.width = logoImg.naturalWidth;
+        c.height = logoImg.naturalHeight;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        logoImgData = c.toDataURL('image/png');
+        logoLoaded = true;
+    };
+    logoImg.src = 'https://richacarson.github.io/Dashboard/iown-logo.png';
+
+    async function exportPDF() {
+        var btn = document.getElementById('pdf-btn');
+        var origText = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
+        btn.disabled = true;
+
+        try {
+            var sections = buildPDFSections();
+            var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            var pageWidth = 210;
+            var pageHeight = 297;
+            var margin = 10;
+            var contentWidth = pageWidth - margin * 2;
+
+            // Logo and footer dimensions
+            var logoH = 0, logoW = 0;
+            if (logoLoaded && logoImgData) {
+                logoW = 36;
+                logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
+            }
+            var logoGap = 4;
+            var footerHeight = 20;
+            var contentTop = margin + (logoH > 0 ? logoH + logoGap : 0);
+            var contentBottom = pageHeight - margin - footerHeight;
+            var usableHeight = contentBottom - contentTop;
+
+            var footerText = 'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.';
+
+            function addLogoAndFooter() {
+                if (logoLoaded && logoImgData) {
+                    pdf.addImage(logoImgData, 'PNG', (pageWidth - logoW) / 2, margin, logoW, logoH);
+                }
+                pdf.setFontSize(7);
+                pdf.setTextColor(157, 175, 136);
+                var footerLines = pdf.splitTextToSize(footerText, contentWidth);
+                pdf.text(footerLines, pageWidth / 2, pageHeight - margin - 10, { align: 'center' });
+            }
+
+            var isFirstPdfPage = true;
+            var styles = document.querySelector('style').textContent;
+
+            for (var i = 0; i < sections.length; i++) {
+                if (!sections[i].trim()) continue;
+
+                // Render section offscreen
+                var wrapper = document.createElement('div');
+                var styleEl = document.createElement('style');
+                styleEl.textContent = styles;
+                wrapper.appendChild(styleEl);
+                var inner = document.createElement('div');
+                inner.className = 'pdf-section';
+                inner.innerHTML = sections[i];
+                wrapper.appendChild(inner);
+                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
+                document.body.appendChild(wrapper);
+
+                var canvas = await html2canvas(inner, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: false,
+                    windowWidth: 800
+                });
+
+                document.body.removeChild(wrapper);
+
+                var pxPerMm = canvas.width / contentWidth;
+                var imgHeightMm = canvas.height / pxPerMm;
+
+                if (imgHeightMm <= usableHeight) {
+                    // Section fits on one page
+                    if (!isFirstPdfPage) pdf.addPage();
+                    isFirstPdfPage = false;
+                    addLogoAndFooter();
+                    var imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(imgData, 'JPEG', margin, contentTop, contentWidth, imgHeightMm);
+                } else {
+                    // Section overflows — slice across pages
+                    var sliceHeightPx = Math.floor(usableHeight * pxPerMm);
+                    var yOffset = 0;
+
+                    while (yOffset < canvas.height) {
+                        if (!isFirstPdfPage) pdf.addPage();
+                        isFirstPdfPage = false;
+                        addLogoAndFooter();
+
+                        var remaining = canvas.height - yOffset;
+                        var thisSlicePx = Math.min(sliceHeightPx, remaining);
+                        var thisSliceMm = thisSlicePx / pxPerMm;
+
+                        var slice = document.createElement('canvas');
+                        slice.width = canvas.width;
+                        slice.height = thisSlicePx;
+                        var ctx = slice.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, slice.width, slice.height);
+                        ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
+
+                        var sliceData = slice.toDataURL('image/jpeg', 0.95);
+                        pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
+
+                        yOffset += thisSlicePx;
+                    }
+                }
+            }
+
+            pdf.save('GPUS_IOWN_Report.pdf');
+        } catch (e) {
+            console.error('PDF export failed:', e);
+            alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
+        }
+
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>
