@@ -22,8 +22,8 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 ### WORKFLOW FOR EACH STOCK
 1. Pull yfinance data: `python3 -c "from data.fetcher import fetch_stock_data; import json; d=fetch_stock_data(['TICKER']); print(json.dumps(d,indent=2))"`
 2. Do 3 web searches:
-   - `"{Company}" earnings revenue growth 2026` (financials)
-   - `"{Company}" CEO culture AI innovation Glassdoor` (culture + AI)
+   - `"{Company}" earnings revenue growth 2026` (financials, analyst sentiment vs fundamentals for social arbitrage)
+   - `"{Company}" CEO culture AI innovation Glassdoor competitive moat` (culture, AI, moat strength, erosion risk)
    - `"{Company}" ESG controversy environmental social` (ESG — NOT inspire score, that comes from CSV)
 3. Look up the Inspire Impact Score from the pre-loaded inspire CSV data (do NOT web search for this)
 4. Score all dimensions per the framework
@@ -44,7 +44,11 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
     "infrastructure": { "score": 6, "label": "...", "analysis": "...",
       "metrics": { "stock_price": 55.20, "pe_ratio": 9.7, "forward_pe": 13.2, "peg_ratio": 2.1, "debt_to_equity": 147.0, "return_on_equity": 26.8, "eps_growth_yoy": -4.0, "eps_growth_5yr_cagr": 2.1, "revenue_growth_yoy": -1.2, "revenue_growth_5yr_cagr": 3.4, "avg_daily_volume": 4200000,
         "dividend": { "yield": 5.47, "payout_ratio": 52.0, "consecutive_years_paid": 127, "consecutive_years_growth": 5, "dividend_growth_5yr_cagr": 3.8 } } } },
-  "ai_resilience": { "score": 7, "label": "LOW RISK|MODERATE|HIGH RISK", "analysis": "..." },
+  "risk_moat_erosion": {
+    "ai_resilience": { "score": 7, "label": "LOW RISK|MODERATE|HIGH RISK", "analysis": "..." },
+    "moat_strength": { "score": 6, "label": "STRONG|MODERATE|WEAK", "analysis": "..." },
+    "erosion_protection": { "score": 5, "label": "STRONG|MODERATE|WEAK", "analysis": "..." } },
+  "social_arbitrage": { "score": 6, "label": "STRONG|NEUTRAL|WEAK", "analysis": "..." },
   "income_quality": { "dividend_safety": { "score": 7, "label": "SAFE|MODERATE|AT RISK", "analysis": "..." } },
   "infinite_game": { "mindset": "INFINITE|MIXED|FINITE", "overall": 6, "summary": "...",
     "just_cause": { "score": 5, "analysis": "..." }, "trusting_teams": { "score": 5, "analysis": "..." },
@@ -58,17 +62,18 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 ```
 
 ### SCORING RULES
-- Labels: STRONG/SAFE/LOW RISK = 7+, DEVELOPING/MODERATE = 4-6, WEAK/AT RISK/HIGH RISK = 1-3
-- Overall score (0-100): Each of 5 dimensions weighted 20%. If no dividend, remaining 4 dimensions 25% each.
-  - Excellence: avg(innovation, inspiration, infrastructure) / 10 * 20
-  - AI Resilience: score / 10 * 20
-  - Infinite Game: overall / 10 * 20
-  - Income Quality: dividend_safety / 10 * 20 (null if no dividend)
-  - Faith: (inspire_impact_score + 100) / 200 * 20
+- Labels: STRONG/SAFE/LOW RISK = 7+, DEVELOPING/MODERATE/NEUTRAL = 4-6, WEAK/AT RISK/HIGH RISK = 1-3
+- Overall score (0-100) — 6 dimensions, weighted:
+  - Excellence: (innovation + inspiration + infrastructure) / 30 * 100 * 0.30
+  - Risk/Moat: (ai_resilience + moat_strength + erosion_protection) / 30 * 100 * 0.25
+  - Infinite Game: overall / 10 * 100 * 0.20
+  - Income: dividend_safety / 10 * 100 * 0.10
+  - Social Arbitrage: social_arbitrage / 10 * 100 * 0.10
+  - Faith: (inspire_impact_score + 100) / 200 * 100 * 0.05
 - Recommendation: BUY 80+, HOLD 60-79, WATCH 40-59, SELL <40
 - Sleeve: Dividend (5+ yr history, yield >2%), Growth (revenue growth >15%), Prospect (everything else)
 - **LIQUIDITY FLOOR**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = 0
-- **Non-dividend companies**: Set `"dividend_safety": null` and weight remaining 4 at 25% each
+- **Non-dividend companies**: Score `dividend_safety` based on FCF quality (do NOT set to null). Set dividend metrics to null, consecutive fields to 0.
 - **Dividend safety scoring**: Based on 5YR dividend growth CAGR beating inflation (~3%), consecutive years paid, consecutive years growth. Yield is NOT a factor.
 - Faith alignment: Use the inspire score and attributions provided from the CSV. Labels: ALIGNED (>25), MIXED (-25 to 25), MISALIGNED (<-25)
 
