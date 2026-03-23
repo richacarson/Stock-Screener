@@ -385,7 +385,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back to Screener
         </a>
-        <button class="pdf-btn" onclick="window.print()">
+        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Export PDF
         </button>
@@ -653,6 +653,8 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <script>
     // Detect embedded mode and propagate
     (function() {
@@ -660,13 +662,62 @@
         var embedded = params.get('embed') === '1' || window.self !== window.top;
         if (embedded) {
             document.body.classList.add('embedded');
-            // Update back link to preserve embed param
             var backLink = document.querySelector('.back-link');
             if (backLink) {
                 backLink.href = 'index.html?embed=1';
             }
         }
     })();
+
+    async function exportPDF() {
+        var btn = document.getElementById('pdf-btn');
+        var origText = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
+        btn.disabled = true;
+
+        try {
+            var pages = document.querySelectorAll('.page');
+            var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            var pageWidth = 210;
+            var pageHeight = 297;
+            var margin = 8;
+            var contentWidth = pageWidth - margin * 2;
+
+            for (var i = 0; i < pages.length; i++) {
+                if (i > 0) pdf.addPage();
+
+                var canvas = await html2canvas(pages[i], {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#F5F5F0',
+                    logging: false,
+                    windowWidth: 800
+                });
+
+                var imgHeight = canvas.height * contentWidth / canvas.width;
+                var imgData = canvas.toDataURL('image/png');
+
+                // If content exceeds one PDF page, scale to fit
+                if (imgHeight > pageHeight - margin * 2) {
+                    var scale = (pageHeight - margin * 2) / imgHeight;
+                    var scaledWidth = contentWidth * scale;
+                    var scaledHeight = imgHeight * scale;
+                    var xOffset = margin + (contentWidth - scaledWidth) / 2;
+                    pdf.addImage(imgData, 'PNG', xOffset, margin, scaledWidth, scaledHeight);
+                } else {
+                    pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, imgHeight);
+                }
+            }
+
+            pdf.save('DGX_IOWN_Report.pdf');
+        } catch (e) {
+            console.error('PDF export failed:', e);
+            alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
+        }
+
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
 </script>
 </body>
 </html>
