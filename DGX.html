@@ -753,6 +753,22 @@
         return sections;
     }
 
+    // Pre-load logo as base64 for PDF header
+    var logoLoaded = false;
+    var logoImgData = null;
+    var logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = function() {
+        var c = document.createElement('canvas');
+        c.width = logoImg.naturalWidth;
+        c.height = logoImg.naturalHeight;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        logoImgData = c.toDataURL('image/png');
+        logoLoaded = true;
+    };
+    logoImg.src = 'https://richacarson.github.io/Dashboard/iown-logo.png';
+
     async function exportPDF() {
         var btn = document.getElementById('pdf-btn');
         var origText = btn.innerHTML;
@@ -767,40 +783,83 @@
             var margin = 10;
             var contentWidth = pageWidth - margin * 2;
 
-            // Get computed styles from the page
-            var styleSheets = document.querySelector('style').outerHTML;
-            var fontLink = '';
-            document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l) { fontLink += l.outerHTML; });
+            // Logo and footer dimensions in mm
+            var logoHeight = logoLoaded ? 18 : 0; // ~18mm for 90px logo
+            var logoGap = 4;
+            var footerHeight = 12;
+            var contentTop = margin + logoHeight + logoGap;
+            var contentBottom = pageHeight - margin - footerHeight;
+            var sliceHeightMm = contentBottom - contentTop;
 
-            for (var i = 0; i < sections.length; i++) {
-                if (!sections[i].trim()) continue;
-                if (i > 0) pdf.addPage();
+            var footerText = 'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.';
 
-                // Build an offscreen container for this section
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = '<div class="pdf-section">' + LOGO_HTML + sections[i] + FOOTER_HTML + '</div>';
-                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
-                // Copy styles
-                var styleEl = document.createElement('style');
-                styleEl.textContent = document.querySelector('style').textContent;
-                wrapper.prepend(styleEl);
-                document.body.appendChild(wrapper);
+            function addLogoAndFooter() {
+                // Logo centered at top
+                if (logoLoaded && logoImgData) {
+                    var logoW = 36; // width in mm
+                    var logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
+                    pdf.addImage(logoImgData, 'PNG', (pageWidth - logoW) / 2, margin, logoW, logoH);
+                }
+                // Footer
+                pdf.setFontSize(7);
+                pdf.setTextColor(157, 175, 136); // --t4 color
+                var footerLines = pdf.splitTextToSize(footerText, contentWidth);
+                pdf.text(footerLines, pageWidth / 2, pageHeight - margin - 2, { align: 'center' });
+            }
 
-                var target = wrapper.querySelector('.pdf-section');
+            var isFirstPdfPage = true;
 
-                var canvas = await html2canvas(target, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#FFFFFF',
-                    logging: false,
-                    windowWidth: 800
-                });
+            // Render all sections into one continuous flow, then slice into pages
+            var allContent = sections.join('<div style="height:24px;"></div>'); // spacer between sections
 
-                document.body.removeChild(wrapper);
+            var wrapper = document.createElement('div');
+            var styleEl = document.createElement('style');
+            styleEl.textContent = document.querySelector('style').textContent;
+            wrapper.appendChild(styleEl);
+            var inner = document.createElement('div');
+            inner.className = 'pdf-section';
+            inner.innerHTML = allContent;
+            wrapper.appendChild(inner);
+            wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
+            document.body.appendChild(wrapper);
 
-                var imgData = canvas.toDataURL('image/jpeg', 0.95);
-                var imgHeight = canvas.height * contentWidth / canvas.width;
-                pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, imgHeight);
+            var canvas = await html2canvas(inner, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#FFFFFF',
+                logging: false,
+                windowWidth: 800
+            });
+
+            document.body.removeChild(wrapper);
+
+            // Slice the tall canvas into page-sized chunks
+            var pxPerMm = canvas.width / contentWidth;
+            var sliceHeightPx = Math.floor(sliceHeightMm * pxPerMm);
+            var yOffset = 0;
+
+            while (yOffset < canvas.height) {
+                if (!isFirstPdfPage) pdf.addPage();
+                isFirstPdfPage = false;
+
+                addLogoAndFooter();
+
+                var remaining = canvas.height - yOffset;
+                var thisSlicePx = Math.min(sliceHeightPx, remaining);
+                var thisSliceMm = thisSlicePx / pxPerMm;
+
+                var slice = document.createElement('canvas');
+                slice.width = canvas.width;
+                slice.height = thisSlicePx;
+                var ctx = slice.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, slice.width, slice.height);
+                ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
+
+                var sliceData = slice.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
+
+                yOffset += thisSlicePx;
             }
 
             pdf.save('DGX_IOWN_Report.pdf');
