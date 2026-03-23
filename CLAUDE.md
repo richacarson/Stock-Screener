@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is IOWN's stock screening application. It uses the **Return on Intention** framework to analyze stocks across six dimensions, generates detailed per-stock HTML reports, and deploys to GitHub Pages at https://richacarson.github.io/Stock-Screener/.
+This is IOWN's stock screening application. It uses the **Return on Intention** framework to analyze stocks across three dimensions (Excellence 50%, AI Resilience 25%, Infinite Game 25%), generates detailed per-stock HTML reports, and deploys to GitHub Pages at https://richacarson.github.io/Stock-Screener/.
 
 ## Architecture
 
@@ -26,36 +26,41 @@ python3 scripts/deploy.py
 
 ## IOWN Scoring Framework
 
-Each stock is scored across six dimensions (overall /100, weighted as shown):
+Three dimensions. See **SCREENING.md** for the complete scoring rubric with evidence checklists and calibration anchors.
 
-### Excellence Evaluation — Think Like an Owner (30%)
-- **Innovation** (/10): AI adoption, digital transformation, R&D
-- **Inspiration** (/10): Mission clarity, purpose, employee engagement
-- **Infrastructure** (/10): Operational durability, balance sheet, legacy adaptation
-  - Includes metrics table: P/E, Forward P/E, PEG, D/E, ROE, EPS/Revenue growth (YoY + 5yr CAGR), avg daily volume, dividend stats (for income stocks)
-  - **HARD RULE — Liquidity Floor**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = **0** (stock is too illiquid for IOWN to trade)
+| Dimension | Weight | What It Measures |
+|-----------|--------|-----------------|
+| Excellence Evaluation | 50% | Innovation + Inspiration + Infrastructure (Think Like an Owner) |
+| AI Resilience | 25% | Is AI a threat or an enabler for this business? |
+| Infinite Game | 25% | Does this company play to keep playing, or play to win this quarter? |
 
-### Risk, Moat & Erosion (25%)
-- **AI Resilience** (/10): Is AI a threat or enabler?
-- **Moat Strength** (/10): Durable competitive advantages (brand, scale, network effects, switching costs, patents)
-- **Erosion Protection** (/10): Margin trends, FCF sustainability, market share trajectory
+### Excellence Evaluation — Think Like an Owner (50%)
+- **Innovation** (/10): Scored via 5-item evidence checklist (track record, AI deployment, market share, pipeline, R&D intensity)
+- **Inspiration** (/10): Mission quality floor (0-4) + evidence adds (community impact, retention, insider buying)
+- **Infrastructure** (/10): Calculated mechanically from financial metrics (D/E, ROE, revenue growth, Forward P/E, profit margin, plus dividend or PEG metrics by sleeve)
+  - **HARD RULE — Liquidity Floor**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = **0**
 
-### Infinite Game — Sinek (20%)
-- **Overall Mindset**: INFINITE / MIXED / FINITE
-- Sub-scores: Just Cause, Trusting Teams, Worthy Rivals, Existential Flexibility, Courage to Lead (each /10)
+### AI Resilience (25%)
+- **AI Resilience** (/10): AI Risk Protection (0-9) + AI Opportunity tiebreaker (0-1)
 
-### Income Quality (10%)
-- **Dividend Safety** (/10): Yield, payout ratio, FCF coverage
-- For non-dividend-paying stocks: Score based on FCF generation quality and likelihood of future shareholder returns
+### Infinite Game — Sinek (25%)
+- **Overall** (/10): Weighted 3-2-2-2-1 checklist (Just Cause, Courage to Lead, Trusting Teams, Existential Flexibility, Worthy Rivals)
+- **Mindset Label**: INFINITE (8-10) / MIXED (5-7) / FINITE (1-4)
 
-### Social Arbitrage — Camillo Lens (10%)
-- **Social Arbitrage** (/10): Mispricing gap between market sentiment and fundamentals
-
-### Faith Alignment — Inspire Insight (5%)
-- **Inspire Impact Score**: -100 to +100
+### Faith Alignment — Display Only (0% weight)
+- **Inspire Impact Score**: -100 to +100 (from `data/inspire_insight_scores.csv`, never web searched)
 - Label: ALIGNED (>25), MIXED (-25 to 25), MISALIGNED (<-25)
+- Displayed on report but does NOT factor into overall score
 
-Plus: Recommendation (BUY/HOLD/SELL/WATCH), Investment Thesis, Key Catalysts, Key Risks.
+### Overall Score Formula
+```
+overall_score = avg(innovation, inspiration, infrastructure) / 10 * 50
+              + ai_resilience / 10 * 25
+              + infinite_game_overall / 10 * 25
+```
+Recommendation: BUY 80+, HOLD 60-79, WATCH 40-59, SELL <40
+
+Plus: Investment Thesis, Key Catalysts, Key Risks.
 
 ## Report JSON Schema
 
@@ -65,10 +70,11 @@ Each `reports/{TICKER}.json` follows this structure:
 {
   "ticker": "GIS",
   "name": "General Mills, Inc.",
-  "sleeve": "Prospect",
+  "sleeve": "Dividend",
   "recommendation": "HOLD",
   "screen_date": "2026-03-09",
   "overall_score": 62,
+  "profile": { "sector": "...", "industry": "...", "exchange": "NYSE", "country": "...", "website": "...", "employees": 33000, "description": "..." },
   "excellence_evaluation": {
     "innovation": { "score": 7, "label": "STRONG", "analysis": "..." },
     "inspiration": { "score": 6, "label": "DEVELOPING", "analysis": "..." },
@@ -78,6 +84,7 @@ Each `reports/{TICKER}.json` follows this structure:
         "stock_price": 55.20,
         "pe_ratio": 9.7, "forward_pe": 13.2, "peg_ratio": 2.1,
         "debt_to_equity": 147.0, "return_on_equity": 26.8,
+        "profit_margin": 12.5,
         "eps_growth_yoy": -4.0, "eps_growth_5yr_cagr": 2.1,
         "revenue_growth_yoy": -1.2, "revenue_growth_5yr_cagr": 3.4,
         "avg_daily_volume": 4200000,
@@ -89,15 +96,7 @@ Each `reports/{TICKER}.json` follows this structure:
       }
     }
   },
-  "risk_moat_erosion": {
-    "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
-    "moat_strength": { "score": 6, "label": "MODERATE", "analysis": "..." },
-    "erosion_protection": { "score": 5, "label": "MODERATE", "analysis": "..." }
-  },
-  "social_arbitrage": { "score": 6, "label": "NEUTRAL", "analysis": "..." },
-  "income_quality": {
-    "dividend_safety": { "score": 7, "label": "SAFE", "analysis": "..." }
-  },
+  "ai_resilience": { "score": 7, "label": "LOW RISK", "analysis": "..." },
   "infinite_game": {
     "mindset": "MIXED",
     "overall": 6,
@@ -108,7 +107,7 @@ Each `reports/{TICKER}.json` follows this structure:
     "existential_flexibility": { "score": 7, "analysis": "..." },
     "courage_to_lead": { "score": 5, "analysis": "..." }
   },
-  "faith_alignment": { "inspire_impact_score": -49, "label": "MIXED" },
+  "faith_alignment": { "inspire_impact_score": -49, "label": "MIXED", "negative_attributions": ["..."], "positive_attributions": ["..."], "source": "Inspire Insight" },
   "investment_thesis": "...",
   "thesis_continued": "...",
   "key_catalysts": ["...", "...", "..."],
@@ -116,12 +115,7 @@ Each `reports/{TICKER}.json` follows this structure:
 }
 ```
 
-**Non-dividend companies**: Score `dividend_safety` based on FCF quality (not set to null):
-```json
-"income_quality": {
-  "dividend_safety": { "score": 5, "label": "MODERATE", "analysis": "No dividend, but strong FCF generation..." }
-}
-```
+**Removed fields**: `risk_moat_erosion`, `social_arbitrage`, `income_quality` — these dimensions no longer exist. `ai_resilience` is now a top-level field.
 
 ### Score Labels
 - Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE/NEUTRAL** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3
@@ -132,9 +126,9 @@ Each `reports/{TICKER}.json` follows this structure:
 See **SCREENING.md** for the complete step-by-step workflow. In short:
 
 1. Pull yfinance data
-2. Web research: financials, culture/leadership, AI/innovation, faith/ESG + Inspire score
-3. Score all six IOWN dimensions with specific evidence
-4. Calculate overall score (0-100), assign recommendation (80+ BUY, 60-79 HOLD, 40-59 WATCH, <40 SELL)
+2. Web research: financials, culture/leadership, AI disruption risk
+3. Score all three IOWN dimensions (Excellence, AI Resilience, Infinite Game) with specific evidence
+4. Calculate overall score (0-100) using 50/25/25 weights, assign recommendation
 5. Assign sleeve (Dividend / Growth / Prospect)
 6. Write `reports/{TICKER}.json`
 7. Run `python3 main.py` to rebuild the site
