@@ -365,11 +365,17 @@
         .pdf-logo {
             display: none;
             text-align: center;
-            padding: 12px 0 8px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 16px;
+            padding: 16px 0 12px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
         }
-        .pdf-logo img { height: 40px; }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 40px 48px;
+            max-width: 800px;
+        }
+        .pdf-section .pdf-logo { display: block; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
@@ -671,6 +677,103 @@
         }
     })();
 
+    // Logo markup reused for each PDF section
+    var LOGO_HTML = '<div class="pdf-logo" style="display:block;text-align:center;padding:16px 0 12px;border-bottom:2px solid rgba(80,100,60,0.12);margin-bottom:20px;">' +
+        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:64px;" alt="IOWN">' +
+        '</div>';
+
+    function buildPDFSections() {
+        // Build discrete sections that each fit ~1 A4 page
+        var sections = [];
+        var a = document.querySelector('.page.fade-in') || document.querySelectorAll('.page')[0];
+
+        // Section 1: Header + Profile
+        var s1 = '';
+        var header = a.querySelector('.stock-header');
+        if (header) s1 += header.outerHTML;
+        // Profile = everything between stock-header and the first .section-header.green
+        var profile = '';
+        var children = a.children;
+        var inProfile = false;
+        for (var i = 0; i < children.length; i++) {
+            var c = children[i];
+            if (c.classList.contains('stock-header')) { inProfile = true; continue; }
+            if (inProfile && c.classList.contains('section-header')) break;
+            if (inProfile && !c.classList.contains('no-print') && !c.classList.contains('pdf-logo')) {
+                profile += c.outerHTML;
+            }
+        }
+        s1 += profile;
+        sections.push(s1);
+
+        // Section 2: Excellence Evaluation + AI Resilience
+        var s2 = '';
+        var excelHeader = a.querySelectorAll('.section-header.green')[0];
+        if (excelHeader) {
+            s2 += excelHeader.outerHTML;
+            var sib = excelHeader.nextElementSibling;
+            while (sib && !(sib.classList.contains('section-header') && !sib.classList.contains('green'))) {
+                s2 += sib.outerHTML;
+                sib = sib.nextElementSibling;
+            }
+            // AI Resilience header + content
+            if (sib && sib.classList.contains('section-header')) {
+                s2 += sib.outerHTML;
+                sib = sib.nextElementSibling;
+                while (sib && !sib.classList.contains('report-footer') && !sib.classList.contains('section-header')) {
+                    s2 += sib.outerHTML;
+                    sib = sib.nextElementSibling;
+                }
+            }
+        }
+        sections.push(s2);
+
+        // Section 3: Infinite Game (all sub-scores)
+        var page2 = document.querySelectorAll('.page')[1];
+        if (page2) {
+            var s3 = '';
+            var igHeader = page2.querySelector('.section-header.green');
+            if (igHeader) {
+                s3 += igHeader.outerHTML;
+                var sib = igHeader.nextElementSibling;
+                while (sib && !sib.classList.contains('section-header')) {
+                    s3 += sib.outerHTML;
+                    sib = sib.nextElementSibling;
+                }
+            }
+            sections.push(s3);
+
+            // Section 4: Faith Alignment + Investment Thesis
+            var s4 = '';
+            var faithHeader = page2.querySelector('.section-header.red');
+            if (faithHeader) {
+                s4 += faithHeader.outerHTML;
+                var sib = faithHeader.nextElementSibling;
+                while (sib && !sib.classList.contains('report-footer')) {
+                    s4 += sib.outerHTML;
+                    sib = sib.nextElementSibling;
+                }
+            }
+            sections.push(s4);
+        }
+
+        // Section 5: Key Catalysts + Key Risks
+        var page3 = document.querySelectorAll('.page')[2];
+        if (page3) {
+            var s5 = '';
+            var kids = page3.children;
+            for (var i = 0; i < kids.length; i++) {
+                var c = kids[i];
+                if (!c.classList.contains('pdf-logo') && !c.classList.contains('no-print')) {
+                    s5 += c.outerHTML;
+                }
+            }
+            sections.push(s5);
+        }
+
+        return sections;
+    }
+
     async function exportPDF() {
         var btn = document.getElementById('pdf-btn');
         var origText = btn.innerHTML;
@@ -678,82 +781,52 @@
         btn.disabled = true;
 
         try {
-            var noPrint = document.querySelectorAll('.no-print');
-            noPrint.forEach(function(el) { el.style.display = 'none'; });
-
-            var pages = document.querySelectorAll('.page');
+            var sections = buildPDFSections();
             var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
             var pageWidth = 210;
             var pageHeight = 297;
             var margin = 10;
             var contentWidth = pageWidth - margin * 2;
-            var usableHeight = pageHeight - margin * 2;
-            var firstPage = true;
 
-            for (var i = 0; i < pages.length; i++) {
-                var canvas = await html2canvas(pages[i], {
+            // Get computed styles from the page
+            var styleSheets = document.querySelector('style').outerHTML;
+            var fontLink = '';
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l) { fontLink += l.outerHTML; });
+
+            for (var i = 0; i < sections.length; i++) {
+                if (!sections[i].trim()) continue;
+                if (i > 0) pdf.addPage();
+
+                // Build an offscreen container for this section
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = '<div class="pdf-section">' + LOGO_HTML + sections[i] + '</div>';
+                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
+                // Copy styles
+                var styleEl = document.createElement('style');
+                styleEl.textContent = document.querySelector('style').textContent;
+                wrapper.prepend(styleEl);
+                document.body.appendChild(wrapper);
+
+                var target = wrapper.querySelector('.pdf-section');
+
+                var canvas = await html2canvas(target, {
                     scale: 2,
                     useCORS: true,
                     backgroundColor: '#FFFFFF',
                     logging: false,
-                    windowWidth: 800,
-                    onclone: function(clonedDoc) {
-                        clonedDoc.querySelectorAll('.no-print').forEach(function(el) { el.remove(); });
-                        clonedDoc.querySelectorAll('.fade-in').forEach(function(el) {
-                            el.style.animation = 'none';
-                            el.style.opacity = '1';
-                        });
-                        // Show logo in PDF
-                        clonedDoc.querySelectorAll('.pdf-logo').forEach(function(el) {
-                            el.style.display = 'block';
-                        });
-                        clonedDoc.documentElement.style.setProperty('--bg', '#FFFFFF');
-                    }
+                    windowWidth: 800
                 });
 
+                document.body.removeChild(wrapper);
+
                 var imgData = canvas.toDataURL('image/jpeg', 0.95);
-                // Full image dimensions in mm when rendered at contentWidth
-                var fullImgHeight = canvas.height * contentWidth / canvas.width;
-
-                if (fullImgHeight <= usableHeight) {
-                    // Fits on one page — render at full width
-                    if (!firstPage) pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, fullImgHeight);
-                    firstPage = false;
-                } else {
-                    // Tall content — slice across multiple PDF pages
-                    var pxPerMm = canvas.width / contentWidth;
-                    var sliceHeightPx = Math.floor(usableHeight * pxPerMm);
-                    var yOffset = 0;
-
-                    while (yOffset < canvas.height) {
-                        if (!firstPage) pdf.addPage();
-                        firstPage = false;
-
-                        var remaining = canvas.height - yOffset;
-                        var thisSlicePx = Math.min(sliceHeightPx, remaining);
-                        var thisSliceMm = thisSlicePx / pxPerMm;
-
-                        // Create a slice canvas
-                        var slice = document.createElement('canvas');
-                        slice.width = canvas.width;
-                        slice.height = thisSlicePx;
-                        var ctx = slice.getContext('2d');
-                        ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
-
-                        var sliceData = slice.toDataURL('image/jpeg', 0.95);
-                        pdf.addImage(sliceData, 'JPEG', margin, margin, contentWidth, thisSliceMm);
-
-                        yOffset += thisSlicePx;
-                    }
-                }
+                var imgHeight = canvas.height * contentWidth / canvas.width;
+                pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, imgHeight);
             }
 
-            noPrint.forEach(function(el) { el.style.display = ''; });
             pdf.save('TSM_IOWN_Report.pdf');
         } catch (e) {
             console.error('PDF export failed:', e);
-            document.querySelectorAll('.no-print').forEach(function(el) { el.style.display = ''; });
             alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
         }
 
