@@ -107,10 +107,10 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
    python3 -c "from data.fetcher import fetch_stock_data; import json; d=fetch_stock_data(['TICKER']); print(json.dumps(d,indent=2))"
    ```
 2. Do **3 web searches** (NOT 4 — inspire comes from CSV above):
-   - `"{Company Name}" earnings revenue growth 2026` — financials, quarterly results, guidance, margins, FCF, analyst sentiment vs fundamentals (for social arbitrage)
-   - `"{Company Name}" CEO leadership culture Glassdoor AI innovation competitive moat` — culture, employee sentiment, AI adoption, R&D, moat strength, erosion risk
+   - `"{Company Name}" earnings revenue growth 2026` — financials, quarterly results, guidance, margins, FCF
+   - `"{Company Name}" CEO leadership culture Glassdoor AI innovation AI disruption risk` — culture, employee sentiment, AI adoption, AI threat/enabler assessment
    - `"{Company Name}" ESG controversy environmental social governance` — ESG issues, community impact (NOT inspire score)
-3. Score all dimensions using research evidence
+3. Score all three dimensions (Excellence, AI Resilience, Infinite Game) using research evidence
 4. Use the inspire score and attributions provided above for `faith_alignment` (do NOT guess or web search)
 5. Write `reports/{TICKER}.json`
 
@@ -154,6 +154,7 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
         "peg_ratio": 2.1,
         "debt_to_equity": 147.0,
         "return_on_equity": 26.8,
+        "profit_margin": 12.5,
         "eps_growth_yoy": -4.0,
         "eps_growth_5yr_cagr": 2.1,
         "revenue_growth_yoy": -1.2,
@@ -169,34 +170,10 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
       }
     }
   },
-  "risk_moat_erosion": {
-    "ai_resilience": {
-      "score": 7,
-      "label": "LOW RISK|MODERATE|HIGH RISK",
-      "analysis": "2-3 sentences citing specific evidence"
-    },
-    "moat_strength": {
-      "score": 6,
-      "label": "STRONG|MODERATE|WEAK",
-      "analysis": "2-3 sentences citing specific evidence"
-    },
-    "erosion_protection": {
-      "score": 5,
-      "label": "STRONG|MODERATE|WEAK",
-      "analysis": "2-3 sentences citing specific evidence"
-    }
-  },
-  "social_arbitrage": {
-    "score": 6,
-    "label": "STRONG|NEUTRAL|WEAK",
-    "analysis": "2-3 sentences on sentiment vs fundamentals gap"
-  },
-  "income_quality": {
-    "dividend_safety": {
-      "score": 7,
-      "label": "SAFE|MODERATE|AT RISK",
-      "analysis": "2-3 sentences citing specific evidence"
-    }
+  "ai_resilience": {
+    "score": 7,
+    "label": "LOW RISK|MODERATE|HIGH RISK",
+    "analysis": "2-3 sentences citing specific evidence"
   },
   "infinite_game": {
     "mindset": "INFINITE|MIXED|FINITE",
@@ -237,18 +214,16 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 - 4-6: DEVELOPING, MODERATE, NEUTRAL
 - 1-3: WEAK, AT RISK, HIGH RISK
 
-**Overall score (0-100) — 6 dimensions, weighted:**
+**Overall score (0-100) — 3 dimensions, weighted:**
 ```
 overall = (
-    (innovation + inspiration + infrastructure) / 30 * 100 * 0.30  # Excellence: 30%
-  + (ai_resilience + moat_strength + erosion_protection) / 30 * 100 * 0.25  # Risk/Moat: 25%
-  + infinite_game_overall / 10 * 100 * 0.20                        # Infinite Game: 20%
-  + dividend_safety / 10 * 100 * 0.10                              # Income: 10%
-  + social_arbitrage / 10 * 100 * 0.10                             # Arbitrage: 10%
-  + (inspire_impact_score + 100) / 200 * 100 * 0.05               # Faith: 5%
+    avg(innovation, inspiration, infrastructure) / 10 * 50   # Excellence: 50%
+  + ai_resilience / 10 * 25                                   # AI Resilience: 25%
+  + infinite_game_overall / 10 * 25                            # Infinite Game: 25%
 )
 ```
-**Non-dividend stocks:** Score `dividend_safety` based on FCF generation quality and likelihood of future shareholder returns (do NOT set to null).
+Faith Alignment is displayed on the report but carries **0% weight** in the overall score.
+No special handling for non-dividend stocks — same formula for all. Dividend metrics factor into Infrastructure sub-score (see SCREENING.md).
 
 **Recommendation from overall score:**
 - **BUY**: 80+
@@ -257,14 +232,12 @@ overall = (
 - **SELL**: <40
 
 **Sleeve assignment:**
-- **Dividend**: Established dividend payer with 5+ year history AND yield > 2%
-- **Growth**: Revenue growth > 15% YoY
-- **Prospect**: Everything else
+- **Current IOWN holdings** (in `data/portfolios.json`): Force sleeve from portfolios.json (dividend array → "Dividend", growth array → "Growth")
+- **All other stocks**: Dividend (5+ yr history AND yield > 2%), Growth (revenue growth > 15% YoY), Prospect (everything else)
 
 **HARD RULES:**
 - **LIQUIDITY FLOOR**: If `avg_daily_volume × stock_price < $1,000,000` → Infrastructure score = **0**
-- **Non-dividend stocks**: Set dividend metrics (yield, payout_ratio, dividend_growth_5yr_cagr) to `null`, consecutive fields to `0`. Score `dividend_safety` on FCF quality (not null).
-- **Dividend safety scoring**: Based on 5YR dividend growth CAGR beating inflation (~3%), high consecutive years of payments, and consecutive years of growth. Yield is **NOT** a factor in dividend safety scoring.
+- **Infrastructure is calculated mechanically** from financial metrics — see SCREENING.md for the full algorithm
 - **Faith alignment labels**: ALIGNED (score > 25), MIXED (-25 to 25), MISALIGNED (score < -25)
 - **Inspire data**: MUST come from the CSV data provided above. Do NOT web search for inspire scores.
 
