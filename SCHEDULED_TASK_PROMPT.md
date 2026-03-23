@@ -16,18 +16,18 @@ from datetime import datetime
 # Load queue (sorted by avg daily volume descending)
 with open('data/screening_queue.csv') as f:
     queue = list(csv.DictReader(f))
-queue_tickers = {r['ticker'] for r in queue}
-queue_lookup = {r['ticker']: r for r in queue}
+queue_tickers = {r['symbol'] for r in queue}
+queue_lookup = {r['symbol']: r for r in queue}
 
 # Find which tickers already have reports
 report_files = [f for f in os.listdir('reports') if f.endswith('.json')]
 done = {f.replace('.json','') for f in report_files}
 
 # Mode 1: Unscreened stocks remain
-remaining = [r for r in queue if r['ticker'] not in done]
+remaining = [r for r in queue if r['symbol'] not in done]
 
 if remaining:
-    batch_tickers = [r['ticker'] for r in remaining[:100]]
+    batch_tickers = [r['symbol'] for r in remaining[:100]]
     mode = 'NEW'
     print(f'MODE: Screening NEW stocks')
     print(f'Total in queue: {len(queue)}')
@@ -69,13 +69,12 @@ for i in range(0, len(batch_tickers), 20):
     print(f'=== BATCH {i//20 + 1} ({len(chunk)} stocks) ===')
     for t in chunk:
         stock = queue_lookup.get(t, {})
-        name = stock.get('name', 'Unknown')
         vol = stock.get('avg_daily_volume', 'N/A')
         insp = inspire.get(t, {})
         score = insp.get('score', '0')
         neg = insp.get('negative_attributions', '').strip()
         pos = insp.get('positive_attributions', '').strip()
-        print(f'{t} | {name} | vol={vol} | inspire={score} | neg=[{neg}] | pos=[{pos}]')
+        print(f'{t} | vol={vol} | inspire={score} | neg=[{neg}] | pos=[{pos}]')
     print()
 "
 ```
@@ -93,7 +92,7 @@ For each batch, launch an agent with the prompt below, filling in the stock list
 You are generating IOWN Return on Intention stock analysis reports. Generate a `reports/{TICKER}.json` file for each of the following stocks. Work through them one at a time.
 
 #### YOUR STOCKS (Batch N)
-{List each ticker with company name, e.g.: BAC (Bank of America), BBD (Banco Bradesco), AMD (Advanced Micro Devices), ...}
+{List each ticker, e.g.: BAC, BBD, AMD, ...}
 
 #### INSPIRE SCORES (from CSV — do NOT web search for these)
 {For each ticker, paste the inspire score and attributions from Step 1 output, e.g.:
@@ -284,9 +283,18 @@ All queue stocks already covered — cycling through for freshness."
 git push
 ```
 
-## Step 4: Report Results
+## Step 4: Deploy to GitHub Pages
 
-After committing, print a summary:
+After committing, deploy the updated site:
+
+```bash
+source .env && export GITHUB_PUSH_TOKEN
+python3 scripts/deploy.py
+```
+
+## Step 5: Report Results
+
+After deploying, print a summary:
 ```bash
 python3 -c "
 import csv, os, json
@@ -294,9 +302,9 @@ from datetime import datetime
 
 with open('data/screening_queue.csv') as f:
     queue = list(csv.DictReader(f))
-queue_tickers = {r['ticker'] for r in queue}
+queue_tickers = {r['symbol'] for r in queue}
 done = {f.replace('.json','') for f in os.listdir('reports') if f.endswith('.json')}
-remaining = [r for r in queue if r['ticker'] not in done]
+remaining = [r for r in queue if r['symbol'] not in done]
 
 # Find oldest report date
 oldest_date = None

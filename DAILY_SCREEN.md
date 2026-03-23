@@ -7,7 +7,7 @@ Screen the next batch of stocks from the queue. This prompt is designed to be ru
 1. Read `data/screening_queue.csv` to find stocks that don't yet have reports in `reports/`
 2. Load `data/inspire_insight_scores.csv` into memory for inspire scores
 3. Screen the next **100 stocks** (5 sequential batches of 20)
-4. After all batches complete: rebuild site, commit, and push
+4. After all batches complete: rebuild site, commit, push, and deploy
 
 ## How to Screen Each Batch
 
@@ -17,7 +17,7 @@ For each batch of 20 stocks, launch **one agent at a time** (not parallel!) with
 
 You are generating IOWN Return on Intention stock analysis reports. Generate a `reports/{TICKER}.json` file for each of the following stocks. Work through them one at a time.
 
-### STOCKS: {comma-separated list of 20 tickers with names}
+### STOCKS: {comma-separated list of 20 tickers}
 
 ### WORKFLOW FOR EACH STOCK
 1. Pull yfinance data: `python3 -c "from data.fetcher import fetch_stock_data; import json; d=fetch_stock_data(['TICKER']); print(json.dumps(d,indent=2))"`
@@ -36,7 +36,7 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 ```json
 {
   "ticker": "TICKER", "name": "Full Company Name", "sleeve": "Dividend|Growth|Prospect",
-  "recommendation": "BUY|HOLD|WATCH|SELL", "screen_date": "2026-03-22", "overall_score": 62,
+  "recommendation": "BUY|HOLD|WATCH|SELL", "screen_date": "2026-03-23", "overall_score": 62,
   "profile": { "sector": "...", "industry": "...", "exchange": "NYSE|NASDAQ", "country": "...", "website": "...", "employees": 33000, "description": "2-3 sentence company description" },
   "excellence_evaluation": {
     "innovation": { "score": 7, "label": "STRONG|DEVELOPING|WEAK", "analysis": "2-3 sentences with specific evidence" },
@@ -83,9 +83,15 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 python3 main.py                    # Rebuild site
 git add reports/*.json
 git commit -m "Daily screening: add {N} new reports"
-git push -u origin {current-branch}
+git push
+
+# Deploy to GitHub Pages
+source .env && export GITHUB_PUSH_TOKEN
+python3 scripts/deploy.py
 ```
 
 ## Queue Management
 
-The queue at `data/screening_queue.csv` is sorted by avg daily volume descending. To find the next unscreened batch, check which tickers in the queue don't have a file in `reports/`. Process them in order (highest volume first).
+The queue at `data/screening_queue.csv` has columns `symbol` and `avg_daily_volume`, sorted by volume descending. To find the next unscreened batch, check which symbols in the queue don't have a file in `reports/`. Process them in order (highest volume first).
+
+Once all 2,202 stocks are screened, switch to REFRESH mode — re-screen the oldest reports (by `screen_date`) to keep data current.
