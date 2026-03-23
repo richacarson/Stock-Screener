@@ -811,83 +811,96 @@
             var margin = 10;
             var contentWidth = pageWidth - margin * 2;
 
-            // Logo and footer dimensions in mm
-            var logoHeight = logoLoaded ? 18 : 0; // ~18mm for 90px logo
+            // Logo and footer dimensions
+            var logoH = 0, logoW = 0;
+            if (logoLoaded && logoImgData) {
+                logoW = 36;
+                logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
+            }
             var logoGap = 4;
-            var footerHeight = 12;
-            var contentTop = margin + logoHeight + logoGap;
+            var footerHeight = 14;
+            var contentTop = margin + (logoH > 0 ? logoH + logoGap : 0);
             var contentBottom = pageHeight - margin - footerHeight;
-            var sliceHeightMm = contentBottom - contentTop;
+            var usableHeight = contentBottom - contentTop;
 
             var footerText = 'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.';
 
             function addLogoAndFooter() {
-                // Logo centered at top
                 if (logoLoaded && logoImgData) {
-                    var logoW = 36; // width in mm
-                    var logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
                     pdf.addImage(logoImgData, 'PNG', (pageWidth - logoW) / 2, margin, logoW, logoH);
                 }
-                // Footer
                 pdf.setFontSize(7);
-                pdf.setTextColor(157, 175, 136); // --t4 color
+                pdf.setTextColor(157, 175, 136);
                 var footerLines = pdf.splitTextToSize(footerText, contentWidth);
                 pdf.text(footerLines, pageWidth / 2, pageHeight - margin - 2, { align: 'center' });
             }
 
             var isFirstPdfPage = true;
+            var styles = document.querySelector('style').textContent;
 
-            // Render all sections into one continuous flow, then slice into pages
-            var allContent = sections.join('<div style="height:24px;"></div>'); // spacer between sections
+            for (var i = 0; i < sections.length; i++) {
+                if (!sections[i].trim()) continue;
 
-            var wrapper = document.createElement('div');
-            var styleEl = document.createElement('style');
-            styleEl.textContent = document.querySelector('style').textContent;
-            wrapper.appendChild(styleEl);
-            var inner = document.createElement('div');
-            inner.className = 'pdf-section';
-            inner.innerHTML = allContent;
-            wrapper.appendChild(inner);
-            wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
-            document.body.appendChild(wrapper);
+                // Render section offscreen
+                var wrapper = document.createElement('div');
+                var styleEl = document.createElement('style');
+                styleEl.textContent = styles;
+                wrapper.appendChild(styleEl);
+                var inner = document.createElement('div');
+                inner.className = 'pdf-section';
+                inner.innerHTML = sections[i];
+                wrapper.appendChild(inner);
+                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
+                document.body.appendChild(wrapper);
 
-            var canvas = await html2canvas(inner, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#FFFFFF',
-                logging: false,
-                windowWidth: 800
-            });
+                var canvas = await html2canvas(inner, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: false,
+                    windowWidth: 800
+                });
 
-            document.body.removeChild(wrapper);
+                document.body.removeChild(wrapper);
 
-            // Slice the tall canvas into page-sized chunks
-            var pxPerMm = canvas.width / contentWidth;
-            var sliceHeightPx = Math.floor(sliceHeightMm * pxPerMm);
-            var yOffset = 0;
+                var pxPerMm = canvas.width / contentWidth;
+                var imgHeightMm = canvas.height / pxPerMm;
 
-            while (yOffset < canvas.height) {
-                if (!isFirstPdfPage) pdf.addPage();
-                isFirstPdfPage = false;
+                if (imgHeightMm <= usableHeight) {
+                    // Section fits on one page
+                    if (!isFirstPdfPage) pdf.addPage();
+                    isFirstPdfPage = false;
+                    addLogoAndFooter();
+                    var imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(imgData, 'JPEG', margin, contentTop, contentWidth, imgHeightMm);
+                } else {
+                    // Section overflows — slice across pages
+                    var sliceHeightPx = Math.floor(usableHeight * pxPerMm);
+                    var yOffset = 0;
 
-                addLogoAndFooter();
+                    while (yOffset < canvas.height) {
+                        if (!isFirstPdfPage) pdf.addPage();
+                        isFirstPdfPage = false;
+                        addLogoAndFooter();
 
-                var remaining = canvas.height - yOffset;
-                var thisSlicePx = Math.min(sliceHeightPx, remaining);
-                var thisSliceMm = thisSlicePx / pxPerMm;
+                        var remaining = canvas.height - yOffset;
+                        var thisSlicePx = Math.min(sliceHeightPx, remaining);
+                        var thisSliceMm = thisSlicePx / pxPerMm;
 
-                var slice = document.createElement('canvas');
-                slice.width = canvas.width;
-                slice.height = thisSlicePx;
-                var ctx = slice.getContext('2d');
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, slice.width, slice.height);
-                ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
+                        var slice = document.createElement('canvas');
+                        slice.width = canvas.width;
+                        slice.height = thisSlicePx;
+                        var ctx = slice.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, slice.width, slice.height);
+                        ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
 
-                var sliceData = slice.toDataURL('image/jpeg', 0.95);
-                pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
+                        var sliceData = slice.toDataURL('image/jpeg', 0.95);
+                        pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
 
-                yOffset += thisSlicePx;
+                        yOffset += thisSlicePx;
+                    }
+                }
             }
 
             pdf.save('STLD_IOWN_Report.pdf');
