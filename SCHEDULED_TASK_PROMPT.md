@@ -107,8 +107,8 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
    python3 -c "from data.fetcher import fetch_stock_data; import json; d=fetch_stock_data(['TICKER']); print(json.dumps(d,indent=2))"
    ```
 2. Do **3 web searches** (NOT 4 — inspire comes from CSV above):
-   - `"{Company Name}" earnings revenue growth 2026` — financials, quarterly results, guidance, margins, FCF
-   - `"{Company Name}" CEO leadership culture Glassdoor AI innovation` — culture, employee sentiment, AI adoption, R&D, competitive moat
+   - `"{Company Name}" earnings revenue growth 2026` — financials, quarterly results, guidance, margins, FCF, analyst sentiment vs fundamentals (for social arbitrage)
+   - `"{Company Name}" CEO leadership culture Glassdoor AI innovation competitive moat` — culture, employee sentiment, AI adoption, R&D, moat strength, erosion risk
    - `"{Company Name}" ESG controversy environmental social governance` — ESG issues, community impact (NOT inspire score)
 3. Score all dimensions using research evidence
 4. Use the inspire score and attributions provided above for `faith_alignment` (do NOT guess or web search)
@@ -169,10 +169,27 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
       }
     }
   },
-  "ai_resilience": {
-    "score": 7,
-    "label": "LOW RISK|MODERATE|HIGH RISK",
-    "analysis": "2-3 sentences citing specific evidence"
+  "risk_moat_erosion": {
+    "ai_resilience": {
+      "score": 7,
+      "label": "LOW RISK|MODERATE|HIGH RISK",
+      "analysis": "2-3 sentences citing specific evidence"
+    },
+    "moat_strength": {
+      "score": 6,
+      "label": "STRONG|MODERATE|WEAK",
+      "analysis": "2-3 sentences citing specific evidence"
+    },
+    "erosion_protection": {
+      "score": 5,
+      "label": "STRONG|MODERATE|WEAK",
+      "analysis": "2-3 sentences citing specific evidence"
+    }
+  },
+  "social_arbitrage": {
+    "score": 6,
+    "label": "STRONG|NEUTRAL|WEAK",
+    "analysis": "2-3 sentences on sentiment vs fundamentals gap"
   },
   "income_quality": {
     "dividend_safety": {
@@ -217,20 +234,21 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 
 **Sub-score labels (/10):**
 - 7-10: STRONG, SAFE, LOW RISK
-- 4-6: DEVELOPING, MODERATE
+- 4-6: DEVELOPING, MODERATE, NEUTRAL
 - 1-3: WEAK, AT RISK, HIGH RISK
 
-**Overall score (0-100) — 5 dimensions, each weighted 20%:**
+**Overall score (0-100) — 6 dimensions, weighted:**
 ```
 overall = (
-    avg(innovation, inspiration, infrastructure) / 10 * 20     # Excellence: 20%
-  + ai_resilience / 10 * 20                                    # AI Resilience: 20%
-  + infinite_game_overall / 10 * 20                             # Infinite Game: 20%
-  + dividend_safety / 10 * 20                                   # Income Quality: 20%
-  + (inspire_impact_score + 100) / 200 * 20                     # Faith: 20%
+    (innovation + inspiration + infrastructure) / 30 * 100 * 0.30  # Excellence: 30%
+  + (ai_resilience + moat_strength + erosion_protection) / 30 * 100 * 0.25  # Risk/Moat: 25%
+  + infinite_game_overall / 10 * 100 * 0.20                        # Infinite Game: 20%
+  + dividend_safety / 10 * 100 * 0.10                              # Income: 10%
+  + social_arbitrage / 10 * 100 * 0.10                             # Arbitrage: 10%
+  + (inspire_impact_score + 100) / 200 * 100 * 0.05               # Faith: 5%
 )
 ```
-**If the company does NOT pay a dividend:** Set `"dividend_safety": null`. The remaining 4 dimensions are weighted 25% each (multiply the 4-dimension sum by 100/80).
+**Non-dividend stocks:** Score `dividend_safety` based on FCF generation quality and likelihood of future shareholder returns (do NOT set to null).
 
 **Recommendation from overall score:**
 - **BUY**: 80+
@@ -245,7 +263,7 @@ overall = (
 
 **HARD RULES:**
 - **LIQUIDITY FLOOR**: If `avg_daily_volume × stock_price < $1,000,000` → Infrastructure score = **0**
-- **Non-dividend stocks**: Set dividend metrics (yield, payout_ratio, dividend_growth_5yr_cagr) to `null`, consecutive fields to `0`
+- **Non-dividend stocks**: Set dividend metrics (yield, payout_ratio, dividend_growth_5yr_cagr) to `null`, consecutive fields to `0`. Score `dividend_safety` on FCF quality (not null).
 - **Dividend safety scoring**: Based on 5YR dividend growth CAGR beating inflation (~3%), high consecutive years of payments, and consecutive years of growth. Yield is **NOT** a factor in dividend safety scoring.
 - **Faith alignment labels**: ALIGNED (score > 25), MIXED (-25 to 25), MISALIGNED (score < -25)
 - **Inspire data**: MUST come from the CSV data provided above. Do NOT web search for inspire scores.
