@@ -2,6 +2,31 @@
 
 Screen the next batch of stocks from the queue. This prompt is designed to be run as a scheduled Claude Code task.
 
+## Step 0: Sync Reports from Prior Runs
+
+**CRITICAL:** Each scheduled run creates its own `claude/` branch. Prior runs' reports may not be on this branch yet. Before checking the queue, pull them in:
+
+```bash
+python3 -c "
+import subprocess, os
+
+result = subprocess.run(['git', 'branch', '-r'], capture_output=True, text=True)
+branches = [b.strip() for b in result.stdout.splitlines()
+            if 'daily-screening' in b and b.strip().startswith('origin/')]
+for branch in sorted(branches):
+    diff = subprocess.run(['git', 'diff', '--name-only', 'HEAD', branch, '--', 'reports/'],
+                          capture_output=True, text=True)
+    new = [f for f in diff.stdout.splitlines() if f.startswith('reports/') and f.endswith('.json') and not os.path.exists(f)]
+    if new:
+        print(f'{branch}: pulling {len(new)} new reports')
+        subprocess.run(['git', 'checkout', branch, '--'] + new)
+    else:
+        print(f'{branch}: no new reports')
+"
+git add reports/*.json 2>/dev/null
+git diff --cached --quiet || git commit -m "Sync reports from prior scheduled screening runs"
+```
+
 ## Instructions
 
 1. Read `data/screening_queue.csv` to find stocks that don't yet have reports in `reports/`
