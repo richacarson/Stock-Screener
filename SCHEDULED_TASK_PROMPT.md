@@ -4,6 +4,47 @@ You are running a scheduled daily task for the IOWN Stock Screener project at `/
 
 **Two modes:** If unscreened stocks remain in the queue, screen those first. Once the entire queue is screened, cycle back and **re-screen the oldest reports** (by `screen_date`) to keep data fresh.
 
+## Step 0: Sync Reports from Prior Scheduled Runs
+
+**CRITICAL:** Each scheduled task runs on its own `claude/` branch. If prior runs generated reports but those weren't merged back to the default branch, you'll re-screen the same stocks. Before determining what to screen, pull any reports from recent screening branches:
+
+```bash
+# List recent daily-screening branches and merge their reports
+python3 -c "
+import subprocess, json
+
+# Get remote branches matching daily-screening pattern
+result = subprocess.run(['git', 'branch', '-r'], capture_output=True, text=True)
+screening_branches = [b.strip() for b in result.stdout.splitlines()
+                      if 'daily-screening' in b and b.strip().startswith('origin/')]
+
+if not screening_branches:
+    print('No prior screening branches found.')
+else:
+    print(f'Found {len(screening_branches)} screening branches, checking for new reports...')
+    for branch in sorted(screening_branches):
+        # Check what reports this branch has that we don't
+        diff = subprocess.run(['git', 'diff', '--name-only', 'HEAD', branch, '--', 'reports/'],
+                              capture_output=True, text=True)
+        new_files = [f for f in diff.stdout.splitlines() if f.startswith('reports/') and f.endswith('.json')]
+        if new_files:
+            # Only pull reports that don't exist locally
+            import os
+            truly_new = [f for f in new_files if not os.path.exists(f)]
+            if truly_new:
+                print(f'  {branch}: {len(truly_new)} new reports — pulling...')
+                subprocess.run(['git', 'checkout', branch, '--'] + truly_new)
+            else:
+                print(f'  {branch}: reports already present locally')
+        else:
+            print(f'  {branch}: no new reports')
+"
+
+# If new reports were pulled, commit them
+git add reports/*.json 2>/dev/null
+git diff --cached --quiet || git commit -m "Sync reports from prior scheduled screening runs"
+```
+
 ## Step 1: Determine What to Screen
 
 Run this Python script to find the next 100 stocks to screen:
