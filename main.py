@@ -142,10 +142,16 @@ def _build_index(env: Environment, reports: list[dict]) -> None:
         key=lambda r: r.get("overall_score", 0), reverse=True
     )
 
+    def _avg_score(reps: list[dict]) -> float:
+        scores = [r.get("overall_score", 0) for r in reps]
+        return round(sum(scores) / len(scores), 1) if scores else 0
+
     html = template.render(
         reports=reports,
         dividend_reports=dividend_reports,
         growth_reports=growth_reports,
+        dividend_avg_score=_avg_score(dividend_reports),
+        growth_avg_score=_avg_score(growth_reports),
         total_reports=len(reports),
         generated_at=datetime.now().isoformat(),
     )
