@@ -443,9 +443,9 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back to Screener
         </a>
-        <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Export PDF
+        <button class="pdf-btn" id="pdf-btn" onclick="exportWord()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
         </button>
     </div>
 
@@ -602,8 +602,7 @@
 </div>
 {% endif %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
 <script>
     // Detect embedded mode and propagate
     (function() {
@@ -618,170 +617,58 @@
         }
     })();
 
-    // Logo markup reused for each PDF section
-    var LOGO_HTML = '<div style="text-align:center;padding:0 0 6px;margin-bottom:10px;">' +
-        '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:90px;" alt="IOWN">' +
-        '</div>';
-
-    var FOOTER_HTML = '<div style="text-align:center;font-size:9px;color:#9DAF88;letter-spacing:0.3px;margin-top:32px;padding-top:12px;border-top:1px solid rgba(80,100,60,0.12);">' +
-        'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.' +
-        '</div>';
-
-    // Collect sibling elements starting from `el` until `stopFn` returns true
-    function collectUntil(el, stopFn) {
-        var html = '';
-        var sib = el;
-        while (sib) {
-            if (stopFn(sib)) break;
-            html += sib.outerHTML;
-            sib = sib.nextElementSibling;
-        }
-        return { html: html, next: sib };
-    }
-
-    function buildPDFSections() {
-        // HTML pages now match PDF order exactly — just collect content from each .page
-        var sections = [];
-        var pages = document.querySelectorAll('.page');
-        for (var p = 0; p < pages.length; p++) {
-            var s = '';
-            var kids = pages[p].children;
-            for (var i = 0; i < kids.length; i++) {
-                var c = kids[i];
-                if (c.classList.contains('pdf-logo') || c.classList.contains('no-print') || c.classList.contains('report-footer') || c.tagName === 'HR') continue;
-                s += c.outerHTML;
-            }
-            if (s.trim()) sections.push(s);
-        }
-        return sections;
-    }
-
-    // Pre-load logo as base64 for PDF header
-    var logoLoaded = false;
-    var logoImgData = null;
-    var logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-    logoImg.onload = function() {
-        var c = document.createElement('canvas');
-        c.width = logoImg.naturalWidth;
-        c.height = logoImg.naturalHeight;
-        var ctx = c.getContext('2d');
-        ctx.drawImage(logoImg, 0, 0);
-        logoImgData = c.toDataURL('image/png');
-        logoLoaded = true;
-    };
-    logoImg.src = 'https://richacarson.github.io/Dashboard/iown-logo.png';
-
-    async function exportPDF() {
+    function exportWord() {
         var btn = document.getElementById('pdf-btn');
         var origText = btn.innerHTML;
         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating...';
         btn.disabled = true;
 
         try {
-            var sections = buildPDFSections();
-            var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            var pageWidth = 210;
-            var pageHeight = 297;
-            var margin = 10;
-            var contentWidth = pageWidth - margin * 2;
-
-            // Logo and footer dimensions
-            var logoH = 0, logoW = 0;
-            if (logoLoaded && logoImgData) {
-                logoW = 36;
-                logoH = logoW * (logoImg.naturalHeight / logoImg.naturalWidth);
-            }
-            var logoGap = 4;
-            var footerHeight = 20;
-            var contentTop = margin + (logoH > 0 ? logoH + logoGap : 0);
-            var contentBottom = pageHeight - margin - footerHeight;
-            var usableHeight = contentBottom - contentTop;
-
-            var footerText = 'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.';
-
-            function addLogoAndFooter() {
-                if (logoLoaded && logoImgData) {
-                    pdf.addImage(logoImgData, 'PNG', (pageWidth - logoW) / 2, margin, logoW, logoH);
+            // Collect page content, skipping UI-only elements
+            var content = '';
+            var pages = document.querySelectorAll('.page');
+            for (var p = 0; p < pages.length; p++) {
+                var kids = pages[p].children;
+                for (var i = 0; i < kids.length; i++) {
+                    var c = kids[i];
+                    if (c.classList.contains('pdf-logo') || c.classList.contains('no-print') || c.classList.contains('report-footer') || c.tagName === 'HR') continue;
+                    content += c.outerHTML;
                 }
-                pdf.setFontSize(7);
-                pdf.setTextColor(157, 175, 136);
-                var footerLines = pdf.splitTextToSize(footerText, contentWidth);
-                pdf.text(footerLines, pageWidth / 2, pageHeight - margin - 10, { align: 'center' });
+                if (p < pages.length - 1) {
+                    content += '<br style="page-break-after: always;">';
+                }
             }
 
-            var isFirstPdfPage = true;
+            // Build a self-contained HTML document for the Word export
             var styles = document.querySelector('style').textContent;
+            var docHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+                '<style>' + styles + '\n' +
+                'body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1A2010; line-height: 1.5; padding: 24px 32px; }\n' +
+                '.score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
+                '.rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
+                '.attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }\n' +
+                '</style></head><body>' +
+                '<div style="text-align:center;margin-bottom:16px;">' +
+                '<img src="https://richacarson.github.io/Dashboard/iown-logo.png" style="height:60px;" alt="IOWN">' +
+                '</div>' +
+                content +
+                '<div style="text-align:center;font-size:8pt;color:#9DAF88;margin-top:24px;padding-top:12px;border-top:1px solid rgba(80,100,60,0.12);">' +
+                'Paradiem, LLC dba Intentional Ownership (\u201CIOWN\u201D) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.' +
+                '</div>' +
+                '</body></html>';
 
-            for (var i = 0; i < sections.length; i++) {
-                if (!sections[i].trim()) continue;
-
-                // Render section offscreen
-                var wrapper = document.createElement('div');
-                var styleEl = document.createElement('style');
-                styleEl.textContent = styles;
-                wrapper.appendChild(styleEl);
-                var inner = document.createElement('div');
-                inner.className = 'pdf-section';
-                inner.innerHTML = sections[i];
-                wrapper.appendChild(inner);
-                wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;';
-                document.body.appendChild(wrapper);
-
-                var canvas = await html2canvas(inner, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#FFFFFF',
-                    logging: false,
-                    windowWidth: 800
-                });
-
-                document.body.removeChild(wrapper);
-
-                var pxPerMm = canvas.width / contentWidth;
-                var imgHeightMm = canvas.height / pxPerMm;
-
-                if (imgHeightMm <= usableHeight) {
-                    // Section fits on one page
-                    if (!isFirstPdfPage) pdf.addPage();
-                    isFirstPdfPage = false;
-                    addLogoAndFooter();
-                    var imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    pdf.addImage(imgData, 'JPEG', margin, contentTop, contentWidth, imgHeightMm);
-                } else {
-                    // Section overflows — slice across pages
-                    var sliceHeightPx = Math.floor(usableHeight * pxPerMm);
-                    var yOffset = 0;
-
-                    while (yOffset < canvas.height) {
-                        if (!isFirstPdfPage) pdf.addPage();
-                        isFirstPdfPage = false;
-                        addLogoAndFooter();
-
-                        var remaining = canvas.height - yOffset;
-                        var thisSlicePx = Math.min(sliceHeightPx, remaining);
-                        var thisSliceMm = thisSlicePx / pxPerMm;
-
-                        var slice = document.createElement('canvas');
-                        slice.width = canvas.width;
-                        slice.height = thisSlicePx;
-                        var ctx = slice.getContext('2d');
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.fillRect(0, 0, slice.width, slice.height);
-                        ctx.drawImage(canvas, 0, yOffset, canvas.width, thisSlicePx, 0, 0, canvas.width, thisSlicePx);
-
-                        var sliceData = slice.toDataURL('image/jpeg', 0.95);
-                        pdf.addImage(sliceData, 'JPEG', margin, contentTop, contentWidth, thisSliceMm);
-
-                        yOffset += thisSlicePx;
-                    }
-                }
-            }
-
-            pdf.save('{{ a.ticker }}_IOWN_Report.pdf');
+            var blob = htmlDocx.asBlob(docHtml, { orientation: 'portrait', margins: { top: 720, right: 720, bottom: 720, left: 720 } });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '{{ a.ticker }}_IOWN_Report.docx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         } catch (e) {
-            console.error('PDF export failed:', e);
-            alert('PDF export failed. Please try using your browser\'s Print > Save as PDF instead.');
+            console.error('Word export failed:', e);
+            alert('Word export failed: ' + e.message);
         }
 
         btn.innerHTML = origText;
