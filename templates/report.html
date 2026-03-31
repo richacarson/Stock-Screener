@@ -229,6 +229,62 @@
             margin-top: 2px;
         }
 
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--t1);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .search-input::placeholder { color: var(--t4); }
+        .sector-select {
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--t2);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.15s;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E8450' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+        .sector-select:focus {
+            border-color: var(--accent);
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--t4);
+            font-size: 13px;
+            display: none;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -281,6 +337,7 @@
     <div class="tabs">
         <button class="tab-btn active" data-tab="dividend">Dividend<span class="tab-count">({{ dividend_reports|length }})</span></button>
         <button class="tab-btn" data-tab="growth">Growth<span class="tab-count">({{ growth_reports|length }})</span></button>
+        <button class="tab-btn" data-tab="screener">Screener<span class="tab-count">({{ screener_reports|length }})</span></button>
     </div>
 
     <!-- Dividend Strategy -->
@@ -341,6 +398,46 @@
         {% endif %}
     </div>
 
+    <!-- Screener — All Reports -->
+    <div class="tab-panel" id="panel-screener">
+        <div class="section-header">All Screened Stocks <span class="portfolio-avg">Avg {{ screener_avg_score }}/100</span></div>
+        <div class="filter-bar">
+            <input type="text" class="search-input" id="screener-search" placeholder="Search ticker or company name...">
+            <select class="sector-select" id="sector-filter">
+                <option value="">All Sectors</option>
+                {% for sector in sectors %}
+                <option value="{{ sector }}">{{ sector }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if screener_reports %}
+        <div class="stock-list" id="screener-list">
+            {% for r in screener_reports %}
+            <a href="{{ r.ticker }}.html" class="stock-card screener-card" data-ticker="{{ r.ticker|lower }}" data-name="{{ r.name|lower }}" data-sector="{{ r.profile.sector|default('')|lower }}">
+                <div class="stock-card-left">
+                    <div class="stock-card-ticker">{{ r.ticker }}</div>
+                    <div class="stock-card-name">{{ r.name }}</div>
+                    {% if r.profile and (r.profile.sector or r.profile.industry) %}
+                    <div class="stock-card-sector">{{ r.profile.industry or r.profile.sector }}</div>
+                    {% endif %}
+                </div>
+                <div class="stock-card-meta">
+                    <span class="sleeve-tag">{{ r.sleeve }}</span>
+                    <span class="rec-tag {{ r.recommendation|lower }}">{{ r.recommendation }}</span>
+                </div>
+                <div class="stock-card-score">
+                    <span class="score-big">{{ r.overall_score }}</span><span class="score-denom">/100</span>
+                    <div class="stock-card-date">{{ r.screen_date }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="no-results" id="screener-no-results">No stocks match your search.</div>
+        {% else %}
+        <div class="empty-state">Screening reports are being generated.</div>
+        {% endif %}
+    </div>
+
     <footer>
         Intentional Ownership &middot; For Investment Committee Use Only &middot; Not Investment Advice
     </footer>
@@ -371,6 +468,29 @@
             document.getElementById('panel-' + target).classList.add('active');
         });
     });
+
+    // Screener search & sector filter
+    var searchInput = document.getElementById('screener-search');
+    var sectorFilter = document.getElementById('sector-filter');
+    var screenerCards = document.querySelectorAll('.screener-card');
+    var noResults = document.getElementById('screener-no-results');
+
+    function filterScreener() {
+        var query = (searchInput ? searchInput.value : '').toLowerCase();
+        var sector = (sectorFilter ? sectorFilter.value : '').toLowerCase();
+        var visible = 0;
+        screenerCards.forEach(function(card) {
+            var matchQuery = !query || card.dataset.ticker.indexOf(query) !== -1 || card.dataset.name.indexOf(query) !== -1;
+            var matchSector = !sector || card.dataset.sector === sector;
+            var show = matchQuery && matchSector;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterScreener);
+    if (sectorFilter) sectorFilter.addEventListener('change', filterScreener);
 </script>
 </body>
 </html>

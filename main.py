@@ -146,12 +146,29 @@ def _build_index(env: Environment, reports: list[dict]) -> None:
         scores = [r.get("overall_score", 0) for r in reps]
         return round(sum(scores) / len(scores), 1) if scores else 0
 
+    # Collect unique sectors for filter dropdown
+    sectors = sorted(
+        {
+            r.get("profile", {}).get("sector", "")
+            for r in reports
+            if r.get("profile", {}).get("sector")
+        }
+    )
+
+    # Non-portfolio reports for the screener tab
+    portfolio_tickers = set(portfolios["dividend"]) | set(portfolios["growth"])
+    screener_reports = [r for r in reports if r["ticker"] not in portfolio_tickers]
+    screener_reports.sort(key=lambda r: r.get("overall_score", 0), reverse=True)
+
     html = template.render(
         reports=reports,
         dividend_reports=dividend_reports,
         growth_reports=growth_reports,
+        screener_reports=screener_reports,
+        sectors=sectors,
         dividend_avg_score=_avg_score(dividend_reports),
         growth_avg_score=_avg_score(growth_reports),
+        screener_avg_score=_avg_score(screener_reports),
         total_reports=len(reports),
         generated_at=datetime.now().isoformat(),
     )
