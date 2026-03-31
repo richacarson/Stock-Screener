@@ -169,7 +169,7 @@ overall = avg(innovation, inspiration, infrastructure) / 10 * 50 + ai_resilience
 ```
 Faith Alignment: 0% weight (display only). Recommendation: BUY 80+, HOLD 60-79, WATCH 40-59, SELL <40.
 
-**Sleeve:** Current IOWN holdings forced from `data/portfolios.json`. Others: Dividend (5+ yr history AND yield > 2%), Growth (revenue growth > 15% YoY), Prospect (everything else).
+**Sleeve:** Current IOWN holdings forced from `data/portfolios.json`. Others: Dividend (5+ yr history AND yield > 2%), Growth (everything else including revenue growth > 15% YoY).
 
 **HARD RULES:**
 - **LIQUIDITY FLOOR**: If `avg_daily_volume × stock_price < $1,000,000` → Infrastructure score = **0**

@@ -127,7 +127,7 @@ Analysis text should include bracketed superscript numbers like `[1]`, `[2]` to 
 
 ### Score Labels
 - Sub-scores /10: **STRONG/SAFE/LOW RISK** = 7+, **DEVELOPING/MODERATE/NEUTRAL** = 4-6, **WEAK/AT RISK/HIGH RISK** = 1-3
-- Sleeve: **Dividend**, **Growth**, or **Prospect**
+- Sleeve: **Dividend** or **Growth**
 
 ## Generating Reports
 
@@ -137,7 +137,7 @@ See **SCREENING.md** for the complete step-by-step workflow. In short:
 2. Web research: financials, culture/leadership, AI disruption risk
 3. Score all three IOWN dimensions (Excellence, AI Resilience, Infinite Game) with specific evidence
 4. Calculate overall score (0-100) using 50/25/25 weights, assign recommendation
-5. Assign sleeve (Dividend / Growth / Prospect)
+5. Assign sleeve (Dividend / Growth)
 6. Write `reports/{TICKER}.json`
 7. Run `python3 main.py` to rebuild the site
 8. Deploy

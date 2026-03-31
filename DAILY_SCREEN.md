@@ -67,7 +67,7 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 - Overall score (0-100): `avg(innovation, inspiration, infrastructure) / 10 * 50 + ai_resilience / 10 * 25 + infinite_game_overall / 10 * 25`
 - Faith Alignment: displayed on report but carries **0% weight** in overall score
 - Recommendation: BUY 80+, HOLD 60-79, WATCH 40-59, SELL <40
-- Sleeve: Current IOWN holdings forced from `data/portfolios.json`; others: Dividend (5+ yr history, yield >2%), Growth (revenue growth >15%), Prospect (everything else)
+- Sleeve: Current IOWN holdings forced from `data/portfolios.json`; others: Dividend (5+ yr history, yield >2%), Growth (everything else including revenue growth >15%)
 - **LIQUIDITY FLOOR**: If avg_daily_volume × stock_price < $1,000,000, Infrastructure score = 0
 - **Infrastructure is calculated mechanically** from financial metrics — see SCREENING.md for the full algorithm
 - Faith alignment labels: ALIGNED (>25), MIXED (-25 to 25), MISALIGNED (<-25)

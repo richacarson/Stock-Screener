@@ -52,7 +52,7 @@ Round to nearest integer. Range: 0–100.
 **For all other stocks** (prospects / screen universe): Auto-classify:
 - **Dividend**: Established dividend payer with 5+ year payment history AND yield > 2%
 - **Growth**: Revenue growth > 15% YoY
-- **Prospect**: Everything else
+- **Growth**: Everything else (default)
 
 ---
 
@@ -155,7 +155,7 @@ Dividend-paying stocks are also scored on these **dividend metrics**:
 | Consecutive Years Growth | ≥ 10 | Higher is better | 0 |
 | 5yr Dividend Growth CAGR (%) | ≥ 6% (2× inflation) | Higher is better | ≤ 0% |
 
-Growth/Prospect stocks add this metric instead:
+Growth stocks add this metric instead:
 
 | Metric | Target (ideal) | Direction | Floor (score = 0) |
 |--------|----------------|-----------|-------------------|
