@@ -12,6 +12,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
+from screener.docx_export import generate_docx
 
 
 REPORTS_DIR = Path("reports")
@@ -55,6 +56,15 @@ def build_site() -> None:
     for report in reports:
         _build_stock_page(env, report)
     print(f"[{datetime.now():%H:%M:%S}] Built {len(reports)} stock pages")
+
+    # Generate Word docs
+    docx_out = OUTPUT_DIR / "docx"
+    docx_out.mkdir(exist_ok=True)
+    for report in reports:
+        ticker = report["ticker"]
+        docx_bytes = generate_docx(report)
+        (docx_out / f"{ticker}_IOWN_Report.docx").write_bytes(docx_bytes)
+    print(f"[{datetime.now():%H:%M:%S}] Built {len(reports)} Word docs")
 
     # Copy reports as JSON for frontend use
     reports_out = OUTPUT_DIR / "reports"
