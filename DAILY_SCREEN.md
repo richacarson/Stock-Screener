@@ -34,7 +34,7 @@ git diff --cached --quiet || git commit -m "Sync reports from prior scheduled sc
 
 1. Read `data/screening_queue.csv` to find stocks that don't yet have reports in `reports/`
 2. Load `data/inspire_insight_scores.csv` into memory for inspire scores
-3. Screen the next **100 stocks** (20 sequential batches of 5)
+3. Screen the next **50 stocks** (10 sequential batches of 5)
 4. After all batches complete: rebuild site, commit, push, and deploy
 
 ## How to Screen Each Batch
@@ -83,7 +83,7 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
 
 ---
 
-## After All 20 Batches Complete
+## After All 10 Batches Complete
 
 ```bash
 # Rebuild site

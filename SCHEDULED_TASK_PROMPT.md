@@ -50,7 +50,7 @@ git diff --cached --quiet || git commit -m "Sync reports from prior scheduled sc
 
 ## Step 1: Determine What to Screen
 
-Run this Python script to find the next 100 stocks to screen:
+Run this Python script to find the next 50 stocks to screen:
 
 ```bash
 python3 -c "
@@ -71,7 +71,7 @@ done = {f.replace('.json','') for f in report_files}
 remaining = [r for r in queue if r['symbol'] not in done]
 
 if remaining:
-    batch_tickers = [r['symbol'] for r in remaining[:100]]
+    batch_tickers = [r['symbol'] for r in remaining[:50]]
     mode = 'NEW'
     print(f'MODE: Screening NEW stocks')
     print(f'Total in queue: {len(queue)}')
@@ -92,7 +92,7 @@ else:
             except:
                 report_dates.append((ticker, '2000-01-01'))
     report_dates.sort(key=lambda x: x[1])  # oldest first
-    batch_tickers = [t for t, _ in report_dates[:100]]
+    batch_tickers = [t for t, _ in report_dates[:50]]
     oldest_date = report_dates[0][1] if report_dates else 'N/A'
     newest_in_batch = report_dates[min(99, len(report_dates)-1)][1] if report_dates else 'N/A'
     mode = 'REFRESH'
@@ -125,7 +125,7 @@ for i in range(0, len(batch_tickers), 5):
 
 ## Step 2: Screen Each Batch
 
-Process **20 batches of 5 stocks each**, launching agents **ONE AT A TIME** (never parallel). Wait for each agent to complete before starting the next.
+Process **10 batches of 5 stocks each**, launching agents **ONE AT A TIME** (never parallel). Wait for each agent to complete before starting the next.
 
 Batches of 5 are critical — larger batches (10-20 stocks) cause agents to hit context limits from web search results and fail mid-batch. 5 stocks × 3 web searches = 15 searches per agent, which fits comfortably.
 
@@ -191,7 +191,7 @@ Faith Alignment: 0% weight (display only). Recommendation: BUY 80+, HOLD 60-79, 
 
 ## Step 3: After All Batches Complete
 
-Once all 20 agents have finished (or however many batches were needed for this run):
+Once all 10 agents have finished (or however many batches were needed for this run):
 
 ```bash
 # Rebuild the static site from all reports
@@ -259,11 +259,11 @@ for rf in os.listdir('reports'):
 print(f'Reports total: {len(done)}')
 print(f'Queue remaining (unscreened): {len(remaining)}')
 if remaining:
-    print(f'Estimated days to finish first pass: {len(remaining) // 100 + (1 if len(remaining) % 100 else 0)}')
+    print(f'Estimated days to finish first pass: {len(remaining) // 50 + (1 if len(remaining) % 50 else 0)} (at 2 runs/day)')
 else:
     print(f'All stocks screened! Now in REFRESH mode (re-screening oldest first)')
 print(f'Oldest report date: {oldest_date or \"N/A\"}')
-print(f'Full refresh cycle: ~{len(queue) // 100 + 1} days')
+print(f'Full refresh cycle: ~{len(queue) // 100 + 1} days (2 runs/day x 50 each)')
 "
 ```
 
