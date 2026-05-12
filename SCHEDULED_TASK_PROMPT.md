@@ -224,10 +224,63 @@ git push -u origin HEAD
 
 ```bash
 source .env && export GITHUB_PUSH_TOKEN
-python3 scripts/deploy.py
-```
 
-If `scripts/deploy.py` fails (e.g., in a sandboxed environment where `git push` to `gh-pages` is blocked), use the Git Data API method documented in CLAUDE.md to deploy the contents of `output/` to `gh-pages`.
+# Deploy using the Git Data API — only deploy new/changed report HTML files and index.html
+# Do NOT redeploy all files every time. Use base_tree to add to existing gh-pages content.
+python3 -c "
+import os, json, base64, time
+from urllib.request import Request, urlopen
+from pathlib import Path
+
+TOKEN = os.environ['GITHUB_PUSH_TOKEN']
+API = 'https://api.github.com/repos/richacarson/Stock-Screener'
+
+def api(method, endpoint, data=None):
+    url = API + endpoint
+    body = json.dumps(data).encode() if data else None
+    req = Request(url, data=body, method=method)
+    req.add_header('Authorization', 'token ' + TOKEN)
+    req.add_header('Content-Type', 'application/json')
+    for attempt in range(5):
+        try:
+            return json.loads(urlopen(req, timeout=60).read())
+        except Exception as e:
+            if attempt < 4: time.sleep(2 ** (attempt + 1))
+            else: raise
+
+# Collect only HTML, JSON manifest, and report JSONs (skip docx for speed)
+output_dir = Path('output')
+files = []
+for root, dirs, filenames in os.walk(output_dir):
+    for fname in filenames:
+        fpath = Path(root) / fname
+        rel = str(fpath.relative_to(output_dir))
+        if rel.startswith('docx/'): continue
+        files.append((rel, fpath))
+
+print(f'Deploying {len(files)} files...')
+tree_items = []
+for i, (rel, fpath) in enumerate(files):
+    content = base64.b64encode(fpath.read_bytes()).decode()
+    blob = api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
+    tree_items.append({'path': rel, 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
+    if (i + 1) % 500 == 0 or i == len(files) - 1:
+        print(f'  Blobs: {i+1}/{len(files)}')
+
+base_sha = None
+for start in range(0, len(tree_items), 200):
+    chunk = tree_items[start:start+200]
+    payload = {'tree': chunk}
+    if base_sha: payload['base_tree'] = base_sha
+    result = api('POST', '/git/trees', payload)
+    base_sha = result['sha']
+
+parent_sha = api('GET', '/git/ref/heads/gh-pages')['object']['sha']
+commit = api('POST', '/git/commits', {'message': 'Deploy: daily screening update', 'tree': base_sha, 'parents': [parent_sha]})
+api('PATCH', '/git/refs/heads/gh-pages', {'sha': commit['sha'], 'force': True})
+print('Deployed to gh-pages!')
+"
+```
 
 ## Step 5: Report Results
 

@@ -99,12 +99,56 @@ For each existing opportunity, evaluate:
 
 If so, update the `"status"` field to `"expired"`.
 
-## Step 6: Commit and Push
+## Step 6: Commit, Push, Rebuild, and Deploy
 
 ```bash
 git add opportunities/*.json
 git diff --cached --quiet || git commit -m "Opportunity finder: [brief description of changes]"
 git push -u origin HEAD
+
+# Rebuild the site so opportunities appear on the live screener
+python3 main.py
+
+# Deploy ONLY the updated index.html (opportunities tab) to gh-pages
+# This is fast — don't redeploy all report files
+source .env && export GITHUB_PUSH_TOKEN
+python3 -c "
+import os, json, base64, time
+from urllib.request import Request, urlopen
+from pathlib import Path
+
+TOKEN = os.environ['GITHUB_PUSH_TOKEN']
+API = 'https://api.github.com/repos/richacarson/Stock-Screener'
+
+def api(method, endpoint, data=None):
+    url = API + endpoint
+    body = json.dumps(data).encode() if data else None
+    req = Request(url, data=body, method=method)
+    req.add_header('Authorization', 'token ' + TOKEN)
+    req.add_header('Content-Type', 'application/json')
+    for attempt in range(5):
+        try:
+            return json.loads(urlopen(req, timeout=60).read())
+        except Exception as e:
+            if attempt < 4: time.sleep(2 ** (attempt + 1))
+            else: raise
+
+# Only deploy changed files — index.html has the opportunities tab
+tree_items = []
+for fpath in ['output/index.html', 'output/manifest.json']:
+    p = Path(fpath)
+    rel = str(p.relative_to('output'))
+    content = base64.b64encode(p.read_bytes()).decode()
+    blob = api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
+    tree_items.append({'path': rel, 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
+
+parent_sha = api('GET', '/git/ref/heads/gh-pages')['object']['sha']
+parent_tree = api('GET', '/git/commits/' + parent_sha)['tree']['sha']
+tree = api('POST', '/git/trees', {'base_tree': parent_tree, 'tree': tree_items})
+commit = api('POST', '/git/commits', {'message': 'Deploy: update opportunities', 'tree': tree['sha'], 'parents': [parent_sha]})
+api('PATCH', '/git/refs/heads/gh-pages', {'sha': commit['sha'], 'force': True})
+print('Deployed opportunities to gh-pages!')
+"
 ```
 
 ## Important Notes
