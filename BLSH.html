@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen BLSH — Bullish</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/BLSH_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('BLSH')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            BLSH
+            <span class="stock-name-full">Bullish</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-04-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">48</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Infrastructure</span>
+        <span class="sep">&middot;</span><span>NYQ</span>
+        <span class="sep">&middot;</span><span>Cayman Islands</span>
+    </div>
+    
+    <div class="profile-desc">Bullish is a global digital asset platform providing market infrastructure and information services. It operates Bullish Exchange, a digital assets spot and derivatives exchange integrating a central limit order book with automated market making. The company also owns CoinDesk, providing indices, data, analytics, and media coverage of the digital asset ecosystem. Founded in 2020 and headquartered in George Town, Cayman Islands.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>414 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.bullish.com" target="_blank" rel="noopener">www.bullish.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Bullish has executed a significant pivot from a pure-play spot exchange to a derivatives powerhouse — the October 2025 launch of its options platform using proprietary Bullish Portfolio Margining (BPM) captured 29% of the global Bitcoin options market within months, ranking second only to Deribit <span class="source-ref">[1]</span>. The $75M acquisition of CoinDesk in early 2024 added a media and data business that diversifies beyond pure trading revenue <span class="source-ref">[3]</span>. These are meaningful strategic moves, though the company is only six years old with limited track record. AI Deployment (1/2): Bullish partnered with Nixtla for AI-powered market intelligence, using TimeGPT for time-series forecasting of trading volumes and market trends across both the exchange and CoinDesk platforms <span class="source-ref">[2]</span>. However, no specific revenue figures or quantified cost savings from AI deployment were cited. Market Share (1/2): Bullish captured 29% of the global Bitcoin options market within months of launch and facilitated $9B+ in cumulative options volume by early February 2026 <span class="source-ref">[1]</span>. However, in the broader crypto exchange market, Bullish remains a niche institutional player competing against Coinbase, Binance, and Kraken. Pipeline (1/2): 2026 SS&amp;O revenue guidance of $220-250M implies ~50% growth, with continued derivatives expansion and CoinDesk data/indices providing near-term visibility <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): As a technology-first exchange with proprietary automated market making and portfolio margining systems, Bullish invests meaningfully in engineering relative to peers.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): Bullish&#39;s stated objective is &#39;to help institutions grow their businesses and drive the adoption of stablecoins, digital assets, and blockchain technology&#39; <span class="source-ref">[2]</span>. This is a generic industry description — it identifies what the company does but articulates no deeper purpose or vision of a better future beyond growing crypto adoption. It is interchangeable with any institutional crypto platform. Community Impact (0/2): No evidence of charitable programs, community investment, or foundation activities was found. Sustainability data is not available for BLSH, and as a Cayman Islands-based crypto exchange, the company has minimal public ESG disclosure <span class="source-ref">[3]</span>. Employee Retention (1/2): With 414 employees, Bullish is a mid-size operation. CEO Tom Farley brings credibility from his tenure as NYSE Group President (2014-2018), providing institutional finance leadership <span class="source-ref">[2]</span>. Glassdoor rating of 3.1/5 is below average, with employees citing concerns about career development and senior leadership, and only 36% having a positive business outlook <span class="source-ref">[2]</span>. Insider Buying (1/2): Bullish raised $1.1B in its August 2025 IPO and is backed by prominent investors including Peter Thiel, though specific post-IPO insider buying transactions by named executives were not identified <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Bullish&#39;s financial profile shows explosive growth but persistent unprofitability. Revenue surged 97.9% YoY to ~$237M trailing, with Q4 2025 adjusted revenue of $92.5M up 67.6% YoY and SS&amp;O segment up 284% driven by the options platform launch <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. D/E of 17.6% is excellent, reflecting the $1.1B IPO capital infusion and conservative balance sheet <span class="source-ref">[4]</span>. However, ROE is deeply negative at -27.6%, profit margin is 0%, and trailing EPS is -$5.99 reflecting large GAAP losses including a $563.6M Q4 loss <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Forward P/E of 42.8x (based on $1.02 forward EPS) suggests analysts expect a profitability inflection, though this is above the 60x floor metric boundary. 5-year revenue CAGR is exceptionally high (~60%+) from near-zero base. PEG ratio unavailable. Liquidity floor cleared: 1.83M avg volume x $43.51 = $79.8M daily <span class="source-ref">[4]</span>. Mechanical calculation: D/E 1.0, ROE 0.0, RevYoY 1.0, Rev5yr 1.0, FwdPE 0.43, PM 0.0 = weighted 4.43/8 = 6/10.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Bullish operates with a predominantly finite mindset oriented around capturing market share in the crypto exchange race. The company&#39;s language centers on competitive positioning (&#39;capturing 29% of Bitcoin options market,&#39; &#39;ranking second only to Deribit&#39;), and its strategic decisions — rapid derivatives launch, CoinDesk acquisition, aggressive growth guidance — prioritize winning the current cycle over building enduring institutional infrastructure. At six years old with a Cayman Islands domicile and 414 employees, the company lacks the organizational depth and cultural foundation for infinite game play.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Bullish&#39;s stated purpose — helping institutions adopt digital assets — is a market development objective, not a Just Cause. There is no articulated vision of a better future, no service-oriented purpose beyond growing crypto adoption, and no sense that the company exists to advance something larger than its own commercial success <span class="source-ref">[2]</span>. The crypto industry broadly frames its cause around financial democratization, but Bullish specifically targets institutional clients rather than underserved populations. Score: 0 weighted points.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Glassdoor rating of 3.1/5 with only 36% positive business outlook indicates significant trust deficits <span class="source-ref">[2]</span>. Employees cite concerns about senior leadership and career development. The company is only six years old with 414 employees spread across multiple jurisdictions (Cayman Islands, US, Europe, Hong Kong), making cultural cohesion challenging. CEO Farley&#39;s institutional finance background from NYSE provides some leadership credibility, but the organization has not demonstrated the stability or psychological safety that Sinek&#39;s framework requires. Score: 0 weighted points.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Bullish&#39;s competitive language is distinctly finite — press releases emphasize &#39;capturing 29% of the global Bitcoin options market,&#39; &#39;ranking second only to Deribit,&#39; and &#39;igniting the institutional crypto market&#39; <span class="source-ref">[1]</span>. This framing centers on market share capture and competitive positioning rather than self-improvement or learning from rivals. The company frames competition as a race to win rather than a context for getting better. Score: 0 weighted points.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Bullish has shown meaningful strategic evolution in a short timeframe — pivoting from a pure spot exchange to a derivatives-dominated platform (options now driving the SS&amp;O segment&#39;s 284% growth), and acquiring CoinDesk to add media and data capabilities <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The portfolio margining system (BPM) represents proprietary technology development that differentiates from competitors. However, the company is too young to have faced the kind of existential test Sinek describes — it hasn&#39;t abandoned a profitable legacy business in service of a larger cause. Score: 1 weighted point.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">The $75M CoinDesk acquisition represented a bold diversification bet, adding media and data capabilities beyond pure exchange operations <span class="source-ref">[3]</span>. The options platform launch committed significant engineering resources to a new product line that cannibalized the spot trading narrative. Raising $1.1B in IPO capital during a volatile crypto market required conviction from CEO Farley and backers. However, these are growth-oriented bets rather than cause-driven sacrifices — Bullish hasn&#39;t demonstrated willingness to forgo short-term revenue for a longer-term principled stance. Score: 1 weighted point.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Bullish is a high-growth institutional crypto exchange riding the derivatives wave — revenue surged 97.9% YoY with Q4 2025 adjusted revenue of $92.5M up 67.6%, driven by the options platform launch that captured 29% of the global Bitcoin options market and $9B+ cumulative volume within months <span class="source-ref">[1]</span>. The 2026 SS&amp;O revenue guidance of $220-250M implies ~50% growth, and forward EPS of $1.02 suggests a profitability inflection after years of losses <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The CoinDesk media and data business adds diversification and recurring revenue beyond exchange transaction fees <span class="source-ref">[3]</span>. D/E of just 17.6% and $1.1B in IPO proceeds provide a strong balance sheet for investment in product development and regulatory expansion across the US (20 states plus New York BitLicense), Germany, Hong Kong, and Gibraltar <span class="source-ref">[3]</span><span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">The bear case is substantial. Bullish reported a $563.6M Q4 loss and trailing EPS of -$5.99, with GAAP profitability still distant despite forward consensus of $1.02 EPS <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The crypto exchange industry is hyper-competitive — Coinbase, Binance, Kraken, and Deribit all compete for institutional volume, and crypto market cyclicality means revenue can collapse in bear markets as trading volumes evaporate. Bullish&#39;s 97.9% revenue growth is partly a function of launching from a small base during a crypto bull cycle; sustainability of this growth through market downturns is unproven. The Cayman Islands domicile raises governance and regulatory perception concerns. Only 36% of employees have a positive business outlook per Glassdoor, and the 3.1/5 rating suggests cultural challenges that could impair talent retention in a competitive labor market <span class="source-ref">[2]</span>. At $6.5B market cap and ~43x forward earnings, the stock is priced for significant execution on derivatives growth and profitability that remains speculative.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Options platform scaling — 29% global Bitcoin options market share captured within months of launch, with 2026 SS&amp;O guidance of $220-250M implying continued explosive derivatives growth <span class="source-ref">[1]</span></li>
+        
+        <li>Profitability inflection — forward EPS of $1.02 suggests analysts expect BLSH to turn profitable in 2026, which would be a transformative milestone after years of GAAP losses <span class="source-ref">[4]</span></li>
+        
+        <li>US market expansion — Bullish secured the New York BitLicense and launched in 20 US states, providing access to the world&#39;s largest institutional investor base as crypto regulation clarifies <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Crypto market cyclicality — revenue and trading volumes are highly correlated with cryptocurrency prices, and a bear market could collapse the 97.9% revenue growth trajectory and delay profitability <span class="source-ref">[1]</span><span class="source-ref">[4]</span></li>
+        
+        <li>Hyper-competitive exchange landscape — Coinbase, Binance, Kraken, and Deribit compete aggressively for institutional volume, and fee compression or market share loss could undermine revenue guidance <span class="source-ref">[1]</span></li>
+        
+        <li>Governance and regulatory risk — Cayman Islands domicile, limited ESG disclosure, and evolving global crypto regulation create uncertainty around operating license continuity and institutional investor appetite for the stock <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (4/9): Bullish&#39;s core business — operating a cryptocurrency exchange and providing market infrastructure — faces moderate AI disruption risk. AI-powered trading algorithms could commoditize market making and reduce the value of Bullish&#39;s proprietary automated market making technology. AI-native analytics platforms could compete with CoinDesk&#39;s data and indices business by providing superior real-time market intelligence at lower cost. The broader crypto exchange industry faces pressure from AI-driven trading bots that could increase market efficiency and compress exchange spreads/fees. However, Bullish&#39;s regulatory licenses (Germany, Hong Kong, Gibraltar, New York BitLicense) and institutional-grade custody infrastructure provide meaningful barriers that pure-AI competitors cannot easily replicate <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. AI Opportunity (1/1): Bullish generates some AI-related value through its Nixtla partnership for AI-powered market intelligence and time-series forecasting, and CoinDesk Indices leverage data analytics that incorporate algorithmic/AI-driven methodologies <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Bullish Q4 2025 Earnings and 2026 Guidance — $92.5M Q4 adjusted revenue (67.6% YoY growth), SS&O segment +284%, options platform 29% global BTC options market share, 2026 SS&O guidance $220-250M; Seeking Alpha, CoinDesk, FinancialContent, February 2026</li>
+        
+        <li><span class="src-num">2.</span> Bullish leadership, culture, and AI — CEO Tom Farley (ex-NYSE President), Glassdoor 3.1/5.0 (36% positive outlook), Nixtla AI partnership for market intelligence; Glassdoor, Simply Wall St, Nixtla, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Bullish corporate background — Peter Thiel-backed, $1.1B IPO August 2025, $75M CoinDesk acquisition, licenses in US/Germany/Hong Kong/Gibraltar, Cayman Islands HQ; CNBC, Wikipedia, Fortune, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance / yfinance data for BLSH (Bullish), retrieved April 20, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

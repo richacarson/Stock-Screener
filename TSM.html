@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen TSM — Taiwan Semiconductor Manufacturing Company Limited</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/TSM_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('TSM')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            TSM
+            <span class="stock-name-full">Taiwan Semiconductor Manufacturing Company Limited</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-04-01</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge buy">BUY</span>
+            <div class="overall-score">
+                <span class="num">89</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Semiconductors</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Taiwan</span>
+    </div>
+    
+    <div class="profile-desc">Taiwan Semiconductor Manufacturing Company (TSMC) is the world's largest dedicated semiconductor foundry, manufacturing over 90% of the world's most advanced chips (3nm and below). The company provides wafer fabrication for customers including NVIDIA, Apple, AMD, Broadcom, and Qualcomm across high-performance computing, smartphones, IoT, automotive, and consumer electronics applications.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>76,907 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.tsmc.com" target="_blank" rel="noopener">www.tsmc.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): TSMC has executed the most consequential technology leadership in the semiconductor industry over the past five years, progressing from 7nm to 5nm to 3nm and now ramping 2nm, while competitors Intel and Samsung have fallen further behind at each node <span class="source-ref">[2]</span>. Revenue surged from TWD 2.16T (2023) to TWD 3.81T (2025), a 33% increase driven by the AI revolution that TSMC&#39;s manufacturing excellence enabled. AI Deployment (2/2): TSMC IS the AI deployment — every major AI chip (NVIDIA H100/B200, AMD MI300, Google TPU) is manufactured exclusively by TSMC, and the company has developed advanced packaging technologies (CoWoS, SoIC) specifically to enable AI workloads <span class="source-ref">[2]</span>. Revenue from AI accelerators is growing at a 54-56% CAGR through 2029 per CEO C.C. Wei <span class="source-ref">[1]</span>. Market Share (2/2): TSMC commands approximately 90% of advanced node (sub-7nm) semiconductor manufacturing globally, a dominance unprecedented in the technology industry <span class="source-ref">[2]</span>. Pipeline (2/2): A16 technology with backside power rail announced at the 30th Technology Symposium, 2nm ramping in 2025-2026, and System-on-Wafer (SoW) technology for hyperscale AI data centers — all with specific timelines and $52-56B capex commitment <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): R&amp;D exceeded $6B in 2024 and is on an upward trajectory, representing top-tier investment intensity for the semiconductor industry <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mission Floor (4/4): TSMC&#39;s founding mission — to be the world&#39;s most trusted semiconductor foundry, enabling innovation for all customers — has been validated by 39 years of consistent execution. Morris Chang&#39;s 1987 insight that the industry needed a pure-play foundry was transformative and created the entire fabless semiconductor ecosystem that powers modern computing <span class="source-ref">[2]</span>. The mission IS the competitive advantage. Community Impact (1/2): TSMC is Taiwan&#39;s largest private employer and the &#39;Sacred Mountain of National Defense&#39; for Taiwan&#39;s strategic importance. The company invests in STEM education and community development, though specific philanthropic dollar amounts are modest relative to its scale <span class="source-ref">[3]</span>. Employee Retention (1/2): TSMC has long average employee tenure and deep institutional knowledge, with many engineers spending entire careers at the company. However, the demanding work culture (Glassdoor 3.1 rating) and reports of &#39;slave mentality&#39; among engineers create tension — people stay for the mission and career advancement, but the culture is not universally praised <span class="source-ref">[2]</span>. Insider Buying (2/2): Multiple senior executives purchased shares in late March 2026 — SVP Choh Fei Yeap bought $55,780 in shares, VP Shyue-Shyh Lin bought $275,420 across two transactions, and VP Bor-Zen Tien acquired $55,930 in shares <span class="source-ref">[4]</span>. Zero insider selling reported, signaling strong executive confidence in AI-driven growth.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">TSMC&#39;s financial profile is world-class across every metric. D/E of 19.6% is exceptionally low for a capital-intensive manufacturer ($52-56B annual capex), reflecting disciplined balance sheet management with $3.07T TWD cash against $1.07T TWD debt <span class="source-ref">[5]</span>. ROE of 35.1% far exceeds the 15% target, driven by pricing power at advanced nodes. Revenue growth of 20.5% YoY (31.6% in USD terms for Q4 2025) with management guiding ~30% USD revenue growth for full-year 2026 <span class="source-ref">[1]</span>. 5-year revenue CAGR of approximately 20% reflects the structural AI demand inflection. Forward P/E of 19.0x is at the target threshold, remarkable for a company growing revenue 25-30% annually. Profit margin of 45.1% with gross margin of 62.3% demonstrates extraordinary pricing power <span class="source-ref">[1]</span>. Forward PEG of approximately 0.54 (19.0x forward P/E / ~35% forward EPS growth) is outstanding. Liquidity floor massively cleared: 14.2M avg volume x $341.15 = $4.8B daily <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>8</span> /10</span>
+    </div>
+
+    <div class="ig-quote">TSMC is a textbook infinite game company that has played to keep playing for nearly four decades. Morris Chang&#39;s founding vision — that the semiconductor industry needed a trusted, pure-play foundry — created an entirely new business model and ecosystem that enabled the fabless revolution, the smartphone era, and now the AI age. The patient, multi-decade investment in manufacturing excellence over flashy product announcements exemplifies infinite game thinking. Under C.C. Wei, TSMC maintains Chang&#39;s discipline while adapting to AI-era demands with $52-56B annual capex commitments.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Just Cause (3/3): TSMC&#39;s purpose — to be the trusted technology and capacity provider of the global semiconductor industry — is the gold standard for a validated Just Cause. Morris Chang&#39;s 1987 vision created the pure-play foundry model that spawned the entire fabless semiconductor ecosystem, enabling companies like NVIDIA, Apple, and AMD to design chips without owning fabs <span class="source-ref">[2]</span>. This cause has been validated through 39 years of consistent execution, survived the founder&#39;s retirement, navigated geopolitical crises, and defines TSMC&#39;s competitive advantage. Sinek would cite TSMC as a canonical example of a Just Cause that IS the business.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): TSMC has stable leadership with deep institutional knowledge — many engineers spend entire careers at the company, and the succession from Chang to Mark Liu to C.C. Wei was orderly and maintained strategic continuity <span class="source-ref">[2]</span>. However, the demanding work culture with Glassdoor ratings of 3.1 and reports of grueling hours suggest the organization prioritizes execution discipline over psychological safety. The culture commands respect but may not reflect the high-trust, empowered environment Sinek envisions.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): TSMC has long acknowledged Samsung and Intel as worthy rivals whose competition drives TSMC to improve. Management regularly discusses Samsung&#39;s gate-all-around transistor work and Intel&#39;s foundry ambitions as motivation to accelerate its own roadmap <span class="source-ref">[2]</span>. The competitive language is about maintaining technology leadership and earning customer trust, not about destroying competitors — consistent with an infinite game mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): TSMC&#39;s founding itself was an act of existential flexibility — Chang created an entirely new business model (pure-play foundry) that didn&#39;t exist before <span class="source-ref">[2]</span>. More recently, TSMC&#39;s geographic diversification with the $65B Arizona fab, Japan fab, and European partnerships represents meaningful strategic adaptation to geopolitical realities <span class="source-ref">[3]</span>. However, TSMC&#39;s core business model hasn&#39;t fundamentally changed since 1987 — it remains a foundry, albeit one that has evolved with technology. The evolution has been continuous improvement rather than transformative reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): TSMC&#39;s $52-56B annual capex plan for 2026 — a 25-37% increase over 2025 — represents one of the largest capital commitments in industrial history, made during a period of geopolitical uncertainty and tariff threats <span class="source-ref">[1]</span>. The $65B Arizona investment was a courageous bet to diversify geographically while maintaining technology leadership. TSMC has consistently invested through downturns (the 2022-2023 cycle trough) to ensure capacity readiness for the next upturn, prioritizing long-term capability over short-term earnings protection.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">TSMC is the most critical company in the global technology supply chain, manufacturing over 90% of the world&#39;s advanced semiconductors and serving as the irreplaceable manufacturing backbone for the AI revolution <span class="source-ref">[2]</span>. Q4 2025 revenue of $33.7B (up 25.5% YoY in USD) with 62.3% gross margin and 48.3% net margin demonstrates extraordinary pricing power and execution <span class="source-ref">[1]</span>. Management guides ~30% USD revenue growth for 2026, with AI accelerator revenue growing at a 54-56% CAGR through 2029 — the company is the largest direct beneficiary of AI infrastructure buildout. At 19x forward P/E with 30%+ revenue growth and a forward PEG of ~0.54, TSMC is compellingly valued relative to its growth trajectory. The $3.07T TWD cash position, 35.1% ROE, and multiple insider purchases in March 2026 confirm financial strength and executive conviction <span class="source-ref">[4]</span><span class="source-ref">[5]</span>.</div>
+    <div class="thesis-text">The bear case centers on geopolitical concentration risk and cyclicality. Over 90% of TSMC&#39;s advanced chip production remains in Taiwan, creating existential exposure to cross-strait tensions — a Chinese blockade or invasion would disrupt the global technology supply chain catastrophically <span class="source-ref">[3]</span>. The $65B Arizona fab and Japan expansion mitigate this but cannot replicate Taiwan&#39;s manufacturing ecosystem in the near term. The $52-56B capex plan for 2026 creates execution risk if AI demand disappoints or customers delay orders due to macro uncertainty. TSMC&#39;s effective tax rate is rising to 17-18% in 2026 from lower historical levels, compressing earnings growth relative to revenue growth <span class="source-ref">[1]</span>. Trailing P/E of 33x prices in significant growth expectations, and any deceleration in AI spending could trigger a meaningful multiple compression from current levels. Additionally, U.S.-China export restrictions on advanced chips could limit TSMC&#39;s ability to serve Chinese customers, removing a meaningful revenue pool <span class="source-ref">[3]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI accelerator revenue CAGR of 54-56% through 2029, with HPC/AI already representing 60% of quarterly revenue and growing as hyperscaler AI capex continues expanding <span class="source-ref">[1]</span></li>
+        
+        <li>2nm node ramp in 2025-2026 with A16 backside power rail technology and System-on-Wafer (SoW) for AI data centers, extending TSMC&#39;s 2-3 year technology lead over Samsung and Intel <span class="source-ref">[2]</span></li>
+        
+        <li>Geographic diversification with $65B Arizona fab and Japan facility, reducing geopolitical concentration risk while capturing U.S. CHIPS Act subsidies and tariff advantages <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Taiwan geopolitical risk — over 90% of advanced chip production on a small island in the South China Sea, with Chinese military exercises and cross-strait tensions creating tail risk of catastrophic supply disruption <span class="source-ref">[3]</span></li>
+        
+        <li>AI demand cyclicality — if hyperscaler AI capex decelerates or customers pull back on orders, TSMC&#39;s $52-56B capex commitment could result in overcapacity and margin compression <span class="source-ref">[1]</span></li>
+        
+        <li>U.S.-China technology decoupling — export restrictions on advanced chips to China could eliminate a meaningful revenue stream, while tariffs on Taiwan imports could pressure customer economics and order volumes <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): TSMC is AI infrastructure itself — the company manufactures virtually every advanced AI chip in existence, from NVIDIA&#39;s Blackwell GPUs to Google&#39;s TPUs to AMD&#39;s MI300X <span class="source-ref">[2]</span>. AI demand is the single largest growth driver, with AI accelerator revenue growing at a 54-56% CAGR through 2029 and HPC (which includes AI) representing 60% of Q4 2025 revenue <span class="source-ref">[1]</span>. TSMC cannot be disrupted by AI because AI literally cannot exist without TSMC&#39;s manufacturing capabilities. The only theoretical risk is that AI reduces demand for non-AI semiconductors (smartphones, consumer electronics), but this is more than offset by explosive AI chip demand. Analysts universally cite TSMC as a primary beneficiary of AI — Barclays ($450 target), Needham ($410), Morningstar ($428 fair value) <span class="source-ref">[4]</span>. AI Opportunity (1/1): TSMC generates massive quantifiable AI revenue — HPC/AI represents approximately 60% of total revenue ($20B+ quarterly), and management projects AI accelerator revenue CAGR of 54-56% through 2029, making TSMC the largest AI revenue generator outside of hyperscalers <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> TSMC Q4 2025 Earnings Release — NT$1.05T revenue, NT$505.7B net income, 62.3% gross margin, 30% 2026 revenue growth guidance, January 2026</li>
+        
+        <li><span class="src-num">2.</span> CNBC, Fortune, Klover.ai — TSMC AI dominance analysis, 54-56% AI accelerator CAGR, 30th Technology Symposium coverage, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> IESE Insight, ScienceDirect, Sustainability Magazine — TSMC geopolitical risk analysis, Arizona fab investment, ESG water and energy footprint, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> TipRanks — TSMC insider buying: SVP Yeap, VP Lin, VP Tien purchased shares in March 2026; Barclays $450 target, Needham $410, Morningstar $428 fair value</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance / yfinance data for TSM (Taiwan Semiconductor), retrieved April 1, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
