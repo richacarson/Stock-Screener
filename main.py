@@ -16,6 +16,7 @@ from screener.docx_export import generate_docx
 
 
 REPORTS_DIR = Path("reports")
+OPPORTUNITIES_DIR = Path("opportunities")
 OUTPUT_DIR = Path("output")
 
 _SOURCE_RE = re.compile(r"\[(\d+)\]")
@@ -119,6 +120,26 @@ def _normalize_report(data: dict) -> None:
         data["ai_resilience"] = {"score": 0, "label": "N/A", "analysis": ""}
 
 
+def _load_opportunities() -> list[dict]:
+    """Load active opportunity JSON files."""
+    opportunities = []
+    if not OPPORTUNITIES_DIR.exists():
+        return opportunities
+    for path in sorted(OPPORTUNITIES_DIR.glob("*.json")):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            if data.get("status") == "active":
+                opportunities.append(data)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"  Warning: Failed to load {path.name}: {e}")
+    opportunities.sort(
+        key=lambda o: (0 if o.get("conviction") == "High Conviction" else 1, o.get("date_identified", "")),
+        reverse=False,
+    )
+    return opportunities
+
+
 def _load_portfolios() -> dict:
     """Load portfolio holdings from data/portfolios.json."""
     portfolio_path = Path("data/portfolios.json")
@@ -170,11 +191,14 @@ def _build_index(env: Environment, reports: list[dict]) -> None:
     screener_reports = [r for r in reports if r["ticker"] not in portfolio_tickers]
     screener_reports.sort(key=lambda r: r.get("overall_score", 0), reverse=True)
 
+    opportunities = _load_opportunities()
+
     html = template.render(
         reports=reports,
         dividend_reports=dividend_reports,
         growth_reports=growth_reports,
         screener_reports=screener_reports,
+        opportunities=opportunities,
         sectors=sectors,
         dividend_avg_score=_avg_score(dividend_reports),
         growth_avg_score=_avg_score(growth_reports),
