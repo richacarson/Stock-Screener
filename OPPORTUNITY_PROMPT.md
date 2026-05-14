@@ -111,7 +111,8 @@ python3 main.py
 
 # Deploy ONLY the updated index.html (opportunities tab) to gh-pages
 # This is fast — don't redeploy all report files
-source .env && export GITHUB_PUSH_TOKEN
+# Load token from environment or .env file
+if [ -z "${GITHUB_PUSH_TOKEN:-}" ] && [ -f .env ]; then source .env && export GITHUB_PUSH_TOKEN; fi
 python3 -c "
 import os, json, base64, time
 from urllib.request import Request, urlopen

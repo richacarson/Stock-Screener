@@ -223,7 +223,8 @@ git push -u origin HEAD
 **IMPORTANT:** Use the GitHub Git Data API to deploy the `output/` directory to `gh-pages`. Do NOT commit report JSON files directly to `gh-pages` — that branch should only contain built output (HTML, manifest.json, and the `output/reports/` copies). Source reports belong in `reports/` on the working branch.
 
 ```bash
-source .env && export GITHUB_PUSH_TOKEN
+# Load token from environment or .env file
+if [ -z "${GITHUB_PUSH_TOKEN:-}" ] && [ -f .env ]; then source .env && export GITHUB_PUSH_TOKEN; fi
 
 # Deploy using the Git Data API — only deploy new/changed report HTML files and index.html
 # Do NOT redeploy all files every time. Use base_tree to add to existing gh-pages content.
