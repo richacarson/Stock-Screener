@@ -195,6 +195,9 @@ Once all 10 agents have finished (or however many batches were needed for this r
 
 ```bash
 # Rebuild the static site from all reports
+# CRITICAL: This regenerates manifest.json with updated screen_date values.
+# The Dashboard uses manifest.json for the stock list — if you skip this,
+# the Dashboard will show stale dates even though report JSONs are updated.
 python3 main.py
 
 # Stage and commit
