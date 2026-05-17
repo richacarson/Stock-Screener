@@ -152,6 +152,33 @@ print('Deployed opportunities to gh-pages!')
 "
 ```
 
+## Step 7: Sync Opportunities to Dashboard
+
+The IOWN Dashboard loads opportunities from its own `public/opportunities/` folder. After committing to this repo, also push the opportunity files to the Dashboard repo:
+
+```bash
+# Clone Dashboard, sync opportunities, push
+DASH_DIR=$(mktemp -d)
+git clone --depth=1 "https://${GITHUB_PUSH_TOKEN}@github.com/richacarson/Dashboard.git" "$DASH_DIR"
+rm -f "$DASH_DIR/public/opportunities/"*.json
+cp opportunities/*.json "$DASH_DIR/public/opportunities/"
+cd "$DASH_DIR"
+git add public/opportunities/
+if ! git diff --cached --quiet; then
+  git config user.name "claude-task[bot]"
+  git config user.email "claude-task[bot]@users.noreply.github.com"
+  git commit -m "Sync opportunities from Stock-Screener"
+  git push
+  echo "Synced opportunities to Dashboard"
+else
+  echo "No opportunity changes to sync"
+fi
+cd -
+rm -rf "$DASH_DIR"
+```
+
+This triggers the Dashboard's GitHub Pages deploy automatically (merging to main fires the deploy workflow).
+
 ## Important Notes
 
 - **Quality over quantity** — one great opportunity per week is better than five mediocre ones
