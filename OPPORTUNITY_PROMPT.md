@@ -154,30 +154,86 @@ print('Deployed opportunities to gh-pages!')
 
 ## Step 7: Sync Opportunities to Dashboard
 
-The IOWN Dashboard loads opportunities from its own `public/opportunities/` folder. After committing to this repo, also push the opportunity files to the Dashboard repo:
+The IOWN Dashboard loads opportunities from its own `public/opportunities/` folder. Use the GitHub API to create a branch + PR + merge — **do NOT `git push` to main directly**, as Dashboard requires PRs.
 
-```bash
-# Clone Dashboard, sync opportunities, push
-DASH_DIR=$(mktemp -d)
-git clone --depth=1 "https://${GITHUB_PUSH_TOKEN}@github.com/richacarson/Dashboard.git" "$DASH_DIR"
-rm -f "$DASH_DIR/public/opportunities/"*.json
-cp opportunities/*.json "$DASH_DIR/public/opportunities/"
-cd "$DASH_DIR"
-git add public/opportunities/
-if ! git diff --cached --quiet; then
-  git config user.name "claude-task[bot]"
-  git config user.email "claude-task[bot]@users.noreply.github.com"
-  git commit -m "Sync opportunities from Stock-Screener"
-  git push
-  echo "Synced opportunities to Dashboard"
-else
-  echo "No opportunity changes to sync"
-fi
-cd -
-rm -rf "$DASH_DIR"
+```python
+python3 -c "
+import os, json, base64, time, datetime
+from urllib.request import Request, urlopen
+from pathlib import Path
+
+TOKEN = os.environ['GITHUB_PUSH_TOKEN']
+API = 'https://api.github.com/repos/richacarson/Dashboard'
+
+def api(method, endpoint, data=None):
+    url = API + endpoint
+    body = json.dumps(data).encode() if data else None
+    req = Request(url, data=body, method=method)
+    req.add_header('Authorization', 'token ' + TOKEN)
+    req.add_header('Content-Type', 'application/json')
+    for attempt in range(5):
+        try:
+            resp = urlopen(req, timeout=60)
+            return json.loads(resp.read())
+        except Exception as e:
+            if attempt < 4: time.sleep(2 ** (attempt + 1))
+            else: raise
+
+# Get current main SHA
+main_sha = api('GET', '/git/ref/heads/main')['object']['sha']
+main_tree_sha = api('GET', '/git/commits/' + main_sha)['tree']['sha']
+
+# Build tree of opportunity files
+opp_files = list(Path('opportunities').glob('*.json'))
+if not opp_files:
+    print('No opportunity files to sync')
+    exit(0)
+
+tree_items = []
+for fpath in opp_files:
+    content = base64.b64encode(fpath.read_bytes()).decode()
+    blob = api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
+    tree_items.append({
+        'path': 'public/opportunities/' + fpath.name,
+        'mode': '100644',
+        'type': 'blob',
+        'sha': blob['sha']
+    })
+
+new_tree = api('POST', '/git/trees', {'base_tree': main_tree_sha, 'tree': tree_items})
+
+commit = api('POST', '/git/commits', {
+    'message': 'Sync opportunities from Stock-Screener',
+    'tree': new_tree['sha'],
+    'parents': [main_sha],
+    'author': {'name': 'claude-task[bot]', 'email': 'claude-task[bot]@users.noreply.github.com'}
+})
+
+# Create a claude/ branch for the PR
+branch = 'claude/opp-sync-' + datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+api('POST', '/git/refs', {'ref': 'refs/heads/' + branch, 'sha': commit['sha']})
+
+# Create and merge the PR
+pr = api('POST', '/pulls', {
+    'title': 'Sync opportunities from Stock-Screener',
+    'head': branch,
+    'base': 'main',
+    'body': 'Auto-synced ' + str(len(opp_files)) + ' opportunity files from Stock-Screener scheduled task.'
+})
+pr_number = pr['number']
+print(f'Created PR #{pr_number}: {pr[\"html_url\"]}')
+
+time.sleep(3)
+merge = api('PUT', '/pulls/' + str(pr_number) + '/merge', {
+    'merge_method': 'merge',
+    'commit_title': 'Sync opportunities from Stock-Screener'
+})
+print('Merged PR to main — Dashboard deploy triggered automatically')
+print(f'Synced {len(opp_files)} opportunity files to Dashboard')
+"
 ```
 
-This triggers the Dashboard's GitHub Pages deploy automatically (merging to main fires the deploy workflow).
+This creates a `claude/` branch, opens a PR, and merges it — which triggers the Dashboard's GitHub Pages deploy automatically.
 
 ## Important Notes
 
