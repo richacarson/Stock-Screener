@@ -179,7 +179,7 @@ for f in sorted(opp_dir.glob('*.json')):
     blob = dash_api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
     dash_items.append({'path': f'public/opportunities/{f.name}', 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
     d = json.load(open(f))
-    opps_manifest.append({'id': d.get('id', f.stem), 'title': d.get('title',''), 'pattern': d.get('pattern',''), 'conviction': d.get('conviction',''), 'status': d.get('status','active'), 'tickers': d.get('tickers',[]), 'date_identified': d.get('date_identified',''), 'timeframe': d.get('timeframe',''), 'summary': d.get('summary', d.get('catalyst','')[:200])})
+    opps_manifest.append(d.get('id', f.stem))
 
 manifest_blob = dash_api('POST', '/git/blobs', {'content': base64.b64encode(json.dumps(opps_manifest, indent=2).encode()).decode(), 'encoding': 'base64'})
 dash_items.append({'path': 'public/opportunities/manifest.json', 'mode': '100644', 'type': 'blob', 'sha': manifest_blob['sha']})
