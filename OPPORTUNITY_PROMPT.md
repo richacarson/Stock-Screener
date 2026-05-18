@@ -154,6 +154,43 @@ tree = api('POST', '/git/trees', {'base_tree': parent_tree, 'tree': tree_items})
 commit = api('POST', '/git/commits', {'message': 'Deploy: update opportunities', 'tree': tree['sha'], 'parents': [parent_sha]})
 api('PATCH', '/git/refs/heads/gh-pages', {'sha': commit['sha'], 'force': True})
 print('Deployed opportunities to gh-pages!')
+
+# Also deploy to Dashboard repo (richacarson/Dashboard)
+DASH_API = 'https://api.github.com/repos/richacarson/Dashboard'
+
+def dash_api(method, endpoint, data=None):
+    url = DASH_API + endpoint
+    body = json.dumps(data).encode() if data else None
+    req = Request(url, data=body, method=method)
+    req.add_header('Authorization', 'token ' + TOKEN)
+    req.add_header('Content-Type', 'application/json')
+    for attempt in range(5):
+        try:
+            return json.loads(urlopen(req, timeout=60).read())
+        except Exception as e:
+            if attempt < 4: time.sleep(2 ** (attempt + 1))
+            else: raise
+
+dash_items = []
+opp_dir = Path('opportunities')
+opps_manifest = []
+for f in sorted(opp_dir.glob('*.json')):
+    content = base64.b64encode(f.read_bytes()).decode()
+    blob = dash_api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
+    dash_items.append({'path': f'public/opportunities/{f.name}', 'mode': '100644', 'type': 'blob', 'sha': blob['sha']})
+    d = json.load(open(f))
+    opps_manifest.append({'id': d.get('id', f.stem), 'title': d.get('title',''), 'pattern': d.get('pattern',''), 'conviction': d.get('conviction',''), 'status': d.get('status','active'), 'tickers': d.get('tickers',[]), 'date_identified': d.get('date_identified',''), 'timeframe': d.get('timeframe',''), 'summary': d.get('summary', d.get('catalyst','')[:200])})
+
+manifest_blob = dash_api('POST', '/git/blobs', {'content': base64.b64encode(json.dumps(opps_manifest, indent=2).encode()).decode(), 'encoding': 'base64'})
+dash_items.append({'path': 'public/opportunities/manifest.json', 'mode': '100644', 'type': 'blob', 'sha': manifest_blob['sha']})
+
+dash_ref = dash_api('GET', '/git/ref/heads/main')
+dash_parent = dash_ref['object']['sha']
+dash_parent_tree = dash_api('GET', f'/git/commits/{dash_parent}')['tree']['sha']
+dash_tree = dash_api('POST', '/git/trees', {'base_tree': dash_parent_tree, 'tree': dash_items})
+dash_commit = dash_api('POST', '/git/commits', {'message': 'Update opportunities from Stock-Screener', 'tree': dash_tree['sha'], 'parents': [dash_parent]})
+dash_api('PATCH', '/git/refs/heads/main', {'sha': dash_commit['sha']})
+print('Deployed opportunities to Dashboard!')
 "
 ```
 
