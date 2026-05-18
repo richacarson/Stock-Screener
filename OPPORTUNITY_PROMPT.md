@@ -183,11 +183,15 @@ def api(method, endpoint, data=None):
 main_sha = api('GET', '/git/ref/heads/main')['object']['sha']
 main_tree_sha = api('GET', '/git/commits/' + main_sha)['tree']['sha']
 
-# Build tree of opportunity files
+# Build tree of opportunity files + manifest
 opp_files = list(Path('opportunities').glob('*.json'))
 if not opp_files:
     print('No opportunity files to sync')
     exit(0)
+
+# Generate manifest.json (list of IDs without .json extension)
+ids = sorted([f.stem for f in opp_files])
+manifest = json.dumps(ids).encode()
 
 tree_items = []
 for fpath in opp_files:
@@ -199,6 +203,15 @@ for fpath in opp_files:
         'type': 'blob',
         'sha': blob['sha']
     })
+
+# Also update the manifest so Dashboard discovers all opportunities automatically
+manifest_blob = api('POST', '/git/blobs', {'content': base64.b64encode(manifest).decode(), 'encoding': 'base64'})
+tree_items.append({
+    'path': 'public/opportunities/manifest.json',
+    'mode': '100644',
+    'type': 'blob',
+    'sha': manifest_blob['sha']
+})
 
 new_tree = api('POST', '/git/trees', {'base_tree': main_tree_sha, 'tree': tree_items})
 
