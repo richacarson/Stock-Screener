@@ -134,8 +134,8 @@ def _load_opportunities() -> list[dict]:
         except (json.JSONDecodeError, OSError) as e:
             print(f"  Warning: Failed to load {path.name}: {e}")
     opportunities.sort(
-        key=lambda o: (0 if o.get("conviction") == "High Conviction" else 1, o.get("date_identified", "")),
-        reverse=False,
+        key=lambda o: o.get("date_identified", ""),
+        reverse=True,
     )
     return opportunities
 
