@@ -1,105 +1,110 @@
 # IOWN Opportunity Finder — Daily Task
 
-You are running the IOWN Opportunity Finder at `/home/user/Stock-Screener`. Your job is to identify compelling investment opportunities by connecting macro events, supply chain dynamics, and sector trends to stocks we've already screened.
+You are running the IOWN Opportunity Finder at `/home/user/Stock-Screener`. Your job is to identify compelling investment opportunities and write them as **full research reports with verified sources**.
 
-**Do NOT force opportunities.** Only create one when there's a genuinely compelling catalyst backed by evidence. Some days there will be nothing. That's fine.
+**Do NOT force opportunities.** Only create one when there's a genuinely compelling, evidence-backed catalyst. Some days there will be nothing. That's the right answer.
 
-## Step 1: Scan for Catalysts
+## Step 1 — Establish today's macro context (cheap)
 
-Do 3-5 web searches for current macro events:
+Before searching, write a short scratch note to `/tmp/today_brief.md`:
+- Today's date and trading day status
+- 3–5 macro headlines from the last 24h (use `web_search` with queries you choose adaptively based on what's actually moving — **do not use the same hard-coded queries every day**)
+- Any FOMC/ECB/BOJ events, earnings of note, geopolitical shifts, commodity prints
 
-1. `major geopolitical events supply chain disruption 2026`
-2. `AI infrastructure spending earnings surprises 2026`
-3. `commodity supply shock shortage 2026`
-4. `technology sector rotation institutional money flow 2026`
-5. `federal reserve policy impact sectors 2026`
+This gives you a focused universe for Step 2 instead of cold searches.
 
-Look for events that create **asymmetric opportunities** — situations where the market hasn't fully priced in the second or third-order effects of a catalyst.
+## Step 2 — Hunt for asymmetric setups
 
-## Step 2: Match to Screened Stocks
+Re-read `/tmp/today_brief.md`. Ask: *which of these creates a second- or third-order effect the market is mispricing?* Examples:
+- Capex commitment by hyperscaler X → who supplies the pick-and-shovel?
+- Geopolitical shock to commodity Y → who has spare capacity?
+- Regulatory shift in industry Z → who's structurally advantaged?
 
-Check which stocks in `reports/` could benefit from any catalyst you find. Only consider stocks we already have IOWN reports for.
+If nothing meets this bar, **stop here and exit cleanly**. Don't write a JSON. Quality > quantity.
+
+## Step 3 — Match to screened universe
+
+For any candidate thesis, identify 1–3 tickers that benefit. **Each ticker MUST have a report in `reports/`.** Then:
 
 ```bash
-ls reports/*.json | wc -l  # See how many stocks are available
+cat reports/{TICKER}.json
 ```
 
-## Step 3: Evaluate Opportunity Quality
+Pull at least 3 specific data points (forward P/E, ROE, margin, growth rate, backlog, market share, AI resilience score, etc.) that you'll weave into the thesis. **Do not write the report without reading these.**
 
-Only create an opportunity if it meets ALL of these criteria:
+## Step 4 — Deep research with citations
 
-1. **Clear catalyst** — a specific, identifiable event or trend (not vague "AI is growing")
-2. **Logical connection** — the link between the catalyst and the stock is defensible and specific
-3. **Timing relevance** — the opportunity is actionable now, not 5 years from now
-4. **Not already obvious** — if everyone on CNBC is talking about it, it's too late
+This is the expensive step. Use `web_search` to gather primary-source evidence:
+- Company press releases / 8-Ks / earnings call transcripts
+- Industry trade publications (Utility Dive, SemiAnalysis, Stratechery, etc.)
+- Government data (EIA, USDA, BLS, FRED) where applicable
+- Analyst notes from Tier-1 banks when publicly summarized
 
-### Opportunity Patterns to Look For
+**Every factual claim in the report must have a citation.** Numbers (revenue, backlog, prices, multiples) must come from a source you can link, or from the screener report in `reports/`.
 
-| Pattern | Description | Example |
-|---------|-------------|---------|
-| **Supply Chain / Picks & Shovels** | X is spending big → who supplies X? | NVDA investing in optical interconnects → CRDO, MRVL |
-| **Supply Shock / Scarcity** | Supply of Y disrupted → who fills the gap? | Iran war disrupts ammonia → NTR |
-| **Secular Trend Acceleration** | Long-term trend hitting an inflection point | AI + quantum → cybersecurity demand → FTNT |
+Cross-check any price/EPS/multiple you cite against the screener report or a fresh API call. **If the numbers don't agree, don't ship the opportunity** — investigate.
 
-### Conviction Tiers
+## Step 5 — Write the opportunity JSON
 
-- **High Conviction**: Multiple data points confirm the thesis. Clear catalyst with specific timeline. Institutional money already moving.
-- **On Our Radar**: Interesting thesis but needs more confirmation. Early signal, worth watching.
-
-## Step 4: Write the Opportunity JSON
-
-If you find something compelling, write it to `opportunities/{id}.json`:
+Schema (write to `opportunities/{id}.json`):
 
 ```json
 {
   "id": "descriptive-slug",
-  "title": "Short Descriptive Title",
-  "pattern": "Supply Chain|Supply Shock|Secular Trend",
-  "conviction": "High Conviction|On Our Radar",
+  "title": "Short Descriptive Title (≤80 chars)",
+  "summary": "One-sentence elevator pitch. What's the trade in plain English?",
+  "pattern": "Supply Chain | Supply Shock | Secular Trend | Regulatory | Cyclical",
+  "conviction": "High Conviction | On Our Radar",
   "status": "active",
   "date_identified": "YYYY-MM-DD",
-  "catalyst": "2-3 sentences describing the specific event or trend that creates the opportunity.",
-  "thesis": "2-3 sentences explaining WHY this catalyst benefits specific stocks. Connect the dots — don't just say 'AI is growing', explain the second-order effect.",
+  "timeframe": "3-6 months | 6-12 months | 12-24 months | 12-36 months",
   "tickers": ["TICK1", "TICK2"],
+  "in_portfolio": true,
+  "catalyst": "2-3 sentences: the specific event/trend that creates the opportunity. Reference a date.",
+  "thesis": "2-3 sentences: the second-order effect. Why does the catalyst translate to these specific tickers?",
+  "body_md": "Full research report in markdown — 800–1500 words. Use ## headings. Embed inline citations like [1], [2] that map to the sources array. Include sections: Setup, Why Now, Company-Specific Edge (per ticker), Numbers That Matter, Bear Case, Conclusion. Use tables for peer comparisons when useful.",
   "ticker_rationale": {
-    "TICK1": "1-2 sentences explaining why THIS specific stock benefits. Cite specific data — market share, revenue exposure, competitive position.",
-    "TICK2": "Same for this stock."
+    "TICK1": "1-2 sentences with at least one specific number from the screener report or your research.",
+    "TICK2": "Same."
+  },
+  "key_metrics": {
+    "TICK1": {"Fwd P/E": 18.2, "ROE": "22%", "Backlog": "100 GW", "FY26 EPS Growth": "55%"},
+    "TICK2": {"Fwd P/E": 14.1, "Div Yield": "3.2%", "Payout Ratio": "45%"}
   },
   "risks": [
-    "Specific risk that could invalidate the thesis",
-    "Another specific risk with scenario"
+    "Specific risk with a scenario, not 'macro risk'",
+    "Another specific risk"
   ],
-  "timeframe": "3-6 months|6-12 months|12-24 months|12-36 months",
+  "invalidation": [
+    "Specific price level, earnings number, or event that would close this trade",
+    "Another concrete invalidation trigger"
+  ],
   "sources": [
-    "Specific source with date",
-    "Another source"
+    {"id": 1, "url": "https://...", "title": "Article or filing title", "publisher": "WSJ | SEC | Company IR | Utility Dive | etc.", "date": "2026-05-12", "accessed": "2026-05-18"},
+    {"id": 2, "url": "https://...", "title": "...", "publisher": "...", "date": "..."}
   ]
 }
 ```
 
 **Rules:**
-- Tickers MUST have existing reports in `reports/`. Check before including.
-- IDs are lowercase kebab-case slugs
-- Only create opportunities for events that have ALREADY happened or are clearly underway — not predictions
-- Max 2-3 opportunities per run. Quality over quantity.
-- If no compelling opportunity exists today, write nothing. That's the right answer.
+- `body_md` is **mandatory** for new opportunities. Don't skip it.
+- `sources` are **objects**, not strings. Every source needs a real URL you actually opened.
+- `invalidation` is **mandatory** — at least 2 concrete triggers.
+- Tickers MUST exist in `reports/`. Check first.
+- IDs are lowercase kebab-case.
+- Only document events that have happened or are clearly underway — not predictions.
+- Max 2 new opportunities per run. Usually zero is correct.
 
-## Step 5: Review Existing Opportunities
+## Step 6 — Expire old opportunities
 
-Check if any existing opportunities should be marked as expired:
+For each active opportunity, evaluate:
+- Has any invalidation trigger fired?
+- Has 30+ days passed without the thesis advancing?
+- Has the timeframe expired?
 
-```bash
-ls opportunities/*.json
-```
+If yes, set `status: "expired"`.
 
-For each existing opportunity, evaluate:
-- Has the catalyst played out? (stock already moved significantly)
-- Has the thesis been invalidated? (ceasefire, policy reversal, etc.)
-- Is the timeframe expired?
-
-If so, update the `"status"` field to `"expired"`.
-
-## Step 6: Commit, Push, Rebuild, and Deploy
+## Step 7 — Commit, Push, Rebuild, and Deploy
 
 ```bash
 git add opportunities/*.json
@@ -152,106 +157,10 @@ print('Deployed opportunities to gh-pages!')
 "
 ```
 
-## Step 7: Sync Opportunities to Dashboard
+## Quality bar — non-negotiable
 
-The IOWN Dashboard loads opportunities from its own `public/opportunities/` folder. Use the GitHub API to create a branch + PR + merge — **do NOT `git push` to main directly**, as Dashboard requires PRs.
-
-```python
-python3 -c "
-import os, json, base64, time, datetime
-from urllib.request import Request, urlopen
-from pathlib import Path
-
-TOKEN = os.environ['GITHUB_PUSH_TOKEN']
-API = 'https://api.github.com/repos/richacarson/Dashboard'
-
-def api(method, endpoint, data=None):
-    url = API + endpoint
-    body = json.dumps(data).encode() if data else None
-    req = Request(url, data=body, method=method)
-    req.add_header('Authorization', 'token ' + TOKEN)
-    req.add_header('Content-Type', 'application/json')
-    for attempt in range(5):
-        try:
-            resp = urlopen(req, timeout=60)
-            return json.loads(resp.read())
-        except Exception as e:
-            if attempt < 4: time.sleep(2 ** (attempt + 1))
-            else: raise
-
-# Get current main SHA
-main_sha = api('GET', '/git/ref/heads/main')['object']['sha']
-main_tree_sha = api('GET', '/git/commits/' + main_sha)['tree']['sha']
-
-# Build tree of opportunity files + manifest
-opp_files = list(Path('opportunities').glob('*.json'))
-if not opp_files:
-    print('No opportunity files to sync')
-    exit(0)
-
-# Generate manifest.json (list of IDs without .json extension)
-ids = sorted([f.stem for f in opp_files])
-manifest = json.dumps(ids).encode()
-
-tree_items = []
-for fpath in opp_files:
-    content = base64.b64encode(fpath.read_bytes()).decode()
-    blob = api('POST', '/git/blobs', {'content': content, 'encoding': 'base64'})
-    tree_items.append({
-        'path': 'public/opportunities/' + fpath.name,
-        'mode': '100644',
-        'type': 'blob',
-        'sha': blob['sha']
-    })
-
-# Also update the manifest so Dashboard discovers all opportunities automatically
-manifest_blob = api('POST', '/git/blobs', {'content': base64.b64encode(manifest).decode(), 'encoding': 'base64'})
-tree_items.append({
-    'path': 'public/opportunities/manifest.json',
-    'mode': '100644',
-    'type': 'blob',
-    'sha': manifest_blob['sha']
-})
-
-new_tree = api('POST', '/git/trees', {'base_tree': main_tree_sha, 'tree': tree_items})
-
-commit = api('POST', '/git/commits', {
-    'message': 'Sync opportunities from Stock-Screener',
-    'tree': new_tree['sha'],
-    'parents': [main_sha],
-    'author': {'name': 'claude-task[bot]', 'email': 'claude-task[bot]@users.noreply.github.com'}
-})
-
-# Create a claude/ branch for the PR
-branch = 'claude/opp-sync-' + datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S')
-api('POST', '/git/refs', {'ref': 'refs/heads/' + branch, 'sha': commit['sha']})
-
-# Create and merge the PR
-pr = api('POST', '/pulls', {
-    'title': 'Sync opportunities from Stock-Screener',
-    'head': branch,
-    'base': 'main',
-    'body': 'Auto-synced ' + str(len(opp_files)) + ' opportunity files from Stock-Screener scheduled task.'
-})
-pr_number = pr['number']
-print(f'Created PR #{pr_number}: {pr[\"html_url\"]}')
-
-time.sleep(3)
-merge = api('PUT', '/pulls/' + str(pr_number) + '/merge', {
-    'merge_method': 'merge',
-    'commit_title': 'Sync opportunities from Stock-Screener'
-})
-print('Merged PR to main — Dashboard deploy triggered automatically')
-print(f'Synced {len(opp_files)} opportunity files to Dashboard')
-"
-```
-
-This creates a `claude/` branch, opens a PR, and merges it — which triggers the Dashboard's GitHub Pages deploy automatically.
-
-## Important Notes
-
-- **Quality over quantity** — one great opportunity per week is better than five mediocre ones
-- **Be specific** — "AI is growing" is not a thesis. "NVIDIA's Rubin platform requires 3.2T optical links, creating $5B TAM for AEC suppliers" is a thesis
-- **Check your work** — verify that tickers you mention have reports in `reports/`
-- **Don't duplicate** — check existing opportunities before creating a new one on the same theme
-- **Expire old ones** — opportunities that have played out or been invalidated should be marked expired
+- "AI is growing" is not a thesis. "Hyperscalers committed $X in 2026 capex, sold-out gas turbine slots at Y company through 2030 per [filing]" is a thesis.
+- Every number traceable to a source.
+- Every URL opened, not invented.
+- If you can't find primary sources for a claim, drop the claim.
+- If you can't write 800+ words of substance, the thesis isn't ready — skip it.
