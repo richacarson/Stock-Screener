@@ -125,11 +125,21 @@ def _load_opportunities() -> list[dict]:
     opportunities = []
     if not OPPORTUNITIES_DIR.exists():
         return opportunities
+    support_files = {
+        "manifest.json",
+        "ledger.json",
+        "signals.json",
+        "team_feedback.json",
+        "committee_lookup.json",
+        "fund_cik_lookup.json",
+    }
     for path in sorted(OPPORTUNITIES_DIR.glob("*.json")):
+        if path.name in support_files:
+            continue
         try:
             with open(path) as f:
                 data = json.load(f)
-            if data.get("status") == "active":
+            if isinstance(data, dict) and data.get("status") == "active":
                 opportunities.append(data)
         except (json.JSONDecodeError, OSError) as e:
             print(f"  Warning: Failed to load {path.name}: {e}")
