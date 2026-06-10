@@ -122,15 +122,15 @@ def _normalize_report(data: dict) -> None:
 
 def _load_opportunities() -> list[dict]:
     """Load active opportunity JSON files."""
-    SUPPORT_FILES = {
-        "manifest.json", "ledger.json", "signals.json", "stalking.json",
-        "committee_lookup.json", "fund_cik_lookup.json", "team_feedback.json",
-    }
     opportunities = []
     if not OPPORTUNITIES_DIR.exists():
         return opportunities
+    SUPPORT = {
+        "manifest.json", "ledger.json", "signals.json", "stalking.json",
+        "committee_lookup.json", "fund_cik_lookup.json", "team_feedback.json",
+    }
     for path in sorted(OPPORTUNITIES_DIR.glob("*.json")):
-        if path.name in SUPPORT_FILES:
+        if path.name in SUPPORT:
             continue
         try:
             with open(path) as f:
