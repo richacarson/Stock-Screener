@@ -61,11 +61,18 @@ def build_site() -> None:
     # Generate Word docs
     docx_out = OUTPUT_DIR / "docx"
     docx_out.mkdir(exist_ok=True)
+    docx_errors = []
     for report in reports:
         ticker = report["ticker"]
-        docx_bytes = generate_docx(report)
-        (docx_out / f"{ticker}_IOWN_Report.docx").write_bytes(docx_bytes)
-    print(f"[{datetime.now():%H:%M:%S}] Built {len(reports)} Word docs")
+        try:
+            docx_bytes = generate_docx(report)
+            (docx_out / f"{ticker}_IOWN_Report.docx").write_bytes(docx_bytes)
+        except Exception as e:
+            docx_errors.append(ticker)
+    if docx_errors:
+        print(f"[{datetime.now():%H:%M:%S}] Built {len(reports) - len(docx_errors)} Word docs ({len(docx_errors)} failed: {', '.join(docx_errors[:10])})")
+    else:
+        print(f"[{datetime.now():%H:%M:%S}] Built {len(reports)} Word docs")
 
     # Copy reports as JSON for frontend use
     reports_out = OUTPUT_DIR / "reports"
