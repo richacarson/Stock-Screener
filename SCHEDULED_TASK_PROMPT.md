@@ -267,28 +267,41 @@ print('Deployed to gh-pages!')
 "
 ```
 
-## Step 4.5: Merge Screening Reports Back to main
+## Step 4.5: Merge Screening Reports Back to the Default Branch
 
-**CRITICAL — prevents orphaned work and a stuck rotation.** Scheduled runs work
-on `claude/...` branches. If today's reports are never merged back to `main`,
-the next run starts from a stale `main`, re-screens the same oldest stocks, and
-the rotation never advances — exactly the "screener isn't progressing / has
-gaps" failure. Merge today's reports back (same safe pattern as the opportunity
-finder: `--no-ff`, abort on conflict, never `--force`).
+**CRITICAL — this is the bug that makes the screener re-screen the same ~50–100
+stocks every day.** Scheduled runs work on `claude/...` branches created from the
+repo's **default branch**. If today's reports are never merged back, the default
+branch stays frozen, the next run starts from that frozen tree, and Step 1 keeps
+selecting the *same* oldest cohort (e.g. GOOG/META) — re-screening them daily and
+never advancing the rotation. (It also makes the deploy overwrite gh-pages reports
+for tickers not screened this run, snapping their dates back to the frozen base.)
+
+Merge today's reports back into the **actual default branch** — detected
+dynamically, because this repo's default is NOT `main`. Same safe pattern as the
+opportunity finder: `--no-ff`, abort on conflict, never `--force`. A failed push
+is non-fatal (the site already deployed in Step 4); the rotation simply won't
+advance until the push to the default branch succeeds.
 
 ```bash
+# Detect the repo's default branch (this repo's default is a claude/* branch, not main)
+DEFAULT_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+[ -z "$DEFAULT_BRANCH" ] && DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}')
+echo "Default branch: $DEFAULT_BRANCH"
+
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [[ "$CURRENT_BRANCH" != "main" ]]; then
+if [[ -n "$DEFAULT_BRANCH" && "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]]; then
   git push -u origin "$CURRENT_BRANCH"
 
-  git checkout main
-  git pull origin main --ff-only
+  git fetch origin "$DEFAULT_BRANCH"
+  git checkout "$DEFAULT_BRANCH"
+  git pull origin "$DEFAULT_BRANCH" --ff-only
 
   if git merge "$CURRENT_BRANCH" --no-ff -m "Merge $CURRENT_BRANCH: daily screening $(date +%Y-%m-%d)"; then
-    git push origin main
-    echo "Merged $CURRENT_BRANCH → main"
+    git push origin "$DEFAULT_BRANCH" || echo "WARN: could not push to $DEFAULT_BRANCH — rotation will not advance until this succeeds."
+    echo "Consolidated screening reports into $DEFAULT_BRANCH"
   else
-    echo "WARN: merge to main had conflicts. Aborting merge; work is safe on $CURRENT_BRANCH."
+    echo "WARN: merge to $DEFAULT_BRANCH had conflicts. Aborting; work is safe on $CURRENT_BRANCH."
     git merge --abort
   fi
 
@@ -296,8 +309,9 @@ if [[ "$CURRENT_BRANCH" != "main" ]]; then
 fi
 ```
 
-This makes Step 0's cross-branch report sync a safety net rather than the only
-way prior runs' reports reach the next run.
+This makes the default branch the single source of truth for the rotation, so
+Step 1 always selects from the genuinely-oldest reports. Step 0's cross-branch
+sync becomes a safety net rather than the only path for prior reports to survive.
 
 ## Step 5: Report Results
 

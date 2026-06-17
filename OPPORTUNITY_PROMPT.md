@@ -487,23 +487,30 @@ print('Deployed opportunities to Stock-Screener gh-pages.')
 
 ---
 
-## Step 7.5: Merge claude/ branch back to main (prevents orphaned work)
+## Step 7.5: Merge claude/ branch back to the default branch (prevents orphaned work)
 
-Scheduled tasks run on `claude/...` work branches. Without merging back, opportunity files (and the ledger, signals, and stalking files) created today exist ONLY on the work branch — never reaching main. The next run starts from a stale main and has to recover missing files from the Dashboard.
+Scheduled tasks run on `claude/...` work branches created from the repo's **default branch**. Without merging back, opportunity files (and the ledger, signals, and stalking files) created today exist ONLY on the work branch — never reaching the default branch. The next run starts from a stale tree and has to recover missing files from the Dashboard.
+
+**This repo's default branch is NOT `main`** (it is a `claude/*` branch), so detect it dynamically — a hardcoded `git checkout main` silently fails and the merge-back never happens.
 
 ```bash
+DEFAULT_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+[ -z "$DEFAULT_BRANCH" ] && DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}')
+echo "Default branch: $DEFAULT_BRANCH"
+
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [[ "$CURRENT_BRANCH" != "main" ]]; then
+if [[ -n "$DEFAULT_BRANCH" && "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]]; then
   git push -u origin "$CURRENT_BRANCH"
 
-  git checkout main
-  git pull origin main --ff-only
+  git fetch origin "$DEFAULT_BRANCH"
+  git checkout "$DEFAULT_BRANCH"
+  git pull origin "$DEFAULT_BRANCH" --ff-only
 
   if git merge "$CURRENT_BRANCH" --no-ff -m "Merge $CURRENT_BRANCH: opportunity finder run $(date +%Y-%m-%d)"; then
-    git push origin main
-    echo "Merged $CURRENT_BRANCH → main"
+    git push origin "$DEFAULT_BRANCH" || echo "WARN: could not push to $DEFAULT_BRANCH."
+    echo "Merged $CURRENT_BRANCH → $DEFAULT_BRANCH"
   else
-    echo "WARN: merge to main had conflicts. Aborting merge; work is safe on $CURRENT_BRANCH."
+    echo "WARN: merge to $DEFAULT_BRANCH had conflicts. Aborting merge; work is safe on $CURRENT_BRANCH."
     git merge --abort
   fi
 
