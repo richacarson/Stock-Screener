@@ -50,58 +50,35 @@ git diff --cached --quiet || git commit -m "Sync reports from prior scheduled sc
 
 ## Step 1: Determine What to Screen
 
-Run this Python script to find the next 50 stocks to screen:
+Batch selection lives in `scripts/select_batch.py` (tested + version-controlled)
+so the rotation logic stays correct. It returns one of two modes:
+
+- **NEW** — next unscreened stocks from `data/screening_queue.csv`, in volume order.
+- **REFRESH** — once the queue is exhausted, the **full report set** ranked by
+  oldest `screen_date` first. This includes seed/portfolio tickers that were
+  never in the queue (NVDA, TSM, AMD, QCOM, …), so the *entire* universe keeps
+  cycling instead of those names getting stuck.
+
+Run this to print the next 50 stocks (with inspire data) to screen:
 
 ```bash
 python3 -c "
-import csv, os, json
-from datetime import datetime
+import csv
+from scripts.select_batch import select_batch
 
-# Load queue (sorted by avg daily volume descending)
-with open('data/screening_queue.csv') as f:
-    queue = list(csv.DictReader(f))
-queue_tickers = {r['symbol'] for r in queue}
-queue_lookup = {r['symbol']: r for r in queue}
-
-# Find which tickers already have reports
-report_files = [f for f in os.listdir('reports') if f.endswith('.json')]
-done = {f.replace('.json','') for f in report_files}
-
-# Mode 1: Unscreened stocks remain
-remaining = [r for r in queue if r['symbol'] not in done]
-
-if remaining:
-    batch_tickers = [r['symbol'] for r in remaining[:50]]
-    mode = 'NEW'
-    print(f'MODE: Screening NEW stocks')
-    print(f'Total in queue: {len(queue)}')
-    print(f'Already screened: {len(done)}')
-    print(f'Remaining unscreened: {len(remaining)}')
-else:
-    # Mode 2: All screened — re-screen oldest reports
-    report_dates = []
-    for rf in report_files:
-        ticker = rf.replace('.json','')
-        if ticker not in queue_tickers:
-            continue
-        with open(f'reports/{rf}') as fh:
-            try:
-                data = json.load(fh)
-                sd = data.get('screen_date', '2000-01-01')
-                report_dates.append((ticker, sd))
-            except:
-                report_dates.append((ticker, '2000-01-01'))
-    report_dates.sort(key=lambda x: x[1])  # oldest first
-    batch_tickers = [t for t, _ in report_dates[:50]]
-    oldest_date = report_dates[0][1] if report_dates else 'N/A'
-    newest_in_batch = report_dates[min(99, len(report_dates)-1)][1] if report_dates else 'N/A'
-    mode = 'REFRESH'
-    print(f'MODE: Re-screening OLDEST reports (all {len(queue)} stocks already screened)')
-    print(f'Oldest report in batch: {oldest_date}')
-    print(f'Newest report in batch: {newest_in_batch}')
-
+mode, batch_tickers = select_batch(count=50)
+print(f'MODE: {mode}')
 print(f'This batch: {len(batch_tickers)} stocks')
 print()
+
+# Queue lookup for volume context (best-effort)
+queue_lookup = {}
+try:
+    with open('data/screening_queue.csv', newline='', encoding='utf-8-sig') as f:
+        for r in csv.DictReader(f):
+            queue_lookup[r['symbol']] = r
+except FileNotFoundError:
+    pass
 
 # Load inspire data
 with open('data/inspire_insight_scores.csv', encoding='utf-8-sig') as f:
@@ -300,12 +277,11 @@ queue_tickers = {r['symbol'] for r in queue}
 done = {f.replace('.json','') for f in os.listdir('reports') if f.endswith('.json')}
 remaining = [r for r in queue if r['symbol'] not in done]
 
-# Find oldest report date
+# Find oldest report date across the FULL report set (not just queue members)
+# so the rotation's true oldest is reported, including seed/portfolio tickers.
 oldest_date = None
 for rf in os.listdir('reports'):
     if not rf.endswith('.json'): continue
-    t = rf.replace('.json','')
-    if t not in queue_tickers: continue
     try:
         with open(f'reports/{rf}') as fh:
             sd = json.load(fh).get('screen_date','')

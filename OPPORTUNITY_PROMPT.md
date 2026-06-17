@@ -462,7 +462,14 @@ def api(method, endpoint, data=None):
             else: raise
 
 tree_items = []
-for fpath in ['output/index.html', 'output/manifest.json']:
+# Deploy ONLY index.html (the opportunities tab renders here). Do NOT push
+# output/manifest.json: that is the stock-screener manifest, owned by the daily
+# screening pipeline. This task runs on a branch with stale stock reports, so
+# rebuilding and pushing manifest.json here would overwrite the fresh manifest
+# on gh-pages with stale screen_dates — the Dashboard staleness bug. The
+# authoritative manifest is published by the screening deploy and the scheduled
+# 'Run Stock Screener' workflow, both of which build from current reports.
+for fpath in ['output/index.html']:
     p = Path(fpath)
     rel = str(p.relative_to('output'))
     content = base64.b64encode(p.read_bytes()).decode()

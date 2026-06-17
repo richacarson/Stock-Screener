@@ -1,7 +1,18 @@
 name: Run Stock Screener
 
 on:
+  # Authoritative daily rebuild + deploy. Rebuilds the static site (which
+  # re-derives manifest.json from the committed report files) and publishes the
+  # full output/ to GitHub Pages, so the Dashboard always sees a manifest.json
+  # that matches reports/*.json. Scheduled late in the day (23:30 UTC) so it
+  # lands after the daily-screening and opportunity-finder deploys and corrects
+  # any manifest drift they may introduce.
+  schedule:
+    - cron: "30 23 * * *"
   workflow_dispatch:  # Manual trigger via gh workflow run
+
+permissions:
+  contents: write  # deploy.py force-pushes the built site to gh-pages
 
 jobs:
   screen:
@@ -18,8 +29,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run screener
+      - name: Build site (re-derives manifest.json from reports/)
         run: python main.py
+
+      - name: Verify manifest matches report files
+        run: python scripts/verify_manifest.py
 
       - name: Deploy to GitHub Pages
         env:
