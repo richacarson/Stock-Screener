@@ -177,6 +177,10 @@ Once all 10 agents have finished (or however many batches were needed for this r
 # the Dashboard will show stale dates even though report JSONs are updated.
 python3 main.py
 
+# Gate the deploy on a consistent manifest. Fails if any manifest screen_date
+# lags its report file, so a drifted manifest is never published.
+python3 scripts/verify_manifest.py
+
 # Stage and commit
 git add reports/*.json
 
@@ -262,6 +266,38 @@ api('PATCH', '/git/refs/heads/gh-pages', {'sha': commit['sha'], 'force': True})
 print('Deployed to gh-pages!')
 "
 ```
+
+## Step 4.5: Merge Screening Reports Back to main
+
+**CRITICAL — prevents orphaned work and a stuck rotation.** Scheduled runs work
+on `claude/...` branches. If today's reports are never merged back to `main`,
+the next run starts from a stale `main`, re-screens the same oldest stocks, and
+the rotation never advances — exactly the "screener isn't progressing / has
+gaps" failure. Merge today's reports back (same safe pattern as the opportunity
+finder: `--no-ff`, abort on conflict, never `--force`).
+
+```bash
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+  git push -u origin "$CURRENT_BRANCH"
+
+  git checkout main
+  git pull origin main --ff-only
+
+  if git merge "$CURRENT_BRANCH" --no-ff -m "Merge $CURRENT_BRANCH: daily screening $(date +%Y-%m-%d)"; then
+    git push origin main
+    echo "Merged $CURRENT_BRANCH → main"
+  else
+    echo "WARN: merge to main had conflicts. Aborting merge; work is safe on $CURRENT_BRANCH."
+    git merge --abort
+  fi
+
+  git checkout "$CURRENT_BRANCH"
+fi
+```
+
+This makes Step 0's cross-branch report sync a safety net rather than the only
+way prior runs' reports reach the next run.
 
 ## Step 5: Report Results
 
