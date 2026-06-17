@@ -14,7 +14,6 @@ from jinja2 import Environment, FileSystemLoader
 from markupsafe import Markup
 from screener.docx_export import generate_docx
 
-
 REPORTS_DIR = Path("reports")
 OPPORTUNITIES_DIR = Path("opportunities")
 OUTPUT_DIR = Path("output")
@@ -75,8 +74,24 @@ def build_site() -> None:
         with open(reports_out / f"{ticker}.json", "w") as f:
             json.dump(report, f, indent=2, default=str)
 
-    # Build manifest for search
-    manifest = [
+    # Build manifest for search / the Dashboard. Always re-derived from the
+    # loaded report files so it can never drift from reports/*.json.
+    manifest = _build_manifest(reports)
+    with open(OUTPUT_DIR / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    print(f"[{datetime.now():%H:%M:%S}] Build complete — {len(reports)} reports")
+
+
+def _build_manifest(reports: list[dict]) -> list[dict]:
+    """Build the Dashboard manifest: an array of report stubs.
+
+    Each field is read straight from the loaded report, so the manifest is a
+    faithful index of reports/*.json — in particular ``screen_date`` is always
+    the report's own value, never a cached/stale one. The Dashboard renders its
+    whole stock list from this array.
+    """
+    return [
         {
             "ticker": r["ticker"],
             "name": r["name"],
@@ -87,10 +102,6 @@ def build_site() -> None:
         }
         for r in reports
     ]
-    with open(OUTPUT_DIR / "manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
-
-    print(f"[{datetime.now():%H:%M:%S}] Build complete — {len(reports)} reports")
 
 
 def _load_reports() -> list[dict]:
@@ -156,22 +167,14 @@ def _build_index(env: Environment, reports: list[dict]) -> None:
     reports_by_ticker = {r["ticker"]: r for r in reports}
 
     dividend_reports = [
-        reports_by_ticker[t]
-        for t in portfolios["dividend"]
-        if t in reports_by_ticker
+        reports_by_ticker[t] for t in portfolios["dividend"] if t in reports_by_ticker
     ]
-    dividend_reports.sort(
-        key=lambda r: r.get("overall_score", 0), reverse=True
-    )
+    dividend_reports.sort(key=lambda r: r.get("overall_score", 0), reverse=True)
 
     growth_reports = [
-        reports_by_ticker[t]
-        for t in portfolios["growth"]
-        if t in reports_by_ticker
+        reports_by_ticker[t] for t in portfolios["growth"] if t in reports_by_ticker
     ]
-    growth_reports.sort(
-        key=lambda r: r.get("overall_score", 0), reverse=True
-    )
+    growth_reports.sort(key=lambda r: r.get("overall_score", 0), reverse=True)
 
     def _avg_score(reps: list[dict]) -> float:
         scores = [r.get("overall_score", 0) for r in reps]

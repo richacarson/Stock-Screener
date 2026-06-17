@@ -108,6 +108,14 @@ If `scripts/deploy.py` fails (e.g., in a sandboxed environment), use the Git Dat
 
 ## Queue Management
 
-The queue at `data/screening_queue.csv` has columns `symbol` and `avg_daily_volume`, sorted by volume descending. To find the next unscreened batch, check which symbols in the queue don't have a file in `reports/`. Process them in order (highest volume first).
+The queue at `data/screening_queue.csv` has columns `symbol` and `avg_daily_volume`, sorted by volume descending. Use `scripts/select_batch.py` to pick the next batch — it handles both modes:
 
-Once all 2,202 stocks are screened, switch to REFRESH mode — re-screen the oldest reports (by `screen_date`) to keep data current.
+```bash
+python3 scripts/select_batch.py --count 50          # human-readable
+python3 scripts/select_batch.py --count 50 --json   # {"mode": ..., "tickers": [...]}
+```
+
+- **NEW** — symbols in the queue without a file in `reports/`, in volume order (most liquid first).
+- **REFRESH** — once all queued stocks are screened, the **full report set** ranked by oldest `screen_date` first.
+
+> REFRESH ranks **every** report, not just queue members. Seed/portfolio tickers that were screened before the queue was built (NVDA, TSM, AMD, QCOM, …) are never in `screening_queue.csv`; ranking only queue members would leave them stuck on stale dates forever. Ranking the full set keeps the entire universe cycling.

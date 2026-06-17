@@ -50,58 +50,35 @@ git diff --cached --quiet || git commit -m "Sync reports from prior scheduled sc
 
 ## Step 1: Determine What to Screen
 
-Run this Python script to find the next 50 stocks to screen:
+Batch selection lives in `scripts/select_batch.py` (tested + version-controlled)
+so the rotation logic stays correct. It returns one of two modes:
+
+- **NEW** — next unscreened stocks from `data/screening_queue.csv`, in volume order.
+- **REFRESH** — once the queue is exhausted, the **full report set** ranked by
+  oldest `screen_date` first. This includes seed/portfolio tickers that were
+  never in the queue (NVDA, TSM, AMD, QCOM, …), so the *entire* universe keeps
+  cycling instead of those names getting stuck.
+
+Run this to print the next 50 stocks (with inspire data) to screen:
 
 ```bash
 python3 -c "
-import csv, os, json
-from datetime import datetime
+import csv
+from scripts.select_batch import select_batch
 
-# Load queue (sorted by avg daily volume descending)
-with open('data/screening_queue.csv') as f:
-    queue = list(csv.DictReader(f))
-queue_tickers = {r['symbol'] for r in queue}
-queue_lookup = {r['symbol']: r for r in queue}
-
-# Find which tickers already have reports
-report_files = [f for f in os.listdir('reports') if f.endswith('.json')]
-done = {f.replace('.json','') for f in report_files}
-
-# Mode 1: Unscreened stocks remain
-remaining = [r for r in queue if r['symbol'] not in done]
-
-if remaining:
-    batch_tickers = [r['symbol'] for r in remaining[:50]]
-    mode = 'NEW'
-    print(f'MODE: Screening NEW stocks')
-    print(f'Total in queue: {len(queue)}')
-    print(f'Already screened: {len(done)}')
-    print(f'Remaining unscreened: {len(remaining)}')
-else:
-    # Mode 2: All screened — re-screen oldest reports
-    report_dates = []
-    for rf in report_files:
-        ticker = rf.replace('.json','')
-        if ticker not in queue_tickers:
-            continue
-        with open(f'reports/{rf}') as fh:
-            try:
-                data = json.load(fh)
-                sd = data.get('screen_date', '2000-01-01')
-                report_dates.append((ticker, sd))
-            except:
-                report_dates.append((ticker, '2000-01-01'))
-    report_dates.sort(key=lambda x: x[1])  # oldest first
-    batch_tickers = [t for t, _ in report_dates[:50]]
-    oldest_date = report_dates[0][1] if report_dates else 'N/A'
-    newest_in_batch = report_dates[min(99, len(report_dates)-1)][1] if report_dates else 'N/A'
-    mode = 'REFRESH'
-    print(f'MODE: Re-screening OLDEST reports (all {len(queue)} stocks already screened)')
-    print(f'Oldest report in batch: {oldest_date}')
-    print(f'Newest report in batch: {newest_in_batch}')
-
+mode, batch_tickers = select_batch(count=50)
+print(f'MODE: {mode}')
 print(f'This batch: {len(batch_tickers)} stocks')
 print()
+
+# Queue lookup for volume context (best-effort)
+queue_lookup = {}
+try:
+    with open('data/screening_queue.csv', newline='', encoding='utf-8-sig') as f:
+        for r in csv.DictReader(f):
+            queue_lookup[r['symbol']] = r
+except FileNotFoundError:
+    pass
 
 # Load inspire data
 with open('data/inspire_insight_scores.csv', encoding='utf-8-sig') as f:
@@ -200,6 +177,10 @@ Once all 10 agents have finished (or however many batches were needed for this r
 # the Dashboard will show stale dates even though report JSONs are updated.
 python3 main.py
 
+# Gate the deploy on a consistent manifest. Fails if any manifest screen_date
+# lags its report file, so a drifted manifest is never published.
+python3 scripts/verify_manifest.py
+
 # Stage and commit
 git add reports/*.json
 
@@ -286,6 +267,52 @@ print('Deployed to gh-pages!')
 "
 ```
 
+## Step 4.5: Merge Screening Reports Back to the Default Branch
+
+**CRITICAL — this is the bug that makes the screener re-screen the same ~50–100
+stocks every day.** Scheduled runs work on `claude/...` branches created from the
+repo's **default branch**. If today's reports are never merged back, the default
+branch stays frozen, the next run starts from that frozen tree, and Step 1 keeps
+selecting the *same* oldest cohort (e.g. GOOG/META) — re-screening them daily and
+never advancing the rotation. (It also makes the deploy overwrite gh-pages reports
+for tickers not screened this run, snapping their dates back to the frozen base.)
+
+Merge today's reports back into the **actual default branch** — detected
+dynamically, because this repo's default is NOT `main`. Same safe pattern as the
+opportunity finder: `--no-ff`, abort on conflict, never `--force`. A failed push
+is non-fatal (the site already deployed in Step 4); the rotation simply won't
+advance until the push to the default branch succeeds.
+
+```bash
+# Detect the repo's default branch (this repo's default is a claude/* branch, not main)
+DEFAULT_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+[ -z "$DEFAULT_BRANCH" ] && DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | awk '/HEAD branch/ {print $NF}')
+echo "Default branch: $DEFAULT_BRANCH"
+
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [[ -n "$DEFAULT_BRANCH" && "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]]; then
+  git push -u origin "$CURRENT_BRANCH"
+
+  git fetch origin "$DEFAULT_BRANCH"
+  git checkout "$DEFAULT_BRANCH"
+  git pull origin "$DEFAULT_BRANCH" --ff-only
+
+  if git merge "$CURRENT_BRANCH" --no-ff -m "Merge $CURRENT_BRANCH: daily screening $(date +%Y-%m-%d)"; then
+    git push origin "$DEFAULT_BRANCH" || echo "WARN: could not push to $DEFAULT_BRANCH — rotation will not advance until this succeeds."
+    echo "Consolidated screening reports into $DEFAULT_BRANCH"
+  else
+    echo "WARN: merge to $DEFAULT_BRANCH had conflicts. Aborting; work is safe on $CURRENT_BRANCH."
+    git merge --abort
+  fi
+
+  git checkout "$CURRENT_BRANCH"
+fi
+```
+
+This makes the default branch the single source of truth for the rotation, so
+Step 1 always selects from the genuinely-oldest reports. Step 0's cross-branch
+sync becomes a safety net rather than the only path for prior reports to survive.
+
 ## Step 5: Report Results
 
 After deploying, print a summary:
@@ -300,12 +327,11 @@ queue_tickers = {r['symbol'] for r in queue}
 done = {f.replace('.json','') for f in os.listdir('reports') if f.endswith('.json')}
 remaining = [r for r in queue if r['symbol'] not in done]
 
-# Find oldest report date
+# Find oldest report date across the FULL report set (not just queue members)
+# so the rotation's true oldest is reported, including seed/portfolio tickers.
 oldest_date = None
 for rf in os.listdir('reports'):
     if not rf.endswith('.json'): continue
-    t = rf.replace('.json','')
-    if t not in queue_tickers: continue
     try:
         with open(f'reports/{rf}') as fh:
             sd = json.load(fh).get('screen_date','')
