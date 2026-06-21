@@ -304,6 +304,26 @@ Do 3-5 web searches for current macro events:
 
 Look for **asymmetric** setups — second/third-order effects the market hasn't fully priced. Match catalysts ONLY to stocks that already have screener reports in `reports/`.
 
+### Backlog Inflection Pattern (NEW)
+
+For defense, aerospace, industrials, capital goods, semi equipment, and connector companies, check for backlog signals. File a **"Backlog Inflection"** opportunity when you find:
+
+- **TTM book-to-bill crossing above 1.2** from below 1.0 (inflection point)
+- **Record backlog disclosure** in a quarterly earnings release
+- **Major new contract win** appearing on defense.gov or in press releases
+- **Backlog acceleration** — 2+ consecutive quarters of rising book-to-bill
+
+Read the company's existing report in `reports/` and check the `backlog` field (if present) for prior data. Cross-reference with the earnings release or 10-Q.
+
+**Key rules from our backlog research:**
+- Use **funded backlog** not IDIQ contract ceilings
+- Use **TTM book-to-bill** not single quarters (too noisy)
+- Backlog ≠ profitability — always check margins and cash conversion alongside
+- A very high backlog-to-revenue ratio (>8x) can signal capacity constraints, not just strength
+- If management stops disclosing a specific book-to-bill number they used to report, that's bearish
+
+**Applicable tickers in our portfolio:** GD, LMT, CAT, TEL, LRCX, PCAR, KEYS, NXPI, ADI, SYK
+
 ---
 
 ## Step 5: Selection Criteria by Tier
@@ -370,7 +390,7 @@ If `stalking.json` does not exist yet, create it as `[]` on the first run that n
 {
   "id": "descriptive-kebab-slug",
   "title": "Short Descriptive Title",
-  "pattern": "Supply Chain|Supply Shock|Secular Trend|Regulatory|Cyclical",
+  "pattern": "Supply Chain|Supply Shock|Secular Trend|Regulatory|Cyclical|Backlog Inflection",
   "conviction": "High Conviction|On Our Radar",
   "status": "active",
   "date_identified": "YYYY-MM-DD",

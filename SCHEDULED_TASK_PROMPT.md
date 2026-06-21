@@ -134,7 +134,8 @@ You are generating IOWN Return on Intention stock analysis reports. Generate a `
    - `"{Company Name}" ESG controversy environmental social governance` — ESG issues, community impact (NOT inspire score)
 3. Score all three dimensions (Excellence, AI Resilience, Infinite Game) using research evidence
 4. Use the inspire score and attributions provided above for `faith_alignment` (do NOT guess or web search)
-5. Write `reports/{TICKER}.json` — match the exact JSON structure of existing reports in `reports/`. Read any existing report (e.g., `reports/AAPL.json`) for the schema.
+5. For defense, aerospace, industrials, capital goods, semi equipment, and connector companies: include a `backlog` object with total_backlog, funded_backlog, ttm_book_to_bill, backlog_trend, and signal (green/yellow/red). See CLAUDE.md for thresholds. Set to `null` for companies where backlog is not applicable.
+6. Write `reports/{TICKER}.json` — match the exact JSON structure of existing reports in `reports/`. Read any existing report (e.g., `reports/AAPL.json`) for the schema.
 
 #### SCORING RULES
 

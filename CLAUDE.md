@@ -112,6 +112,16 @@ Each `reports/{TICKER}.json` follows this structure:
   "thesis_continued": "...",
   "key_catalysts": ["...", "...", "..."],
   "key_risks": ["...", "...", "..."],
+  "backlog": {
+    "total_backlog": 194000000000,
+    "funded_backlog": 165000000000,
+    "funded_pct": 85,
+    "ttm_book_to_bill": 1.2,
+    "backlog_to_revenue_quarters": 4.2,
+    "backlog_trend": "accelerating|stable|decelerating",
+    "signal": "green|yellow|red",
+    "note": "Brief context on backlog composition or major contract wins"
+  },
   "sources": [
     "Company Q1 FY2026 Earnings Release, January 2026",
     "Yahoo Finance — TICKER key statistics, accessed March 2026",
@@ -121,6 +131,20 @@ Each `reports/{TICKER}.json` follows this structure:
 ```
 
 **Removed fields**: `risk_moat_erosion`, `social_arbitrage`, `income_quality` — these dimensions no longer exist. `ai_resilience` is now a top-level field.
+
+### Backlog / Book-to-Bill (optional field)
+Include the `backlog` object for stocks in **defense, aerospace, industrials, capital goods, semiconductor equipment, and connectors** — any business where order backlogs are a leading indicator of future revenue. Set to `null` for stocks where backlog is not applicable (consumer staples, financials, pharma, etc.).
+
+**Signal thresholds:**
+- **Green**: TTM book-to-bill > 1.2 OR record backlog
+- **Yellow**: TTM book-to-bill 1.0–1.2
+- **Red**: TTM book-to-bill < 1.0 for 2+ quarters
+
+**Important distinctions:**
+- Use **funded backlog** (binding commitments) not IDIQ contract ceilings
+- Always use **TTM book-to-bill**, not single-quarter (too noisy)
+- Backlog-to-revenue ratio measures visibility: >3x quarters = strong, <2x = low visibility
+- A very high backlog-to-revenue ratio (>8x) can signal capacity constraints or execution risk
 
 ### Source References
 Analysis text should include bracketed superscript numbers like `[1]`, `[2]` to cite specific sources. The `sources` array is 1-indexed — `[1]` refers to `sources[0]`. Include sources for all key claims: financial data, analyst quotes, management commentary, product announcements. The template renders these as styled superscripts with a "Resources" page at the end of the PDF.
