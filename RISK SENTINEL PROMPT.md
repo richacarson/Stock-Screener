@@ -95,16 +95,72 @@ Read `sentinel_notes.json` and honor any acknowledged/ignored items — do not r
 
 ---
 
-## Step 3: Gather per-holding data
+## Step 3: Load the per-holding data drop (with freshness check)
 
-Source `.env` and export the Finnhub key (`source .env && export FINNHUB_KEY` — the same key the data-drop workflow uses). For each ticker in the universe, pull:
+You do **not** call market-data APIs directly. The data-API secrets (`FINHUB_API`, `FMP_API`) live in GitHub Actions, not in this routine's environment — so the quantitative sweep runs inside the **Risk Data Drop** Action, which commits `public/risk-data-drop.json` to the Dashboard repo. You consume that file. (Same architecture as the Morning Brief consuming the FCI Data Drop.)
 
-- **Price + day move** — Alpaca snapshot (IEX feed) or Finnhub `/quote`. Flag any single-name move beyond ~±5% (AMBER) / ~±8% (RED) absent an obvious index-wide move.
-- **Earnings surprise** — Finnhub `/stock/earnings`. Flag a miss vs. estimate, or guidance suspension/cut (RED).
-- **Analyst recommendation drift** — Finnhub `/stock/recommendation`. Flag a fresh downgrade or a clear deterioration in the buy/hold/sell distribution vs. the prior period (AMBER, or RED if paired with a catalyst).
-- **Key fundamentals** — Finnhub `/stock/metric` only as needed to substantiate a flag (e.g., leverage spike).
+A scheduled pre-market run (6:17 AM CT) normally has the file fresh and waiting. But GitHub's scheduler is best-effort and can fire late or skip. So **verify freshness; don't assume it.**
 
-Batch politely; respect rate limits. If a call fails, record `"data":"unavailable"` for that field and move on — never block the whole run on one ticker.
+```bash
+# Dashboard is attached to this routine; the drop lives there.
+cd ../Dashboard
+git pull --quiet origin main || true
+
+python3 - <<'PY'
+import json, sys
+from datetime import datetime, timezone
+try:
+    d = json.load(open("public/risk-data-drop.json"))
+    gen = datetime.fromisoformat(d["generated_at"].replace("Z", "+00:00"))
+    age_min = (datetime.now(timezone.utc) - gen).total_seconds() / 60
+    priced = sum(1 for h in d.get("holdings", {}).values() if h.get("price") is not None)
+    fresh = age_min <= 180 and priced > 0   # within 3h and actually has data
+    print(f"drop age: {age_min:.0f} min | priced: {priced} | fresh: {fresh}")
+    sys.exit(0 if fresh else 1)
+except Exception as e:
+    print(f"drop missing/unreadable: {e}")
+    sys.exit(1)
+PY
+```
+
+**If that check fails (stale, missing, or empty), dispatch the Action yourself and wait for it:**
+
+```bash
+# Trigger the pre-warmed sweep on demand, then poll until it completes.
+gh workflow run "Risk Data Drop" --repo richacarson/Dashboard
+echo "Dispatched Risk Data Drop; waiting for completion…"
+for i in $(seq 1 20); do
+  sleep 30
+  STATUS=$(gh run list --repo richacarson/Dashboard --workflow "Risk Data Drop" \
+           --limit 1 --json status,conclusion -q '.[0].status + "/" + (.[0].conclusion // "")')
+  echo "  poll $i: $STATUS"
+  case "$STATUS" in
+    completed/success) break ;;
+    completed/*) echo "Action failed — proceed with degraded coverage, flag it"; break ;;
+  esac
+done
+git pull --quiet origin main || true
+```
+
+**Then load the drop and use it for the rest of the run:**
+
+```bash
+python3 - <<'PY'
+import json
+d = json.load(open("public/risk-data-drop.json"))
+print("as_of:", d["generated_at"], "| holdings:", len(d.get("holdings", {})),
+      "| errors:", len(d.get("errors", [])))
+PY
+```
+
+Each holding in `risk-data-drop.json` carries: `sleeve`, `price`, `pct_change`, `prev_close`, `quote_source`, `recommendation` (current + `prev_period` so you can compute drift), `earnings` (last actual vs estimate + surprise %), and best-effort `recent_grades` (analyst upgrade/downgrade actions). This is the raw quantitative layer.
+
+**What this gives you vs. what you still do yourself:**
+- The drop = the deterministic quant sweep. It catches the **silent decliner** — a name down hard on no news that web search would miss. Read `pct_change` for every holding, not just the ones in the headlines.
+- Your **built-in web search** (Step 4) remains the qualitative layer: the *why* behind a move, breaking downgrades, litigation, and the deal-watch status. No secret needed for that half.
+- If the drop's `errors` list is non-empty or `priced` is low, say so in the report — degraded coverage is itself a flag, never silently swallowed.
+
+> Note: if zero holdings are priced, the Action almost certainly hit a bad/empty key. Don't publish a falsely-calm "all green" read off an empty drop — raise a RED `data_integrity` flag instead and state that the sweep failed.
 
 ---
 
