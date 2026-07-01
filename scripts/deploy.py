@@ -57,6 +57,10 @@ def deploy():
     # Initialize git in temp dir and push to gh-pages
     os.chdir(tmp_dir)
     run("git init")
+    # Set a git identity so `git commit` works in clean CI environments
+    # (no global user.name/user.email there — locally it inherits yours).
+    run('git config user.email "github-actions[bot]@users.noreply.github.com"')
+    run('git config user.name "github-actions[bot]"')
     run("git config commit.gpgsign false")
     run("git checkout -b gh-pages")
     run("git add -A")
