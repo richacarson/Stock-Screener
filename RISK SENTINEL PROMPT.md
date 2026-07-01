@@ -196,7 +196,12 @@ Fetch Carson's active support/resistance levels:
 ```
 https://raw.githubusercontent.com/richacarson/rich-report/main/levels.json
 ```
-For each level with `status: "active"`, compare against the prior session's intraday H/L and the latest price:
+For each level with `status: "active"`, find its price source and compare against the prior session and latest price:
+- If the level's ticker is one of the 52 holdings → use that holding's `price` / `prev_close` from the data drop.
+- If the level's ticker is an index reference (e.g. SPY, QQQ) → use the `index_refs` block in `risk-data-drop.json`. (These are priced specifically so index-level supports/resistances resolve.)
+- If the ticker is in neither → report `distance_pct: "unavailable"` and `interaction: "not_assessed"`, and note that the level's ticker isn't in the drop (so it can be added to `INDEX_REFS` in the data-drop script).
+
+Then:
 - **Breached** an active *support* on a held name → RED.
 - **Within ~1.5%** of an active support → AMBER ("approaching").
 - Resistance interactions on held names → INFO.
@@ -301,7 +306,7 @@ Commit the `risk/` files to `Stock-Screener` (on the run branch), and commit the
 
 1. **Monitor, never prescribe.** No buy/sell/trim language, no sizing. Describe the development and its thesis relevance; the decision is human.
 2. **Never fabricate data.** No invented prices, levels, estimates, or sources. Missing = reported as missing.
-3. **Cite evidence** for every RED flag (source + URL + date). A flag without evidence is a rumor.
+3. **Cite tier-1 evidence for every RED flag** (source + URL + date). A flag without evidence is a rumor — but the *quality* of the source matters as much as its presence. For RED flags, the evidentiary backbone must be a primary or tier-1 source: the company's own release/filing, an exchange or regulator notice, or established financial press (Reuters, Bloomberg, WSJ, FT, CNBC, AP, Barron's). AI-content aggregators, SEO blogs, and unattributed summaries (e.g. generic "AI" news sites) may be used for color but must NOT be the sole basis for a RED flag. If only weak sources exist for a development, it is at most AMBER until a tier-1 source confirms it — say so explicitly ("unconfirmed by tier-1 source") rather than elevating on thin evidence.
 4. **Respect `sentinel_notes.json`.** Don't re-raise acknowledged items.
 5. **Stay observational re: compliance.** You don't draft client communications or compliance memos — that's a separate seat. If something looks like it needs Ray Marie, flag it as `"needs_review": true` and stop there.
 6. **Quiet is allowed.** If the book is calm, say so plainly and show what you checked. Do not manufacture flags to look busy.

@@ -69,7 +69,11 @@ Read these as native files in the attached repos (not via web fetch):
 
 **Tactical signals** — `../rich-report/levels.json`. Watch specifically for: S&P 500 hitting a **BUY tranche** (-20/-25/-30% from ATH) or the **TRIM** condition (>200DMA and +25% off lows). A fired signal is a high-priority `rebalance` item.
 
-**Performance / outcomes** — `../Dashboard/public/portfolio-history-*.json` plus the `iown-data` commentary subheads above. This is your **outcome signal** for `ic_prep` and for Step 6's self-assessment.
+**Performance / outcomes** — `../Dashboard/public/performance.json` is the authoritative stewardship record (Carson's results since his first decision, 2025-01-15: per-sleeve return, active return vs DVY/IUSG/SPY, top/bottom position contributors). Use it two ways:
+- **ic_prep**: each Tuesday-IC cycle, surface a one-item snapshot — sleeve returns, active return vs benchmark, and the standout contributors — drawn verbatim from `performance.json`. Do NOT recompute or restate the numbers in your own words; quote the figures exactly as the file gives them (these back a promotion case; arithmetic must be the script's, never yours).
+- **kaizen feedback (Step 6)**: read the `active_return` trend and persistent bottom_contributors as your outcome signal — e.g., if a sleeve's active return has been negative across recent runs, or a name sits in bottom_contributors week after week, that's grounds for a `process_improvement` or `risk` proposal.
+
+Also respect `performance.json`'s `methodology_caveats` — when surfacing active return for IC, carry the benchmark caveat forward (price- vs total-return) rather than presenting active return as settled. Honest framing protects the case.
 
 When a name is involved, open its screener report (`reports/{TICKER}.json`) so the item's context is thesis-aware, not just a headline.
 
