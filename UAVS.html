@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen UAVS — AgEagle Aerial Systems, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/UAVS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('UAVS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            UAVS
+            <span class="stock-name-full">AgEagle Aerial Systems, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-26</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 47</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">48</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Aerospace & Defense</span>
+        <span class="sep">&middot;</span><span>NYSE American</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">AgEagle Aerial Systems, Inc. (doing business as EagleNXT) designs and delivers autonomous uncrewed aerial systems (UAS) and sensors for commercial and government applications. Products include senseFly eBee fixed-wing drones (the #1 most-used conventional fixed-wing drone in the US per FAA data), MicaSense multispectral cameras, and Ground Control cloud-based operating platform. Serves agriculture, military/defense, public safety, surveying/mapping, and utilities industries. Founded in 2010, headquartered in Wichita, Kansas.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>59 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.ageagle.com" target="_blank" rel="noopener">www.ageagle.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): AgEagle transformed from an agriculture-focused drone company to a multi-vertical UAS platform serving military/defense, public safety, and commercial markets through strategic acquisitions of senseFly and MicaSense, building an integrated drone+sensor+software ecosystem <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. However, revenue has declined from $13.39M in FY2024 to $12.81M in FY2025, and Q1 2026 dropped sharply to $1.40M (-61.6% YoY), indicating the transformation has yet to translate into sustained growth. AI Deployment (1/2): CEO Bill Irby has publicly discussed integrating AI into drone operations and ISR capabilities, stating &#39;You have to augment the human mind with AI,&#39; with AI being incorporated into autonomous flight and data processing workflows <span class="source-ref">[3]</span>. These AI features are in development/early deployment rather than generating quantified revenue or cost savings. Market Share (1/2): The eBee is the #1 most-used conventional fixed-wing drone in the US per FAA registration data, giving AgEagle a meaningful niche position, but the company is tiny ($12.8M revenue, 59 employees) and not a dominant player in the broader UAS market against DJI, Skydio, and AeroVironment <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. Product Pipeline (1/2): Active R&amp;D in autonomous UAS for military/government applications with new sales leadership appointments to drive defense market penetration, but no specific named next-gen products with firm launch dates or contract visibility have been announced <span class="source-ref">[4]</span>. R&amp;D Intensity (1/1): The company maintains significant R&amp;D investment relative to its small revenue base for drone technology, sensor integration, and autonomous flight development.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): AgEagle&#39;s stated purpose centers on &#39;designing and delivering autonomous uncrewed aerial systems,&#39; which is functional and describes what the company does rather than articulating why it exists or a transformative vision for the world <span class="source-ref">[1]</span>. The mission does not differentiate meaningfully from dozens of other drone companies and lacks the aspirational quality that would inspire employees or stakeholders beyond day-to-day operations. Community Impact (0/2): No evidence of charitable giving, community programs, or foundation activity was identified for this micro-cap company with only 59 employees and persistent operating losses <span class="source-ref">[5]</span>. Financial constraints limit capacity for meaningful community investment. Employee Retention (0/2): With only 59 employees and significant recent leadership turnover — new CEO in 2024, new CFO in 2025, new VP of Sales in 2025, and new board members in 2024 — there is no evidence of organizational stability or cultural continuity <span class="source-ref">[4]</span>. Frequent executive changes at this scale suggest high instability. Insider Buying (0/2): No notable insider buying was identified; recent capital raises suggest dilution rather than insider conviction, which is the opposite signal from alignment of management and shareholder interests <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a growth stock with Forward P/E and Forward PEG excluded (unavailable for this unprofitable company). D/E of 23.6% is well below the 70% threshold, earning a full score on that metric, reflecting modest total debt of $983.7K against $4.2M equity after recent capital raises <span class="source-ref">[5]</span>. ROE is not meaningful — FY2025 net loss of -$13.1M against equity that swung from -$5.7M to +$4.2M during the year due to dilutive financing, scoring zero on this critical 2x-weighted metric. Revenue growth YoY of -4.3% (FY2025 $12.81M vs FY2024 $13.39M) is negative but above the -20% floor <span class="source-ref">[2]</span><span class="source-ref">[5]</span>. The 5-year revenue CAGR of 58.4% (from $1.29M in 2020 to $12.81M in 2025) scores full marks but is misleading, as it reflects growth from a near-zero base rather than sustained compounding. Profit margin of -102.3% (net loss -$13.1M on $12.81M revenue) scores zero <span class="source-ref">[2]</span>. Liquidity floor passes narrowly: 1,675,480 avg daily volume × $0.82 = $1.37M, just above the $1M threshold <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">AgEagle operates with predominantly finite game characteristics. Frequent leadership changes (new CEO 2024, new CFO 2025, new VP Sales 2025), a history that includes pump-and-dump allegations from Bonitas Research, and persistent operating losses force survival-mode decision-making that is inherently short-term. While CEO Irby has articulated a defense/public safety market vision, the company&#39;s financial fragility and leadership instability undermine the long-term orientation essential to infinite game play.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): AgEagle&#39;s general purpose around autonomous aerial solutions is functional but lacks a deeply articulated, durable Just Cause that would survive leadership transitions and inspire beyond the current strategy <span class="source-ref">[1]</span>. The company&#39;s history of strategic pivots and the 2021 pump-and-dump allegations from Bonitas Research, while involving different management, undermine the credibility of any stated long-term cause <span class="source-ref">[6]</span>. The current purpose reads more as a business strategy description than an enduring reason for existence.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Significant leadership turnover characterizes the organization — new CEO (2024), new CFO (2025), new VP of Sales (2025), and new board members (2024) represent near-complete executive team replacement within 18 months <span class="source-ref">[4]</span>. With only 59 employees, this level of leadership churn creates substantial organizational instability. No evidence of cultural continuity, employee engagement programs, or team-building initiatives was identified, and the frequent executive changes suggest the company has not established the psychological safety and consistency required for trusting teams.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence was found of AgEagle&#39;s leadership acknowledging competitors&#39; strengths or articulating what the company can learn from DJI, Skydio, AeroVironment, or other drone market leaders <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The competitive landscape is barely discussed in public materials, with the company positioning itself through its own niche capabilities (eBee platform, fixed-wing design) rather than engaging with what rivals do better as a source of self-improvement.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): AgEagle pivoted from an agriculture-only drone company to a multi-vertical platform serving defense, public safety, and commercial markets, and the acquisitions of senseFly and MicaSense meaningfully expanded product capabilities from aircraft-only to an integrated drone+sensor+software ecosystem <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. This represents genuine strategic evolution. However, the pivot appears driven more by market necessity and revenue decline in agriculture than by visionary leadership, and the core business model of selling drone hardware and sensors remains fundamentally unchanged.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Under CEO Bill Irby, AgEagle has invested in military/defense market expansion and product development despite ongoing operating losses, and the Q2 2025 turnaround to profitability ($5.78M net income with drone sales surging 92% to $2.9M) demonstrates some strategic risk-taking yielding results <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The decision to narrow market focus from broad commercial applications to defense and public safety shows willingness to make hard strategic choices. However, the reliance on dilutive equity financing and the overall financial trajectory limit the evidence of sacrificing short-term results for long-term capability building.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">AgEagle Aerial Systems offers speculative exposure to the growing defense and public safety drone market through its eBee platform — the #1 most-used conventional fixed-wing drone in the US per FAA data — and an integrated sensor+software ecosystem from the senseFly and MicaSense acquisitions <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The Q2 2025 quarter demonstrated the business model&#39;s potential, with drone sales surging 92% to $2.9M, gross margins reaching 55.7%, and net income turning positive at $5.78M <span class="source-ref">[1]</span>. CEO Irby&#39;s AI integration strategy for autonomous flight and ISR applications positions the company in a high-growth defense drone market benefiting from NDAA compliance requirements as the US military phases out Chinese-made drones <span class="source-ref">[3]</span>. At $0.82 per share with ~$48M market cap and $29.9M in cash (up 730% from capital raises), the stock offers high-risk optionality on defense contract wins and revenue inflection.</div>
+    <div class="thesis-text">The bear case is multi-dimensional and severe. FY2025 revenue of $12.81M declined 4.3% YoY, and Q1 2026 collapsed to $1.40M (-61.6% YoY), suggesting the Q2 2025 turnaround was an anomaly rather than a trend <span class="source-ref">[2]</span><span class="source-ref">[5]</span>. The company remains deeply unprofitable with a -102.3% profit margin on $12.81M FY2025 revenue and a cumulative net loss of -$13.1M for the year. ROE is not meaningful due to equity swinging from -$5.7M to +$4.2M via dilutive financing. The 2021 Bonitas Research pump-and-dump allegations, while involving prior management, created lasting reputational damage and reflect governance weaknesses in the company&#39;s history <span class="source-ref">[6]</span>. With only 59 employees and near-complete executive team replacement in 18 months (new CEO, CFO, VP Sales, board members), organizational stability is fragile <span class="source-ref">[4]</span>. The competitive landscape is brutal — DJI dominates commercial drones, Skydio has substantial AI-powered military drone funding, and AeroVironment&#39;s systems are battle-proven — leaving limited room for a micro-cap company to win meaningful defense contracts. Liquidity passes the $1M floor by only $373K, creating execution risk if volume declines.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Defense contract wins leveraging eBee platform&#39;s NDAA compliance advantage as the US military accelerates phaseout of Chinese-made drones, with CEO Irby&#39;s AI integration strategy for ISR applications differentiating against competitors <span class="source-ref">[3]</span></li>
+        
+        <li>Revenue inflection from the military/defense pivot — Q2 2025 demonstrated 92% drone sales growth and 55.7% gross margins, and if defense orders materialize consistently the margin structure could rapidly scale toward profitability <span class="source-ref">[1]</span></li>
+        
+        <li>Cash position of $29.9M (up 730% from capital raises) provides 2+ years of operating runway at current burn rate, reducing near-term dilution risk and enabling investment in product development and defense market penetration <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Q1 2026 revenue collapsed 61.6% YoY to $1.40M, suggesting the Q2 2025 turnaround ($5.78M net income) was lumpy contract-driven rather than a sustainable trend — FY2025 still posted -$13.1M net loss with -102.3% profit margin <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Near-complete executive team replacement in 18 months (new CEO, CFO, VP Sales, board members) with only 59 employees creates organizational instability, and the 2021 Bonitas Research pump-and-dump allegations reflect historical governance weaknesses <span class="source-ref">[4]</span><span class="source-ref">[6]</span></li>
+        
+        <li>Intense competition from well-funded rivals — DJI (commercial dominance), Skydio (AI-powered military drones with substantial venture backing), and AeroVironment (battle-proven defense systems) — makes it extremely difficult for a $48M market cap company to win meaningful defense contracts at scale <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): AgEagle&#39;s core business — designing and manufacturing physical drone platforms and multispectral sensors — is inherently protected from AI displacement, as autonomous aerial vehicles require hardware engineering, manufacturing expertise, and extensive regulatory compliance (FAA certification, ITAR, NDAA) that AI cannot substitute <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The defense and government customer base adds regulatory moats and clearance requirements that software-only AI competitors cannot easily penetrate. However, AI could enhance competitors&#39; drone software capabilities and reduce AgEagle&#39;s differentiation in data processing and flight planning, particularly as larger players like DJI and Skydio invest heavily in AI-powered autonomy. AI Opportunity (1/1): CEO Irby explicitly discusses AI integration into drone operations and ISR, stating the need to &#39;augment the human mind with AI,&#39; with AI-enhanced autonomous flight and data processing as a core product direction that could drive defense contract wins <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            47
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> AgEagle Aerial Systems Q2 FY2025 Earnings Release — StockTitan/GlobeNewswire, August 2025</li>
+        
+        <li><span class="src-num">2.</span> AgEagle Aerial Systems FY2025 Annual Results — SEC Form 8-K, March 2026</li>
+        
+        <li><span class="src-num">3.</span> Bill Irby, CEO of AgEagle — AI and the Future of UAVs and ISR Interview — CSCPG, 2025</li>
+        
+        <li><span class="src-num">4.</span> AgEagle Board and Leadership Appointments — GlobeNewswire, 2024-2025</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis / Yahoo Finance — UAVS Revenue History and Key Statistics, accessed June 2026</li>
+        
+        <li><span class="src-num">6.</span> Bonitas Research Short Report on AgEagle — SilverLaw, 2021</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DUK — Duke Energy Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DUK_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DUK')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DUK
+            <span class="stock-name-full">Duke Energy Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-01</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">62</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Utilities</span>
+        <span class="sep">&middot;</span><span>Utilities - Regulated Electric</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Duke Energy is one of America's largest energy holding companies, serving approximately 8.4 million electric customers and 1.7 million natural gas customers across six states in the Southeast and Midwest. Headquartered in Charlotte, North Carolina, the company operates through its regulated electric utilities (Duke Energy Carolinas, Duke Energy Progress, Duke Energy Florida, Duke Energy Indiana, Duke Energy Ohio, and Duke Energy Kentucky) and natural gas distribution subsidiaries. Duke Energy reported FY2025 revenue of $32.2B and is executing a $103 billion five-year capital plan focused on grid modernization, clean energy transition, and data center infrastructure.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>26,441 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.duke-energy.com" target="_blank" rel="noopener">www.duke-energy.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Duke Energy has modernized grid operations with self-healing technology and AI-ready grid infrastructure across its six-state service territory, but these are incremental improvements to existing utility operations rather than transformative new products or business models <span class="source-ref">[1]</span>. The company has deployed over 1,500 MW of owned renewables and announced partnerships to serve hyperscale data center campuses, yet these moves are reactive to industry trends and regulatory mandates rather than first-mover innovations. AI Deployment (1/2): Duke deploys AI and machine learning for grid management, outage prediction, and vegetation management optimization, and CEO Harry Sideris has publicly positioned the company as &#39;AI-ready&#39; for the data center revolution <span class="source-ref">[3]</span>. However, no specific revenue generation or quantified cost savings from AI deployment have been disclosed — these remain internal operational tools, not monetized AI products. Market Share (2/2): Duke Energy is the nation&#39;s largest electric utility by customer count, serving 8.4 million electric customers across the Carolinas, Florida, Indiana, Ohio, and Kentucky <span class="source-ref">[2]</span>. The company&#39;s regulated monopoly positions in these territories provide durable, government-sanctioned market leadership with minimal competitive displacement risk. Product Pipeline (1/2): The $103 billion five-year capital plan through 2029 represents one of the largest capital deployment programs in the U.S. utility sector, targeting grid hardening, renewable generation, battery storage, and data center interconnection <span class="source-ref">[1]</span>. While the scale is impressive, these are capital investments in the existing regulated utility model — not new product categories or business model innovations. R&amp;D Intensity (0/1): As a regulated utility, Duke Energy&#39;s R&amp;D spending is minimal relative to its $32.2B revenue base. Innovation spending flows through the capital plan rather than a formal R&amp;D budget.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Duke Energy&#39;s stated purpose centers on &#39;powering the lives of our customers and the vitality of our communities&#39; and advancing a clean energy transition <span class="source-ref">[3]</span>. This is a clear, functional mission that identifies what the company does and for whom, but it is not distinctive — virtually every major utility uses similar language about reliable energy delivery and sustainability. The purpose does not articulate a transformative vision that would differentiate Duke Energy from peers like Southern Company or NextEra Energy. Community Impact (1/2): Duke Energy Foundation has invested hundreds of millions in community programs across its service territory, supporting workforce development, environmental stewardship, and disaster resilience <span class="source-ref">[2]</span>. However, the company&#39;s environmental record is significantly tarnished by the 2014 Dan River coal ash spill — one of the worst environmental disasters in North Carolina history — which resulted in $102 million in federal fines and ongoing remediation costs <span class="source-ref">[4]</span>. This catastrophic failure and subsequent regulatory battles undercut the community impact narrative despite genuine philanthropic investment. Employee Retention (1/2): Duke Energy maintains a 3.9/5 Glassdoor rating with approximately 72% of employees recommending the company to a friend. Employees cite a family-friendly culture, strong benefits, and job stability as positives <span class="source-ref">[6]</span>. However, recurring feedback notes a disconnect between frontline workers and upper management, and some employees call for &#39;major cultural change&#39; in how corporate decisions filter down to field operations. Insider Buying (0/2): No evidence of notable net insider buying by CEO Harry Sideris or other senior executives was identified in the past 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Duke Energy delivered strong Q1 2026 results with revenue of $9.18B (up 11.3% YoY) and adjusted EPS of $1.93, beating the consensus estimate of $1.80 <span class="source-ref">[1]</span>. Forward P/E of 17.65x is well within the 20x target for dividend stocks, and 5-year revenue CAGR of 6.1% reflects accelerating growth driven by electrification and data center demand. The stock&#39;s dividend profile is anchored by 21 consecutive years of dividend growth and a 3.24% yield with a manageable 67.2% payout ratio <span class="source-ref">[6]</span>. However, D/E of 161% is significantly above the 70% target, reflecting the capital-intensive nature of utility infrastructure investment — though this is typical for the sector. ROE of 9.66% falls short of the 15% target, a structural characteristic of heavily regulated utilities with large asset bases and capped returns. Profit margin of 15.71% is below the 20% target but reasonable for a regulated utility. The weakest metric is dividend growth 5-year CAGR of just 1.99%, well below the 6% target, indicating modest annual dividend increases despite the long growth streak.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Duke Energy&#39;s 100+ year operating history and massive infrastructure investments suggest a company built for the long term, but closer examination reveals a predominantly finite-game orientation. The company&#39;s retreat from ESG and clean energy commitments under political pressure, its lobbying against renewable energy policies while publicly championing sustainability, and its regulated monopoly mindset that prioritizes defending territorial control over genuine competitive learning all point to a company that plays to preserve its current position rather than to advance a cause worth playing for indefinitely.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Duke Energy&#39;s stated purpose of powering communities and advancing clean energy transition is undermined by actions that suggest the cause bends to external pressure rather than driving decisions. In 2023, Duke Energy quietly removed ESG language from corporate communications and pulled back from diversity and environmental commitments amid political backlash — a pattern documented across its public filings and executive communications <span class="source-ref">[4]</span>. A company with a genuine just cause does not abandon its language when the political winds shift. The $103B capital plan is impressive in scale but is primarily driven by regulatory mandates and economic opportunity (data center demand, grid reliability requirements) rather than a transcendent purpose <span class="source-ref">[1]</span>. Duke&#39;s clean energy commitments have been repeatedly delayed or scaled back when they conflicted with near-term earnings expectations or political considerations.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Duke Energy&#39;s 26,441-person workforce operates in a stable utility culture with strong benefits and job security — hallmarks of the regulated utility employment model. The 3.9/5 Glassdoor rating and 72% recommendation rate suggest adequate employee satisfaction <span class="source-ref">[6]</span>. However, employee reviews consistently cite a disconnect between corporate leadership in Charlotte and field operations across six states, with some calling for &#39;major cultural change&#39; in how decisions flow from executives to frontline workers. The hierarchical, compliance-driven culture typical of regulated utilities does not naturally foster the psychological safety and vulnerability-based trust that characterize exceptional trusting teams.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Duke Energy operates in regulated territories with minimal direct competition by design — state utility commissions grant exclusive service rights within defined geographies <span class="source-ref">[2]</span>. While NextEra Energy, Southern Company, and other utilities operate as industry peers, Duke&#39;s competitive posture tends toward defending its regulated monopoly positions through regulatory engagement and political influence rather than learning from rivals to improve. The company&#39;s lobbying efforts to limit PURPA qualifying facility rates and its support for Florida&#39;s anti-solar amendment suggest a &#39;keep competitors out&#39; mentality rather than a &#39;learn from competitors&#39; orientation <span class="source-ref">[5]</span>. This is structurally difficult to overcome in a regulated monopoly business model.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Duke Energy is executing a significant transition from fossil fuels toward renewables, battery storage, and data center infrastructure, with the $103B five-year capital plan representing one of the largest energy transition investments in the U.S. utility sector <span class="source-ref">[1]</span>. The company has retired coal plants, invested in solar and wind generation, and repositioned itself as a beneficiary of AI-driven electricity demand. However, this transition is driven primarily by economics (renewables are now cheaper than coal), regulation (state clean energy mandates), and customer demand (data center operators requiring clean energy) rather than a proactive company-specific strategic pivot. Every major regulated utility is making similar moves at similar timescales — Duke is evolving with the industry rather than leading a strategic reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Duke Energy&#39;s $103B five-year capital plan represents a significant long-term commitment to grid transformation and clean energy, requiring management to accept higher near-term capital costs and regulatory complexity for decades-long infrastructure returns <span class="source-ref">[1]</span>. CEO Harry Sideris has been vocal about positioning Duke for the AI revolution and data center demand wave <span class="source-ref">[3]</span>. However, the courage narrative is substantially undercut by Duke&#39;s retreat from ESG commitments under political pressure — removing diversity and sustainability language from communications when it became politically inconvenient <span class="source-ref">[4]</span> — and by the company&#39;s lobbying against renewable energy policies that it publicly claims to support <span class="source-ref">[5]</span>. Genuine courage to lead requires consistency between public positioning and behind-the-scenes advocacy, and Duke&#39;s record shows a gap between the two.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Duke Energy at 17.65x forward earnings with a 3.24% dividend yield and 21 consecutive years of dividend growth offers a compelling regulated utility position anchored by structural tailwinds from the AI revolution <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. The company&#39;s Q1 2026 results — revenue of $9.18B (up 11.3% YoY) and adjusted EPS of $1.93 (beating estimates by $0.13) — demonstrate accelerating growth driven by data center demand, electrification, and grid modernization investments <span class="source-ref">[1]</span>. As the nation&#39;s largest electric utility serving 8.4 million customers, Duke&#39;s regulated monopoly positions across six states provide durable, recession-resistant cash flows with government-sanctioned returns on its $103B capital deployment program <span class="source-ref">[2]</span>. The AI resilience profile is exceptional — Duke is not merely insulated from AI disruption but is a direct infrastructure beneficiary, as hyperscale data centers require massive baseload electricity that flows directly to Duke&#39;s revenue and rate base <span class="source-ref">[3]</span>. FY2026 EPS guidance of $6.55-$6.80 implies continued earnings acceleration.</div>
+    <div class="thesis-text">The bear case centers on Duke Energy&#39;s capital-intensive balance sheet and modest shareholder returns relative to peers. D/E of 161% reflects the structural reality of utility infrastructure investment but limits financial flexibility during rising interest rate environments — every 100 basis points of higher borrowing costs compresses margins on the $103B capital plan <span class="source-ref">[2]</span>. ROE of 9.66% is below the 15% target and reflects the capped-return nature of regulated utilities, meaning Duke must continuously deploy massive capital just to grow earnings at mid-single-digit rates. Dividend growth of just 1.99% CAGR over five years is well below inflation, eroding real income for dividend investors despite the 21-year growth streak <span class="source-ref">[6]</span>. The company&#39;s environmental track record — including the 2014 Dan River coal ash spill ($102M in federal fines) and ongoing remediation liabilities — creates regulatory and litigation tail risk <span class="source-ref">[4]</span>. Duke&#39;s retreat from ESG commitments under political pressure and lobbying against renewable policies it publicly supports raise governance concerns about management credibility and long-term strategic consistency <span class="source-ref">[4]</span><span class="source-ref">[5]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI-driven data center demand accelerating electricity consumption across Duke&#39;s six-state service territory, with CEO Sideris citing hyperscale interconnection requests as a primary growth driver supporting the $103B capital plan <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Q1 2026 earnings momentum — revenue up 11.3% YoY to $9.18B and adjusted EPS of $1.93 beating estimates by $0.13 — positions Duke for potential upward EPS guidance revision if data center demand continues accelerating <span class="source-ref">[1]</span></li>
+        
+        <li>Constructive regulatory outcomes across the Carolinas, Florida, and Indiana on rate case filings that would approve recovery of grid modernization and clean energy investments, expanding the rate base and earnings power <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>D/E of 161% and a $103B capital plan create significant interest rate sensitivity — rising borrowing costs compress margins on new capital deployment and could force management to choose between dividend growth and balance sheet repair <span class="source-ref">[2]</span><span class="source-ref">[6]</span></li>
+        
+        <li>Environmental liabilities from the 2014 Dan River coal ash spill and ongoing remediation across legacy coal ash sites represent unquantified tail risk, with potential for additional regulatory penalties or litigation costs <span class="source-ref">[4]</span></li>
+        
+        <li>Regulatory disallowance risk on the massive capital plan — if state utility commissions deny recovery of portions of the $103B in planned investments, Duke would absorb costs that cannot be passed to ratepayers, directly reducing earnings and ROE <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): Duke Energy operates physical electric and natural gas infrastructure serving 8.4 million electric customers and 1.7 million gas customers across six states <span class="source-ref">[2]</span>. AI cannot replace power lines, substations, transformers, natural gas pipelines, or the physical grid operations that constitute Duke&#39;s core business. The company&#39;s regulated utility status provides additional structural protection — state utility commissions grant monopoly service territories with guaranteed returns on prudently invested capital, creating a regulatory moat that is entirely independent of AI disruption dynamics. Unlike software, media, or professional services companies where AI can automate core value creation, Duke&#39;s value is embedded in physical atoms: copper wire, steel towers, concrete substations, and the regulatory right to serve specific geographies. AI is actually a massive demand driver for Duke Energy — hyperscale data centers require enormous amounts of reliable baseload electricity, directly increasing Duke&#39;s revenue opportunity and justifying expanded capital deployment <span class="source-ref">[3]</span>. CEO Harry Sideris has positioned Duke as a primary beneficiary of the AI revolution, citing data center interconnection requests across the Carolinas and Florida as a key growth catalyst <span class="source-ref">[3]</span>. AI Opportunity (1/1): AI-driven data center demand is directly boosting Duke Energy&#39;s growth trajectory. Q1 2026 results cited accelerating data center demand as a key driver of the 11.3% revenue increase, and the company&#39;s updated five-year capital plan explicitly allocates billions for data center interconnection and grid capacity expansion to serve AI infrastructure <span class="source-ref">[1]</span>. Duke Energy is not merely resilient to AI — it is a direct infrastructure beneficiary of the AI buildout.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Duke Energy Q1 2026 Earnings Release and Supplemental Slides, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Duke Energy FY2025 10-K and Earnings Release, February 2026</li>
+        
+        <li><span class="src-num">3.</span> Duke Energy Illumination — CEO Harry Sideris on AI Revolution and Grid Readiness, 2025</li>
+        
+        <li><span class="src-num">4.</span> The Assembly NC — Duke Energy Once Outspoken on Diversity and Environment Now Whispers, 2024</li>
+        
+        <li><span class="src-num">5.</span> Energy and Policy Institute — Duke Climate Policy Advocacy Disclosures, 2023</li>
+        
+        <li><span class="src-num">6.</span> Yahoo Finance — DUK Key Statistics and Financial Data, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

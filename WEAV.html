@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen WEAV — Weave Communications, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/WEAV_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('WEAV')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            WEAV
+            <span class="stock-name-full">Weave Communications, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-04-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 54</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">53</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Health Information Services</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Weave Communications, Inc. operates an AI-powered patient communications, engagement, and payments platform for small and medium-sized healthcare businesses. The company offers AI receptionists, unified phone systems, text messaging, review management, online scheduling, digital forms, insurance verification, payment processing, and practice analytics for dental, optometry, veterinary, and medical practices. Founded in 2008 and headquartered in Lehi, Utah.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>904 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.getweave.com" target="_blank" rel="noopener">www.getweave.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Weave has successfully evolved from a basic phone system (founded as Recall Solutions in 2008) into a comprehensive AI-powered healthcare communications and payments platform, expanding from dental-only to multi-specialty healthcare including optometry, veterinary, and medical practices <span class="source-ref">[1]</span>. The addition of payments processing, which is growing at more than 2x total revenue, represents a meaningful business model expansion. AI Deployment (2/2): Weave has made AI the centerpiece of its growth strategy — the TrueLark acquisition brings agentic AI receptionist capabilities, and the company has deployed AI-powered SMS response assistants, review respond assistants, email assistants, and Call Intelligence analytics that are actively shipping to customers <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Management explicitly acknowledged AI revenue will be back-end loaded into 2026 with omnichannel AI Receptionist and expanded autonomous features ramping. Market Share (1/2): Weave serves a meaningful niche in SMB healthcare communications but competes against larger players (Dentrix, RevenueWell, Solutionreach) and emerging AI-native competitors. The company&#39;s expansion from dental into multi-specialty medical, including dental service organizations and vision/veterinary groups via Weave Enterprise, positions it for share gains <span class="source-ref">[1]</span>. Product Pipeline (1/2): The TrueLark AI receptionist acquisition and omnichannel AI Receptionist product have specific 2026 revenue visibility, though exact launch timelines for full autonomous capabilities are not precisely defined <span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): As a SaaS platform company, Weave invests significantly in technology development relative to revenue, with continuous platform feature releases and the TrueLark AI acquisition reflecting above-average innovation commitment.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Weave&#39;s stated purpose is to help healthcare practices create better patient experiences by simplifying communications and payments. This is clear and identifies a meaningful problem — reducing administrative burden for small healthcare practices — but it is fairly standard for a healthcare SaaS company and does not articulate a transformative future vision. Community Impact (0/2): No evidence of significant charitable programs, community investment, or philanthropic initiatives beyond standard corporate practices. As a small-cap SaaS company with 904 employees and negative GAAP profitability, community giving is not a strategic priority. Employee Retention (1/2): Weave has been certified as a Great Place to Work for six consecutive years in the US and for the first time in India <span class="source-ref">[2]</span>. The executive team is rated &#39;A+&#39; on Comparably, ranking in the top 5% of similar-size companies. Glassdoor rating is 3.6/5 based on 551 reviews, with positive comments about culture and leadership communication but some concerns about sales leadership experience. Insider Buying (1/2): CEO Brett White was appointed in August 2022 and has significant equity-based compensation aligning his interests with shareholders. No notable net insider buying events were identified, but the 3.4-year CEO tenure suggests reasonable stability for a growth-stage company.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Weave&#39;s infrastructure reflects a high-growth, pre-profitability SaaS company transitioning toward positive operating income. D/E of 63.3% is conservative and well below the 70% target <span class="source-ref">[4]</span>. ROE of -37.6% is negative, reflecting GAAP net losses of -$28M on $239M revenue, though Q4 2025 achieved positive operating income of $2.3M — suggesting approaching profitability <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Revenue growth of 17% YoY exceeded the 10% target, with FY2026 guidance of $273-$276M implying continued 14-16% growth <span class="source-ref">[1]</span>. Estimated 5-year revenue CAGR of ~24% is strong. Forward P/E of 25.7x on forward EPS of $0.21 reflects early-stage profitability with significant earnings improvement expected. Profit margin of -11.7% is negative but improving, with Q4 2025 gross margins reaching a record 73.3% <span class="source-ref">[1]</span>. Free cash flow turned positive at $45M, a significant milestone for a company still GAAP unprofitable <span class="source-ref">[4]</span>. Liquidity floor cleared: 1.9M avg volume × $5.33 = $10.3M daily <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Weave demonstrates mixed infinite game characteristics. The company has shown meaningful existential flexibility by transforming from a simple phone system into a comprehensive AI-powered healthcare platform, and CEO Brett White has built a strong team culture (six consecutive Great Place to Work certifications). However, GAAP unprofitability, aggressive AI acquisition strategy, and competitive pressure from larger players suggest the company is playing to survive and grow rather than advancing a clearly articulated long-term cause.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Weave&#39;s purpose — simplifying healthcare practice communications to improve patient experiences — is genuine and addresses a real pain point for SMB healthcare providers burdened by fragmented administrative tools. However, it reads as a business problem statement rather than a Just Cause in Sinek&#39;s framework — there is no articulated vision of a future state so compelling that employees would sacrifice to advance it <span class="source-ref">[1]</span>. The company&#39;s strategic decisions appear driven by market opportunity and competitive positioning rather than a deeper purpose. Score: 1 weighted point.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Weave demonstrates strong organizational trust. Six consecutive Great Place to Work certifications in the US and first-time certification in India reflect genuine cultural strength <span class="source-ref">[2]</span>. Executive team rated &#39;A+&#39; on Comparably (top 5% of similar-size companies). Glassdoor rating of 3.6/5 across 551 reviews shows employees citing strong culture and clear leadership communication. CEO Brett White&#39;s 3.4-year tenure has brought stability after earlier leadership turbulence. For a 904-employee company, maintaining cultural coherence through a CEO transition and the pressure of public market growth expectations is notable. Score: 2 weighted points.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Weave competes against Dentrix, RevenueWell, Solutionreach, and emerging AI competitors. The company&#39;s competitive language focuses on feature differentiation and market positioning rather than learning from rivals&#39; strengths. The TrueLark acquisition was driven by competitive necessity (needing AI capabilities to stay relevant) rather than an infinite mindset of using competition to improve <span class="source-ref">[2]</span>. Score: 0 weighted points.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Weave has meaningfully evolved its business model — from Recall Solutions (a basic recall/reminder service) to a comprehensive multi-product healthcare communications platform with AI receptionist, payments, scheduling, reviews, and analytics <span class="source-ref">[1]</span>. The TrueLark acquisition represents a bet on AI-powered front-desk automation that could transform the company&#39;s core value proposition. However, these are evolutionary product expansions rather than a true existential pivot — the company has always served SMB healthcare practices. Score: 1 weighted point.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">CEO Brett White has made some courageous bets — the TrueLark AI acquisition while still GAAP unprofitable shows willingness to invest for long-term capability over short-term profitability <span class="source-ref">[2]</span>. Expanding from dental-only to multi-specialty healthcare and launching Weave Enterprise for multi-location practices broadens the addressable market at the cost of near-term complexity. The decision to guide for $8-$12M non-GAAP operating income in 2026 while acknowledging AI revenue is back-end loaded reflects some patience over short-term earnings optimization <span class="source-ref">[1]</span>. Score: 1 weighted point.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Weave Communications is an AI-powered healthcare communications platform executing a compelling growth trajectory — $239M FY2025 revenue grew 17% YoY with Q4 gross margins hitting a record 73.3% and operating income turning positive at $2.3M <span class="source-ref">[1]</span>. FY2026 guidance of $273-$276M (14-16% growth) with $8-$12M non-GAAP operating income represents a profitability inflection point for this six-time Great Place to Work <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The TrueLark AI receptionist acquisition accelerates Weave&#39;s transition to autonomous front-office automation, with AI revenue expected to ramp in H2 2026 via the omnichannel AI Receptionist product <span class="source-ref">[2]</span>. Payments processing growing at 2x total revenue provides a high-margin expansion vector. At $5.33 per share and $419M market cap (~1.5x FY2026 revenue), Weave trades at a significant discount to healthcare SaaS peers, pricing in execution risk while offering asymmetric upside if AI product adoption accelerates and profitability improves <span class="source-ref">[4]</span>. D/E of 63% and $45M positive free cash flow provide financial stability.</div>
+    <div class="thesis-text">The bear case centers on execution risk and profitability uncertainty. Weave remains GAAP unprofitable with -11.7% net margins and -37.6% ROE, reflecting a business model that has not yet proven sustainable unit economics at scale <span class="source-ref">[4]</span>. The TrueLark acquisition introduces integration risk — merging an AI startup into Weave&#39;s existing platform requires seamless technical alignment, and management acknowledged AI revenue contribution is back-end loaded into 2026, meaning near-term expectations may disappoint <span class="source-ref">[2]</span>. Forward P/E of 25.7x on thin forward EPS of $0.21 means any profitability setback would cause significant multiple compression. Competition from larger players (Dentrix/Henry Schein, Patterson Dental) and AI-native entrants could compress Weave&#39;s pricing power in the SMB healthcare segment. At only 904 employees and $419M market cap, Weave lacks the scale and resources to compete with well-funded competitors if AI commoditizes healthcare communications tools. Revenue growth is decelerating from 17% to guided 14-16%, and the path from $8-$12M non-GAAP operating income to sustainable GAAP profitability remains uncertain <span class="source-ref">[1]</span><span class="source-ref">[4]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>FY2026 profitability inflection with $273-$276M revenue guidance and $8-$12M non-GAAP operating income, following Q4 2025 record 73.3% gross margins and first positive operating income quarter <span class="source-ref">[1]</span></li>
+        
+        <li>TrueLark AI receptionist acquisition ramping omnichannel AI Receptionist product in H2 2026, potentially accelerating revenue per customer and competitive differentiation <span class="source-ref">[2]</span></li>
+        
+        <li>Payments processing growing at 2x total revenue providing high-margin expansion, combined with Weave Enterprise multi-location product opening dental service organizations and medical groups as customers <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>GAAP unprofitable with -11.7% net margins and -37.6% ROE — path to sustainable profitability remains unproven despite approaching non-GAAP breakeven <span class="source-ref">[4]</span></li>
+        
+        <li>TrueLark integration risk with AI revenue back-end loaded into 2026 — execution failure could delay revenue synergies while competitors advance with AI-native solutions <span class="source-ref">[2]</span></li>
+        
+        <li>Small scale (904 employees, $419M market cap) competing against larger players and AI-native entrants that could commoditize healthcare communications at lower cost <span class="source-ref">[2]</span><span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (4/9): Weave&#39;s core business — healthcare practice communications and engagement software — faces meaningful AI disruption risk from both directions. On one hand, AI-native competitors can build healthcare communication tools (AI receptionists, automated scheduling, review management) without Weave&#39;s legacy platform overhead. Google, Microsoft, and vertical SaaS competitors could deploy AI-powered communications solutions that replicate Weave&#39;s functionality at lower cost. Weave&#39;s own acquisition of TrueLark acknowledges that AI front-desk automation is the future, but execution risk is high — integration failures could delay revenue synergies while competitors advance <span class="source-ref">[2]</span>. On the other hand, Weave&#39;s embedded position in healthcare practice workflows, payment processing integration, and multi-product platform create switching costs that provide some protection. AI Opportunity (1/1): Weave generates meaningful AI-related revenue through its AI receptionist, SMS response assistant, review respond assistant, email assistant, and Call Intelligence products, with AI revenue expected to accelerate in H2 2026 as the omnichannel AI Receptionist ramps <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            54
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Weave Communications Q4 and FY2025 Earnings — $239M revenue, 17% YoY growth, record 73.3% gross margins, $2.3M operating income in Q4, FY2026 guidance $273-$276M revenue / $8-$12M non-GAAP operating income; Investors.getweave.com, TipRanks, Yahoo Finance, February 2026</li>
+        
+        <li><span class="src-num">2.</span> Weave Communications AI Strategy and Culture — TrueLark AI receptionist acquisition (May 2025), omnichannel AI Receptionist product, CEO Brett White, Great Place to Work (6 years), Comparably A+ executive team rating, Glassdoor 3.6/5 (551 reviews); BusinessWire, Glassdoor, Comparably, AInvest, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Weave Communications ESG Profile — Sustainalytics average ESG risk management rating, no specific controversies identified; Sustainalytics, Sustainable Platform, 2025</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance / yfinance data for WEAV (Weave Communications, Inc.), retrieved April 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

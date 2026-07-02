@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen ECX — ECARX Holdings, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/ECX_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('ECX')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            ECX
+            <span class="stock-name-full">ECARX Holdings, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-28</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 53</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Auto Parts</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>China</span>
+    </div>
+    
+    <div class="profile-desc">ECARX Holdings, Inc. is a global mobility technology company that develops and sells automotive computing platforms, system-on-chip (SoC) core modules, intelligent cockpit and driving solutions, and software stacks. Founded in 2017 by Geely founder Li Shufu, ECARX products have been integrated into more than 11 million vehicles worldwide. The company listed on NASDAQ in 2022 via SPAC merger and is headquartered in Hangzhou, China, with R&D and operations across Europe, Asia, and the Americas.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,800 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.ecarxgroup.com" target="_blank" rel="noopener">www.ecarxgroup.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): ECARX has successfully pivoted from a Geely-captive supplier to a global automotive computing platform company, winning non-Geely OEM contracts and expanding into autonomous driving with the May Mobility partnership announced in May 2026 <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Shipments of high-end Pikes and Antora solutions increased approximately 73% YoY in Q1 2026, demonstrating successful product diversification <span class="source-ref">[3]</span>. However, the company remains heavily dependent on Geely ecosystem revenue. AI Deployment (2/2): ECARX has shipped AI-powered products with measurable results — AutoGPT in-vehicle AI system upgraded with DeepSeek-R1 model for improved local processing, and integration of GigaAI DriveDreamer World Model for autonomous driving simulation <span class="source-ref">[2]</span>. R&amp;D costs were reduced 32% YoY through internal AI deployment across the business, demonstrating quantified AI-driven efficiency gains <span class="source-ref">[3]</span>. Market Share (1/2): ECARX is a meaningful player in automotive computing platforms with products in over 11 million vehicles, but is not a category leader — competing against Qualcomm, NVIDIA, and Mobileye in the broader automotive computing market <span class="source-ref">[1]</span>. Product Pipeline (1/2): May Mobility autonomous fleet partnership targets delivery of up to thousands of autonomy-enabled vehicles with 50% cost efficiency and global fleet scaling by 2028 <span class="source-ref">[2]</span>. Acquisition of Flyme Software business for end-to-end OS capabilities adds pipeline visibility. R&amp;D Intensity (0/1): R&amp;D spending declined 32% YoY to US$23.5M in Q1 2026, reflecting cost optimization rather than increased R&amp;D intensity <span class="source-ref">[3]</span>. While strategic, this is below industry average intensity for an automotive technology company.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): ECARX articulates its mission as &#34;building the vehicle mind at the heart of smart mobility&#34; and aims to &#34;redefine the driving experience by making it safer and more enjoyable for everyone&#34; <span class="source-ref">[4]</span>. The mission is clear and identifies what the company does and for whom, but does not articulate a deeply distinctive purpose beyond the obvious — it is similar to what many automotive technology companies would say. Community Impact (1/2): ECARX demonstrates some community engagement through its global expansion creating jobs across multiple regions, and the company cites values of sustainability and positive societal impact, but no specific charitable programs, foundation work, or quantified community investment figures were identified <span class="source-ref">[4]</span>. Employee Retention (1/2): ECARX has grown to approximately 1,800 employees across 13 global locations with stable leadership under founder-CEO Ziyu Shen since founding in 2017, suggesting adequate retention <span class="source-ref">[4]</span>. However, no specific tenure or turnover data is publicly available. Insider Buying (1/2): Geely Holding invested US$45.6M through a private placement of 27.3M shares at US$1.67/share in January 2026 — a meaningful vote of confidence from the strategic founder-linked entity <span class="source-ref">[5]</span>. However, this is a corporate strategic investment rather than personal insider buying by executives.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. ECARX remains unprofitable with negative shareholders equity of -US$239.7M as of fiscal year 2024, making debt-to-equity and ROE metrics not meaningful (scored 0) <span class="source-ref">[6]</span>. Full-year 2025 revenue of US$847.9M grew 10% YoY, and 5-year revenue CAGR from 2021 (US$436M) to 2025 is approximately 18%, both meeting targets and scoring 1.0 <span class="source-ref">[3]</span><span class="source-ref">[7]</span>. Net profit margin of -7.8% is below the 0% floor, scoring 0 <span class="source-ref">[3]</span>. Forward P/E and Forward PEG are not calculable for an unprofitable company and are excluded from the scoring. Total debt of approximately US$355M (short-term borrowings US$310.7M, convertible notes US$38.8M, long-term borrowings US$5.6M) against negative equity reflects a challenged balance sheet <span class="source-ref">[6]</span>. Gross margin improved to 21.4% in Q1 2026, and adjusted EBITDA turned positive at US$4.0M — signs of progress toward profitability <span class="source-ref">[3]</span>. Liquidity floor check: 1.55M avg daily volume x US$1.13 = US$1.75M &gt; US$1M threshold — passes.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">ECARX under founder-CEO Ziyu Shen shows elements of infinite thinking — the company has maintained its founding vision of building the vehicle mind for smart mobility since 2017 and has demonstrated willingness to invest through losses to build long-term capability. However, as a young company (founded 2017, public since 2022), ECARX has not yet been tested through multiple market cycles or leadership transitions. The heavy dependence on Geely ecosystem and the need to achieve profitability create finite-game pressures that could override long-term thinking.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): ECARX has a genuine and distinctive purpose — &#34;building the vehicle mind at the heart of smart mobility&#34; — that connects the company to a larger vision of safer, more intelligent transportation <span class="source-ref">[4]</span>. Strategic decisions can be traced to this purpose: investing in autonomous driving capabilities, expanding globally to serve non-Geely OEMs, and acquiring Flyme Software for end-to-end OS capabilities. However, the company is less than a decade old and has not yet proven this cause through multiple market cycles or leadership transitions. The cause has not yet been tested by true adversity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): ECARX operates with approximately 1,800 employees across 13 global locations, with stable founder-led leadership under CEO Ziyu Shen since inception <span class="source-ref">[4]</span>. The company has managed significant cost restructuring (R&amp;D costs down 32%, SG&amp;A down 24% in Q1 2026) without evident organizational instability <span class="source-ref">[3]</span>. However, as a young, globally distributed company still in pre-profitability mode, there is inherent organizational pressure. No specific evidence of exceptional trust culture, employee empowerment programs, or standout retention metrics was found.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): ECARX competes against Qualcomm, NVIDIA, and Mobileye — dominant players with vastly greater resources — and uses their strengths as motivation to differentiate through cost efficiency, vertical integration, and China market expertise rather than attempting to out-resource them <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The May Mobility partnership and Flyme Software acquisition demonstrate a strategy of finding unique positioning rather than direct confrontation with larger rivals.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): ECARX has evolved meaningfully from a Geely-captive component supplier to a global independent automotive computing platform company, expanding beyond China to Europe, the Americas, and Southeast Asia <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The pivot into autonomous driving platforms via the May Mobility partnership represents further strategic flexibility <span class="source-ref">[2]</span>. However, the company is young enough that these changes are more natural business evolution than the kind of painful, transformative pivot that Sinek describes — ECARX has not yet had to abandon a profitable core business in service of its Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): ECARX has demonstrated willingness to invest through sustained losses — deploying nearly US$200M of capital raised in late 2025 and early 2026 to build global R&amp;D infrastructure and expand operations across South America, Singapore, and Germany <span class="source-ref">[5]</span>. The company is choosing long-term capability building over near-term profitability optimization. However, these investments are funded by external capital (including Geely strategic investment) rather than by sacrificing existing profitable operations, which reduces the courage required.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">ECARX is executing a credible transformation from a Geely-captive automotive component supplier into a global intelligent vehicle computing platform company. Full-year 2025 revenue of US$847.9M grew 10% YoY, with 5-year revenue CAGR of approximately 18% from US$436M in 2021 <span class="source-ref">[3]</span><span class="source-ref">[7]</span>. Gross margin improved to 21.4% in Q1 2026, and adjusted EBITDA turned positive at US$4.0M — a milestone on the path to profitability <span class="source-ref">[3]</span>. The company&#39;s products are deployed in over 11 million vehicles globally, providing scale validation <span class="source-ref">[1]</span>. Key growth vectors include the May Mobility autonomous fleet partnership (targeting thousands of autonomy-enabled vehicles with 50% cost efficiency by 2028), Flyme Software acquisition for end-to-end OS capabilities, and international expansion into Europe, Latin America, and Southeast Asia <span class="source-ref">[2]</span>. Full-year 2026 guidance of US$1.0-1.1 billion represents 18-30% growth and would mark a significant milestone <span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case centers on ECARX&#39;s fragile financial position and competitive exposure. The company operates with negative shareholders equity of -US$239.7M, total debt of approximately US$355M, and a current ratio of only 0.59, raising near-term liquidity concerns <span class="source-ref">[6]</span>. At US$1.13 per share and US$461M market cap, the stock is deep in micro-cap territory with thin trading volume (1.55M daily average), creating significant execution and financing risk. Q1 2026 revenue of US$131.5M declined 22% YoY, suggesting revenue lumpiness and continued Geely dependence <span class="source-ref">[3]</span>. ECARX competes against Qualcomm, NVIDIA, and Mobileye — companies with 100x+ its scale and resources in automotive AI computing. The path to sustained profitability remains unproven, and continued reliance on external capital (including Geely&#39;s US$45.6M January 2026 investment) means the company cannot yet self-fund its growth ambitions <span class="source-ref">[5]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>May Mobility autonomous fleet partnership ramping in 2027-2028 with delivery of up to thousands of autonomy-enabled vehicles, representing a major non-Geely revenue diversification opportunity</li>
+        
+        <li>Full-year 2026 revenue guidance of US$1.0-1.1 billion, if achieved, would demonstrate the company can sustain 18-30% growth while improving margins toward sustained EBITDA profitability</li>
+        
+        <li>International expansion into Europe (Germany R&amp;D hub), Latin America, and Southeast Asia (Singapore) creating new OEM relationships and reducing Geely ecosystem revenue concentration</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Negative shareholders equity of -US$239.7M and current ratio of 0.59 create near-term liquidity risk — if revenue growth stalls or capital markets tighten, ECARX may face a dilutive financing event at unfavorable terms</li>
+        
+        <li>Heavy competition from Qualcomm, NVIDIA, and Mobileye with 100x+ greater scale and resources in automotive AI computing — ECARX&#39;s cost advantage could erode as larger players move down-market</li>
+        
+        <li>Geely ecosystem concentration risk — while diversifying, ECARX remains heavily dependent on Geely-affiliated OEMs for revenue, and any strategic shift by Geely toward alternative suppliers or in-house solutions could materially impact the business</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): ECARX operates in the automotive computing hardware and software platform space — a sector that AI fundamentally enables rather than disrupts. The company builds the physical computing platforms, SoC modules, and sensor suites that power intelligent vehicles, creating a hardware-software stack that AI cannot substitute <span class="source-ref">[1]</span>. However, ECARX faces competitive risk from significantly larger AI chip players — Qualcomm, NVIDIA, and Mobileye — who are aggressively moving into automotive computing with superior AI silicon and development ecosystems. ECARX is a relatively small player (US$848M TTM revenue vs. NVIDIA and Qualcomm at 100x+ scale) competing on cost and integration advantages, particularly within the Geely ecosystem, rather than on frontier AI capability <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The core risk is not that AI disrupts ECARX, but that larger AI-native competitors outspend and outscale the company in automotive compute. AI Opportunity (1/1): ECARX generates meaningful AI-related revenue through its intelligent cockpit and driving platforms deployed in over 11 million vehicles <span class="source-ref">[1]</span>. The company ships AI-powered products including the AutoGPT in-vehicle AI system with DeepSeek-R1 integration, and the May Mobility autonomous fleet partnership represents a direct AI revenue opportunity with delivery of up to thousands of autonomy-enabled vehicles <span class="source-ref">[2]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            53
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> ECARX Holdings Inc. Company Overview and Product Portfolio — ecarxgroup.com, accessed June 2026</li>
+        
+        <li><span class="src-num">2.</span> ECARX and May Mobility Strategic Framework Agreement — PR Newswire, May 2026</li>
+        
+        <li><span class="src-num">3.</span> ECARX Q1 2026 Unaudited Financial Results — ir.ecarxgroup.com, May 19, 2026</li>
+        
+        <li><span class="src-num">4.</span> ECARX Mission, Vision and About Us — ecarxgroup.com/about-us, accessed June 2026</li>
+        
+        <li><span class="src-num">5.</span> Geely Holding US$45.6M Private Placement and Strategic Capital Deployment — SEC Form 6-K, January 2026</li>
+        
+        <li><span class="src-num">6.</span> ECARX Holdings 20-F Annual Report FY2025 — SEC Filing, 2026</li>
+        
+        <li><span class="src-num">7.</span> ECARX Revenue History 2021-2025 — stockanalysis.com/stocks/ecx/revenue, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

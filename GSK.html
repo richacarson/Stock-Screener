@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen GSK — GSK plc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/GSK_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('GSK')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            GSK
+            <span class="stock-name-full">GSK plc</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-29</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">71</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Drug Manufacturers—General</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United Kingdom</span>
+    </div>
+    
+    <div class="profile-desc">GSK plc is a global biopharma company focused on uniting science, technology, and talent to get ahead of disease. The company operates across Specialty Medicines (HIV, oncology, respiratory/immunology), General Medicines, and Vaccines segments, with leading positions in HIV (ViiV Healthcare), respiratory, and vaccines (Shingrix). Headquarters in London, UK.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>66,841 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.gsk.com" target="_blank" rel="noopener">www.gsk.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): GSK completed the transformative separation from Haleon (consumer health) in July 2022 to become a focused biopharma company, and the results validate the pivot — Specialty Medicines grew 14% CER in Q1 2026 with Oncology up 28% CER, HIV up 10% CER, and Shingrix revenue surging 20% CER to £1.0B <span class="source-ref">[1]</span>. However, the company has not defined an entirely new category or made a transformative acquisition that redefines its business. AI Deployment (2/2): GSK appointed a dedicated Chief AI Officer (Kim Branson) and has deployed AI with measurable results — AI and machine learning cut two years off the RSV clinical trial timeline, and AI powers drug discovery, molecule design, and patient selection for clinical trials <span class="source-ref">[2]</span>. CEO Walmsley highlights AI as central to GSK&#39;s competitive advantage in R&amp;D productivity. Market Share (1/2): GSK holds leadership positions in HIV (ViiV Healthcare), respiratory, and vaccines (Shingrix is the dominant shingles vaccine globally), but does not hold category-defining dominant share in any single therapeutic area — Pfizer, AstraZeneca, and Merck compete aggressively across overlapping categories <span class="source-ref">[1]</span>. Pipeline (2/2): Strong late-stage pipeline with specific milestones — Blenrep (oncology) relaunch, Jemperli (endometrial cancer) expansion, Nucala (respiratory), next-gen HIV long-acting injectables, and the announced $4.7B acquisition of Nuvalent to strengthen oncology <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. R&amp;D Intensity (0/1): R&amp;D spending is roughly in line with big pharma industry averages (~15% of revenue), not top-quartile relative to biotech peers <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): GSK&#39;s mission — &#39;to unite science, technology, and talent to get ahead of disease together&#39; — is specific, thoughtful, and reflects genuine intentionality. The &#39;Ahead Together&#39; strategy concentrates investment in four therapeutic areas (infectious diseases, HIV, immunology/respiratory, oncology) and aligns daily operations with long-term patient impact <span class="source-ref">[2]</span>. The vision to &#39;positively impact the health of over 2.5 billion people by the end of the decade&#39; is ambitious and measurable. However, the mission has been refined through multiple CEO transitions and corporate restructurings — it is not yet proven through a full multi-decade cycle as a focused biopharma company. Community Impact (1/2): GSK has significant vaccine access programs in developing countries and philanthropic activity, though specific charitable dollar amounts for recent years were not surfaced in research <span class="source-ref">[3]</span>. Employee Retention (1/2): Glassdoor reviews show a mixed picture — good benefits, work-life balance, and innovative atmosphere cited as strengths, but slow approval processes, bureaucratic culture, &#39;no risk&#39; mindset, and criticism of senior leadership and direction create drag on mission-driven retention <span class="source-ref">[2]</span>. Insider Buying (1/2): Multiple Non-Executive Directors purchased ordinary shares and ADS in June 2026, and senior executives acquired shares via dividend reinvestment in April 2026, signaling moderate insider conviction at current valuations <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">GSK&#39;s financial profile reflects a durable large-cap pharma company with improving growth trajectory. Q1 2026 sales of £7.6B grew 5% CER with core operating profit up 10% CER to £2.65B and margins expanding to 34.7% <span class="source-ref">[1]</span>. Full-year 2025 revenue of $44.1B grew 12.6% YoY, demonstrating meaningful acceleration. ROE of 43.3% dramatically exceeds the 15% target, reflecting efficient capital deployment. Forward P/E of 11.84x is well below the 20x target, offering significant valuation compression advantage <span class="source-ref">[4]</span>. The dividend profile is mixed — 30+ years of continuous payment and a reasonable 42% payout ratio are offset by only 2 consecutive years of growth and a negative 5-year dividend CAGR of -3.9%, reflecting the 2022 dividend cut associated with the Haleon separation <span class="source-ref">[4]</span>. D/E of 98% is moderately elevated with approximately £17B debt against £16B equity. Profit margin of 17.5% approaches the 20% target. The pending $4.7B Nuvalent acquisition will temporarily increase leverage but expands the oncology growth platform <span class="source-ref">[1]</span>. Liquidity floor easily cleared at approximately $311M daily (6.0M shares × $51.89) <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">GSK under Emma Walmsley has made one of pharma&#39;s most significant acts of existential flexibility — separating the consumer health business (Haleon) to become a focused biopharma company, betting the company&#39;s future on specialty medicines, vaccines, and R&amp;D-driven innovation. The &#39;Ahead Together&#39; vision of getting ahead of disease is a credible Just Cause validated by meaningful strategic decisions. However, the bureaucratic culture and &#39;no risk&#39; organizational mindset, noted persistently in employee reviews, suggest the infinite game thinking at the top has not fully permeated the organization.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">GSK&#39;s mission — &#39;to unite science, technology, and talent to get ahead of disease together&#39; — connects the company&#39;s work to one of humanity&#39;s most enduring challenges <span class="source-ref">[2]</span>. The &#39;Ahead Together&#39; strategy is not marketing copy; it has shaped transformative decisions including the Haleon separation, the $4.7B Nuvalent acquisition, and heavy investment in HIV, vaccines, and oncology. The goal of positively impacting 2.5 billion lives by 2030 is measurable and ambitious. However, this cause is relatively new in its current form — GSK has undergone multiple identity shifts (Glaxo → GlaxoWellcome → GlaxoSmithKline → GSK + Haleon), and the focused biopharma identity has not yet been tested through a full economic cycle or leadership transition. (2/3 points)</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">GSK provides a stable, well-compensated work environment with good benefits and work-life balance — Glassdoor reviews consistently cite these as strengths <span class="source-ref">[2]</span>. The organization of 66,841 employees is not experiencing major cultural disruption or layoffs. However, persistent criticism of bureaucratic decision-making, slow approval processes, and a &#39;no risk&#39; culture suggests organizational trust is adequate but not exceptional — employees feel secure but not necessarily empowered to take bold action or challenge the status quo <span class="source-ref">[2]</span>. The deference to hierarchy and process-heavy culture is typical of large pharma but inconsistent with Sinek&#39;s ideal of high-trust teams. (1/2 points)</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">GSK operates in a competitive landscape with Pfizer, AstraZeneca, Merck, and Johnson &amp; Johnson, and the company&#39;s strategic communications reflect a learning-oriented competitive mindset. The Nuvalent acquisition signals a recognition that GSK needed to strengthen its oncology portfolio to match competitors&#39; capabilities — an acknowledgment of rivals&#39; strengths rather than a destructive competitive posture <span class="source-ref">[1]</span>. GSK&#39;s HIV leadership through ViiV Healthcare coexists with Gilead&#39;s dominance in HIV cure research, with both companies pushing the field forward. (1/1 point)</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">The separation of Haleon (consumer health) in July 2022 was a transformative act of existential flexibility — GSK abandoned a profitable, stable consumer health business that provided revenue diversification and defensive characteristics to become a focused, higher-risk biopharma company <span class="source-ref">[3]</span>. This required accepting a dividend cut, temporary leverage increase, and loss of the consumer health cash flow cushion. The earlier mergers (Glaxo + Wellcome in 1995, GlaxoSmithKline in 2000) also demonstrated willingness to fundamentally restructure. The current Nuvalent acquisition ($4.7B) extends this flexibility into oncology. These pivots were driven by a vision of becoming a world-class specialty medicines company, not by desperation. (2/2 points)</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">CEO Walmsley has made costly long-term bets: the Haleon separation sacrificed near-term revenue stability for long-term R&amp;D focus, the $4.7B Nuvalent acquisition extends the oncology pipeline at the cost of increased leverage, and the decision to fight Zantac litigation rather than settle broadly ($2.2B settlement for 93% of cases, jury victories in individual cases) shows principled stance <span class="source-ref">[3]</span>. However, the Zantac litigation itself is a legacy governance failure, and the 5-year negative dividend growth CAGR reflects a period where shareholders bore costs of the strategic restructuring. (1/2 points)</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">GSK is a focused biopharma company delivering accelerating growth from its specialty medicines portfolio — Q1 2026 saw Specialty Medicines sales up 14% CER to £3.2B, Oncology surging 28% CER, HIV growing 10% CER, and Shingrix revenue up 20% CER to £1.0B <span class="source-ref">[1]</span>. Core operating profit rose 10% CER with margins expanding to 34.7%, and core EPS of 46.5p beat consensus by 7-8%. The Haleon separation has unlocked strategic focus, with the R&amp;D pipeline delivering results — AI cut two years off the RSV trial, and the $4.7B Nuvalent acquisition strengthens oncology <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. At 11.84x forward PE with 3.48% dividend yield, the stock offers compelling value relative to pharma peers. Full-year 2026 guidance of 3-5% sales growth and 7-9% core EPS growth CER was reaffirmed, and the 30+ year dividend payment history provides income stability <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. ROE of 43.3% reflects efficient capital deployment, and the improving Specialty Medicines mix is driving structural margin expansion.</div>
+    <div class="thesis-text">The bear case highlights dividend deterioration, Zantac liability, and execution risk. The 5-year dividend CAGR of -3.9% and only 2 consecutive years of growth reflect the painful Haleon separation dividend reset — income investors have been poorly served over the medium term despite the 3.48% current yield <span class="source-ref">[4]</span>. The $2.2B Zantac settlement resolves 93% of cases but remaining litigation creates tail risk, and the reputational damage from a product liability crisis is a governance concern <span class="source-ref">[3]</span>. The $4.7B Nuvalent acquisition increases leverage at a time when D/E is already 98%, and pharma M&amp;A carries integration and pipeline execution risk. Revenue growth guidance of 3-5% for 2026 is modest relative to the multiple re-rating the stock has enjoyed (+64.9% in the last 52 weeks), suggesting limited further upside at current levels <span class="source-ref">[4]</span>. Patent expirations on key drugs (Dolutegravir, Nucala) in the late 2020s create a looming revenue cliff that requires pipeline success to offset. The bureaucratic organizational culture may slow the AI-driven innovation that CEO Walmsley champions <span class="source-ref">[2]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Specialty Medicines portfolio accelerating with Oncology up 28% CER, Shingrix up 20% CER, and HIV up 10% CER in Q1 2026 — becoming a structural growth engine as the product mix shifts toward higher-margin specialty products <span class="source-ref">[1]</span></li>
+        
+        <li>Nuvalent acquisition ($4.7B) expanding the oncology pipeline with targeted therapies, complementing Blenrep relaunch and Jemperli expansion to build a credible oncology franchise <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>AI-driven R&amp;D productivity under Chief AI Officer Kim Branson — demonstrated 2-year reduction in RSV trial timeline, with AI embedded across drug discovery, molecule design, and clinical trial optimization to accelerate pipeline delivery <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Patent expiration risk on key drugs including Dolutegravir and Nucala in the late 2020s creates a revenue cliff requiring successful pipeline commercialization to offset <span class="source-ref">[1]</span></li>
+        
+        <li>Zantac litigation tail risk — while 93% of cases settled for $2.2B, remaining individual cases and potential future claims create ongoing liability uncertainty <span class="source-ref">[3]</span></li>
+        
+        <li>Negative 5-year dividend CAGR of -3.9% and only 2 consecutive years of growth undermine the income investment thesis despite 30+ years of continuous payment — further dividend growth depends on pipeline execution and margin expansion <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): PROTECTED — Pharmaceutical development, clinical trials, regulatory approval, and drug manufacturing are deeply regulated, physical-world processes that AI cannot displace <span class="source-ref">[1]</span>. A new drug requires 10-15 years of clinical development, FDA/EMA review, and manufacturing at GMP-certified facilities — no AI system can shortcut safety requirements for human therapeutics. GSK&#39;s revenue streams from marketed drugs (HIV, vaccines, respiratory) are protected by patents, regulatory exclusivity, and established physician prescribing habits. However, AI-native biotech startups (Recursion, Insilico Medicine) could potentially accelerate discovery of competing molecules, creating a moderate threat at the R&amp;D stage — the disruption risk is not to existing revenue but to future pipeline competitiveness <span class="source-ref">[2]</span>. AI Opportunity (1/1): GSK has deployed AI with quantifiable results — Chief AI Officer Kim Branson leads a global machine learning team that used AI to cut two years off the RSV clinical trial timeline <span class="source-ref">[2]</span>. AI is embedded in drug discovery, molecule design, patient selection for clinical trials, and manufacturing optimization. CEO Walmsley describes AI as &#39;central to GSK&#39;s competitive advantage in R&amp;D productivity&#39; <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> GSK Q1 2026 Results — £7.6B revenue (+5% CER), core operating profit £2.65B (+10% CER), Specialty Medicines £3.2B (+14% CER), Shingrix £1.0B (+20% CER), April 30, 2026</li>
+        
+        <li><span class="src-num">2.</span> GSK CEO Emma Walmsley and CAIO Kim Branson — AI in drug discovery, RSV trial acceleration, Glassdoor employee reviews, Columbia Business School interview, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> GSK ESG and Zantac Litigation — Haleon separation, $2.2B Zantac settlement, net-zero 2030 environmental commitment, Nuvalent acquisition, 2022-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance / StockAnalysis — GSK key statistics, $51.89 stock price, 11.84x forward PE, 3.48% dividend yield, 42% payout ratio, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

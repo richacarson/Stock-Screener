@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CVS — CVS Health Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CVS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CVS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CVS
+            <span class="stock-name-full">CVS Health Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-19</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -83</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">62</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Healthcare Plans</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">CVS Health Corporation provides health solutions in the United States through three segments: Health Care Benefits (Aetna insurance plans), Health Services (Caremark PBM), and Pharmacy & Consumer Wellness (retail pharmacies, prescription drugs, consumer health products). The company operates approximately 9,000 retail pharmacy locations, manages pharmacy benefits for over 100 million plan members, and provides health insurance through Aetna. CVS also acquired Oak Street Health for primary care services. With $405B+ in guided 2026 revenue, CVS is the largest health services company by revenue. Founded in 1963 and headquartered in Woonsocket, Rhode Island.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>219,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.cvshealth.com" target="_blank" rel="noopener">www.cvshealth.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): CVS has executed a multi-year transformation from a retail pharmacy chain into a vertically integrated health services company through the $69B Aetna acquisition (2018) and $10.6B Oak Street Health acquisition (2023), fundamentally changing its business model and competitive position <span class="source-ref">[1]</span>. However, the $5.7B impairment charge on Oak Street Health signals that the primary care acquisition has not delivered expected value. AI Deployment (2/2): CVS announced a $20 billion tech modernization plan in June 2025 and is building an AI-native consumer engagement platform from the ground up, integrating experiences across Aetna, Caremark, CVS Pharmacy, and external partners <span class="source-ref">[2]</span>. The company appointed a dedicated Chief Data &amp; AI Officer (Ali Keshavarz) and deployed &#39;Ollie,&#39; an AI coaching assistant supporting 10,000+ mid-level managers through the &#39;Wiser&#39; leadership development platform <span class="source-ref">[2]</span>. Market Share (1/2): CVS is the largest retail pharmacy chain in the U.S. and the largest health services company by revenue ($405B+ guided), but faces intense competition from Walgreens, UnitedHealth Group, and Cigna across its three segments. The Caremark PBM segment grew 11% YoY <span class="source-ref">[1]</span>. Product Pipeline (0/2): While the $20B tech modernization is ambitious, no specific next-generation products with defined launch dates and revenue visibility were identified. The AI-native platform is in development rather than shipping. R&amp;D Intensity (1/1): The $20B technology investment commitment and dedicated Chief AI Officer represent above-average technology spending for the healthcare services sector <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): CEO David Joyner (nearly 40-year CVS veteran) has articulated CVS&#39;s purpose as building a &#39;simpler, more connected and more affordable&#39; healthcare experience, stating the company&#39;s obligation is to &#39;do the most good for the most people&#39; <span class="source-ref">[2]</span>. The mission is specific, thoughtful, and connected to a larger purpose of healthcare access — the 2014 decision to stop selling tobacco ($2B annual revenue sacrifice) validated this purpose through a costly action. However, it has not yet been tested through multi-decade consistency under the current articulation. Community Impact (1/2): CVS&#39;s &#39;Healthy 2030&#39; ESG roadmap aligns with 8 of 17 UN Sustainable Development Goals, focusing on health equity and community health access <span class="source-ref">[3]</span>. The company operates 9,000+ pharmacy locations providing essential healthcare services in underserved communities. However, no specific dollar amounts for charitable programs were identified. Employee Retention (1/2): CVS employs 219,000 people and has invested in AI-assisted leadership coaching (&#39;Wiser&#39; platform with &#39;Ollie&#39; AI assistant) for 10,000+ managers, signaling investment in employee development <span class="source-ref">[2]</span>. CEO Joyner&#39;s nearly 40-year tenure is exceptional. However, the retail pharmacy workforce faces industry-wide turnover challenges, and no specific retention metrics were identified. Insider Buying (1/2): CEO Joyner&#39;s 40-year tenure represents deep alignment with the company. However, no notable net insider buying by executives was identified in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. D/E of 100.9% is below the 300% floor but well above the 70% target, reflecting debt from the Aetna and Oak Street Health acquisitions <span class="source-ref">[4]</span>. Forward P/E of 11.7 is deeply discounted. Revenue growth metrics are reasonable: 6.1% YoY growth and a 3-year CAGR of 7.6%, driven by the Health Services segment (Caremark +11%) and Health Care Benefits growth <span class="source-ref">[1]</span>. Dividend profile is mixed: 41+ consecutive years of payments and a 5-year dividend CAGR of 7.4% exceeding the 6% target, but the payout ratio of 116.7% exceeds the 100% floor (scoring 0) and consecutive years of growth is currently 0 as the dividend was flat in 2025 <span class="source-ref">[4]</span>. Major weaknesses include ROE of only 3.75% (reflecting the $5.7B Oak Street impairment and acquisition-heavy balance sheet) and profit margin of just 0.72% — among the lowest in the healthcare sector <span class="source-ref">[4]</span>. Liquidity is strong at $823M+ daily traded value.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">CVS Health under CEO David Joyner demonstrates some infinite game characteristics through its long-term healthcare transformation strategy, &#39;Healthy 2030&#39; ESG roadmap, and the purposeful decision to exit tobacco sales in 2014. However, the company&#39;s recent strategic missteps (Oak Street Health $5.7B impairment), frequent CEO turnover (Joyner is the third CEO in four years), and quarterly-earnings-focused communications raise questions about whether CVS is truly playing an infinite game or managing short-term crises while articulating long-term aspirations.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): CEO Joyner&#39;s articulation of CVS&#39;s purpose — &#39;do the most good for the most people&#39; and building &#39;simpler, more connected and more affordable&#39; healthcare — is thoughtful and service-oriented. The 2014 tobacco exit ($2B revenue sacrifice) validated the commitment to health over profit. However, this Just Cause has not been tested through decades of consistent execution — leadership has turned over rapidly (Karen Lynch, then Joyner), and the $5.7B Oak Street impairment suggests strategic decisions are not consistently guided by the cause <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): CVS has experienced significant leadership instability — three CEOs in four years (Larry Merlo to Karen Lynch to David Joyner) creates organizational uncertainty <span class="source-ref">[2]</span>. The company has 219,000 employees across retail pharmacies, a workforce segment known for high turnover and labor challenges. Reports of pharmacist burnout, understaffing, and labor disputes have been industry-wide concerns. While the &#39;Wiser&#39; AI coaching platform for managers shows investment in development, the leadership churn at the top signals potential trust deficits through the organization.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): CVS&#39;s competitive language tends toward market dominance rather than self-improvement. The company frames its vertically integrated model (pharmacy + insurance + PBM) as a competitive weapon against UnitedHealth Group and Cigna rather than as a means of serving customers better. The acquisition strategy (Aetna, Oak Street Health, Signify Health) appears designed to build defensive scale rather than to learn from competitors&#39; strengths <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): CVS has demonstrated meaningful strategic evolution — transforming from a retail pharmacy chain into a vertically integrated health services company through the $69B Aetna acquisition (2018), the Oak Street Health primary care acquisition (2023), and the $20B tech modernization plan <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The 2014 tobacco exit was a notable example of abandoning profitable revenue in service of a health-focused mission. However, these changes were incremental rather than transformative, and the $5.7B Oak Street impairment suggests the company&#39;s strategic pivots have not always been well-executed.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The 2014 decision to stop selling tobacco products, sacrificing $2B in annual revenue, was a genuinely courageous act that cost CVS real money in service of its health mission <span class="source-ref">[3]</span>. The $20B tech modernization commitment represents a bold long-term investment. However, the rapid CEO turnover, the $5.7B Oak Street impairment, and the flat dividend in 2025 suggest that recent leadership has been more focused on crisis management than courageous long-term vision.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">CVS Health reported Q1 2026 revenue of $100.4B (up 6.2% YoY) and raised full-year 2026 guidance to adjusted EPS of $7.30-$7.50 (mid-teens growth) on revenue of at least $405B, driven by Aetna&#39;s profitability recovery and Caremark&#39;s 11% revenue growth <span class="source-ref">[1]</span>. The stock trades at just 11.7x forward earnings with a PEG ratio of 0.28 — the lowest growth-adjusted valuation in the entire screening universe. The $20B tech modernization plan and AI-native consumer platform position CVS to create a differentiated, technology-enabled healthcare experience across its 9,000+ retail locations, 100M+ PBM members, and Aetna insurance base <span class="source-ref">[2]</span>. CEO David Joyner, a 40-year CVS veteran, brings institutional knowledge and stability after a period of leadership transition. The 2.64% dividend yield provides income while the company executes its turnaround.</div>
+    <div class="thesis-text">The bear case centers on fundamental profitability weakness and strategic execution risk. Profit margin of just 0.72% and ROE of 3.75% are critically low, reflecting the $5.7B Oak Street Health impairment charge and the margin compression inherent in managing a $405B revenue business that generates less than $3B in net income <span class="source-ref">[4]</span>. The payout ratio of 116.7% exceeds 100%, meaning CVS is paying dividends from cash flow rather than earnings — an unsustainable position if earnings don&#39;t recover to guidance levels. Three CEOs in four years creates strategic uncertainty, and the Oak Street impairment signals that the vertical integration strategy (pharmacy + insurance + primary care) has not delivered expected synergies <span class="source-ref">[1]</span>. D/E of 100.9% reflects the debt burden from the $69B Aetna and $10.6B Oak Street acquisitions. The healthcare sector faces ongoing regulatory risk from drug pricing legislation, PBM reform proposals, and potential Medicare reimbursement changes that could compress margins further.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Aetna profitability recovery driving raised 2026 EPS guidance to $7.30-$7.50, representing mid-teens earnings growth that could compress the 11.7x forward P/E multiple if sustained through 2027</li>
+        
+        <li>The $20B tech modernization plan and AI-native consumer platform launch could differentiate CVS from competitors by creating a unified healthcare experience across pharmacy, insurance, and care delivery</li>
+        
+        <li>Caremark Health Services segment growing 11% YoY, demonstrating that the PBM business continues to gain share and could drive sustained mid-single-digit consolidated revenue growth</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Profit margin of 0.72% and payout ratio of 116.7% signal fundamental profitability weakness — any earnings miss against the $7.30-$7.50 adjusted EPS guidance could force a dividend cut and trigger significant stock decline</li>
+        
+        <li>Three CEOs in four years creates strategic whiplash risk, and the $5.7B Oak Street Health impairment demonstrates that major capital allocation decisions have destroyed shareholder value</li>
+        
+        <li>PBM reform legislation, drug pricing controls, and Medicare reimbursement changes represent regulatory tail risks that could structurally compress margins across all three CVS segments simultaneously</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): CVS Health&#39;s core business spans physical retail pharmacies (9,000+ locations), insurance claims processing (Aetna), and pharmacy benefit management (Caremark) — all of which involve deeply regulated processes, physical infrastructure, and human health interactions that create meaningful defensive moats against AI disruption <span class="source-ref">[1]</span>. Pharmacist oversight requirements, insurance regulation, and the physical dispensing of medications cannot be replaced by AI. However, AI-powered telehealth and digital health platforms could erode retail pharmacy foot traffic, AI-driven claims processing could reduce the competitive advantage of scale in PBM operations, and AI health assistants could disrupt Aetna&#39;s care management services. Some business lines face real AI pressure even as the core remains defensible <span class="source-ref">[2]</span>. AI Opportunity (1/1): CVS generates measurable value from AI deployments — the $20B tech modernization plan, AI-native consumer engagement platform, and &#39;Ollie&#39; AI coaching assistant for 10,000+ managers represent quantifiable AI-driven operational improvements <span class="source-ref">[2]</span>. The Chief Data &amp; AI Officer role and &#39;engagement as a service&#39; strategy position CVS to generate AI-enabled revenue from personalized health services.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -83
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Abortifacients</span>
+            
+            <span class="attr-tag negative">Abortion Activism</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> CVS Health Q1 2026 Earnings and Full-Year Guidance — CNBC, Fierce Healthcare, Healthcare Dive, May 2026</li>
+        
+        <li><span class="src-num">2.</span> CVS Health AI Strategy, Leadership, and Tech Modernization — Becker's Hospital Review, Constellation Research, IMD, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> CVS Health ESG Reports, Healthy 2030 Roadmap, and Sustainability Profile — cvshealth.com, Censible, Yahoo Finance, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — CVS Key Statistics and Financial Data, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
