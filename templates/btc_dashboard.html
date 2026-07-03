@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>BTC Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #F5F5F0;
+    --surface: #FFFFFF;
+    --card: #FFFFFF;
+    --card-hover: #F0F2EC;
+    --border: rgba(80,100,60,0.12);
+    --border-hover: rgba(80,100,60,0.22);
+    --border-active: rgba(80,100,60,0.40);
+    --t1: #1A2010;
+    --t2: #3A4A28;
+    --t3: #6E8450;
+    --t4: #9DAF88;
+    --accent: #4A6B25;
+    --accent-gold: #B8860B;
+    --accent-soft: rgba(74,107,37,0.08);
+    --pos: #16A34A;
+    --neg: #DC2626;
+    --bar-track: rgba(80,100,60,0.10);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: var(--bg);
+    color: var(--t1);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv01' on, 'cv02' on;
+    -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+
+.container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+header img { height: 48px; }
+.header-meta { text-align: right; }
+.header-title { font-size: 11px; font-weight: 800; color: var(--t3); letter-spacing: 2px; text-transform: uppercase; }
+.header-sub { font-size: 11px; color: var(--t4); margin-top: 2px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.3s ease; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
+.tile {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; box-shadow: var(--shadow);
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.tile:hover { border-color: var(--border-active); background: var(--card-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.tile-label { font-size: 10px; font-weight: 800; color: var(--t3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+.tile-value { font-size: 26px; font-weight: 800; color: var(--t1); line-height: 1.1; }
+.tile-value.pos { color: var(--pos); }
+.tile-value.neg { color: var(--neg); }
+.tile-sub { font-size: 12px; color: var(--t4); margin-top: 4px; }
+.tile-sub .pos { color: var(--pos); font-weight: 700; }
+.tile-sub .neg { color: var(--neg); font-weight: 700; }
+
+.panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; box-shadow: var(--shadow); margin-bottom: 6px;
+}
+.section-header {
+    font-size: 11px; font-weight: 800; color: var(--t3); letter-spacing: 2px;
+    text-transform: uppercase; border-bottom: 2px solid var(--accent-gold);
+    padding-bottom: 8px; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: baseline;
+}
+.section-header .hint { font-size: 10px; font-weight: 400; letter-spacing: 0.5px; text-transform: none; color: var(--t4); }
+
+.legend { display: flex; gap: 16px; font-size: 11px; color: var(--t2); margin-bottom: 10px; flex-wrap: wrap; }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.chart-wrap { position: relative; }
+.chart-wrap svg { display: block; width: 100%; height: auto; }
+.tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--surface); border: 1px solid var(--border-active); border-radius: 8px;
+    padding: 8px 10px; font-size: 11px; color: var(--t2); box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    white-space: nowrap;
+}
+.tooltip .tt-date { font-weight: 800; color: var(--t1); margin-bottom: 3px; }
+.tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+.tooltip .swatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+.loc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.loc-name { width: 90px; font-size: 12px; font-weight: 700; color: var(--t2); text-transform: capitalize; }
+.loc-bar { flex: 1; height: 8px; background: var(--bar-track); border-radius: 4px; overflow: hidden; }
+.loc-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.5s ease; }
+.loc-amt { width: 170px; text-align: right; font-size: 12px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.loc-note { font-size: 11px; color: var(--t4); margin-top: 8px; }
+.loc-note.warn { color: var(--accent-gold); font-weight: 700; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+    text-align: right; font-size: 10px; font-weight: 800; color: var(--t3);
+    letter-spacing: 1px; text-transform: uppercase; padding: 6px 8px;
+    border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--card);
+}
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3) { text-align: left; }
+tbody td { padding: 7px 8px; border-bottom: 1px solid var(--border); color: var(--t2); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3) { text-align: left; }
+tbody tr:hover td { background: var(--card-hover); }
+.table-scroll { max-height: 420px; overflow-y: auto; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge.buy { background: rgba(22,163,74,0.10); color: #16A34A; }
+.badge.sell { background: rgba(220,38,38,0.10); color: #DC2626; }
+.badge.withdrawal { background: rgba(37,99,235,0.10); color: #2563EB; }
+.badge.deposit { background: rgba(217,119,6,0.10); color: #D97706; }
+.src { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: capitalize; }
+
+footer { text-align: center; font-size: 10px; color: var(--t4); padding: 18px 0 6px; line-height: 1.6; }
+
+@media (max-width: 640px) {
+    .container { padding: 12px; }
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .tile-value { font-size: 20px; }
+    .loc-amt { width: 120px; }
+}
+</style>
+</head>
+<body>
+<div class="container fade-in">
+    <header>
+        <img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN">
+        <div class="header-meta">
+            <div class="header-title">BTC Tracker</div>
+            <div class="header-sub">Built {{ built_at }} &middot; BTC/USD ${{ "{:,.0f}".format(spot) }}</div>
+        </div>
+    </header>
+
+    <div class="tiles">
+        <div class="tile">
+            <div class="tile-label">BTC Held</div>
+            <div class="tile-value">{{ "%.8f"|format(s.total_btc) }}</div>
+            <div class="tile-sub">{{ s.n_buys }} buys since {{ s.first_buy or "—" }}</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Current Value</div>
+            <div class="tile-value">${{ "{:,.0f}".format(current_value) }}</div>
+            <div class="tile-sub">at ${{ "{:,.0f}".format(spot) }}/BTC</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Average Cost</div>
+            <div class="tile-value">${{ "{:,.0f}".format(s.avg_cost) }}</div>
+            <div class="tile-sub">per BTC, fees included</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Total Invested</div>
+            <div class="tile-value">${{ "{:,.0f}".format(s.invested) }}</div>
+            <div class="tile-sub">cost basis ${{ "{:,.0f}".format(s.cost_basis) }}</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Unrealized P&amp;L</div>
+            <div class="tile-value {{ 'pos' if unrealized >= 0 else 'neg' }}">{{ "+" if unrealized >= 0 else "−" }}${{ "{:,.0f}".format(unrealized|abs) }}</div>
+            <div class="tile-sub"><span class="{{ 'pos' if unrealized >= 0 else 'neg' }}">{{ "%+.1f"|format(unrealized_pct) }}%</span> vs cost basis</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Realized P&amp;L</div>
+            <div class="tile-value {{ 'pos' if s.realized_pnl >= 0 else 'neg' }}">{{ "+" if s.realized_pnl >= 0 else "−" }}${{ "{:,.0f}".format(s.realized_pnl|abs) }}</div>
+            <div class="tile-sub">{{ s.n_sells }} sells &middot; avg-cost method</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Break-even Price</div>
+            <div class="tile-value">${{ "{:,.0f}".format(s.avg_cost) }}</div>
+            <div class="tile-sub">price is {{ "%.1f"|format(spot / s.avg_cost) if s.avg_cost else "—" }}&times; your avg</div>
+        </div>
+        <div class="tile">
+            <div class="tile-label">Fees Paid</div>
+            <div class="tile-value">${{ "{:,.0f}".format(s.fees_usd) }}</div>
+            <div class="tile-sub">+ {{ "%.6f"|format(s.fees_btc) }} BTC network</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="section-header">Average Cost vs Market Price <span class="hint">USD per BTC</span></div>
+        <div class="legend">
+            <span class="key"><span class="swatch" style="background:#B8860B"></span>Your average cost</span>
+            <span class="key"><span class="swatch" style="background:#4A6B25"></span>BTC price (weekly)</span>
+            <span class="key"><span class="swatch" style="background:#4A6B25;border-radius:50%;opacity:0.55"></span>Individual buys</span>
+        </div>
+        <div class="chart-wrap" id="chart-cost"></div>
+    </div>
+
+    <div class="panel">
+        <div class="section-header">BTC Accumulated <span class="hint">total held over time</span></div>
+        <div class="chart-wrap" id="chart-btc"></div>
+    </div>
+
+    <div class="panel">
+        <div class="section-header">Where It Lives</div>
+        {% for name, amount in locations %}
+        <div class="loc-row">
+            <div class="loc-name">{{ name }}</div>
+            <div class="loc-bar"><div class="loc-fill" style="width: {{ "%.1f"|format(100 * amount / s.total_btc if s.total_btc else 0) }}%"></div></div>
+            <div class="loc-amt">{{ "%.8f"|format(amount) }} &middot; ${{ "{:,.0f}".format(amount * spot) }}</div>
+        </div>
+        {% endfor %}
+        {% if onchain is not none %}
+        <div class="loc-note {{ 'warn' if onchain_mismatch else '' }}">
+            On-chain check (mempool.space): Phantom addresses hold {{ "%.8f"|format(onchain) }} BTC
+            {% if onchain_mismatch %} — differs from computed {{ "%.8f"|format(phantom_computed) }} BTC; some transfers may be missing from the history.{% else %} — matches the computed balance. ✓{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="section-header">Transactions <span class="hint">{{ txs|length }} total &middot; newest first</span></div>
+        <div class="table-scroll">
+        <table>
+            <thead><tr>
+                <th>Date</th><th>Type</th><th>Source</th><th>BTC</th><th>Price</th><th>USD</th><th>Avg Cost After</th><th>Total BTC</th>
+            </tr></thead>
+            <tbody>
+            {% for t in txs %}
+            <tr>
+                <td>{{ t.date }}</td>
+                <td><span class="badge {{ t.type }}">{{ t.type }}</span></td>
+                <td><span class="src">{{ t.source }}</span></td>
+                <td>{{ "%.8f"|format(t.btc_amount) }}</td>
+                <td>{{ "${:,.0f}".format(t.price) if t.price else "—" }}</td>
+                <td>{{ "${:,.2f}".format(t.usd_amount) if t.usd_amount else "—" }}</td>
+                <td>{{ "${:,.0f}".format(t.avg_cost) }}</td>
+                <td>{{ "%.8f"|format(t.total_btc) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <footer>
+        Average-cost method, fees included in basis. Transfers to Phantom are tracked as moves, not sales.<br>
+        Private dashboard — not deployed. Not tax advice.
+    </footer>
+</div>
+
+<script>
+const DATA = {{ chart_data | safe }};
+
+function fmtUsd(v) { return "$" + Math.round(v).toLocaleString(); }
+function fmtDate(ts) {
+    return new Date(ts * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+// Minimal line/area chart with crosshair tooltip. series: [{points:[{t,v}], ...}]
+function drawChart(el, series, dots, opts) {
+    const W = 940, H = 260, PAD = { l: 56, r: 12, t: 10, b: 24 };
+    const all = series.flatMap(s => s.points).concat(dots || []);
+    if (!all.length) { el.innerHTML = '<div style="color:var(--t4);font-size:12px">No data yet — run the tracker to populate.</div>'; return; }
+    const t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
+    const v1 = Math.max(...all.map(p => p.v)) * 1.06;
+    const v0 = opts.zeroBase ? 0 : Math.min(...all.map(p => p.v)) * 0.94;
+    const X = t => PAD.l + (W - PAD.l - PAD.r) * (t - t0) / Math.max(t1 - t0, 1);
+    const Y = v => PAD.t + (H - PAD.t - PAD.b) * (1 - (v - v0) / Math.max(v1 - v0, 1e-9));
+
+    let g = "";
+    const nTicks = 4;
+    for (let i = 0; i <= nTicks; i++) {
+        const v = v0 + (v1 - v0) * i / nTicks, y = Y(v);
+        g += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${y}" y2="${y}" stroke="rgba(80,100,60,0.10)" stroke-width="1"/>`;
+        g += `<text x="${PAD.l - 8}" y="${y + 3}" text-anchor="end" font-size="10" fill="#9DAF88">${opts.fmt(v)}</text>`;
+    }
+    const nX = 5;
+    for (let i = 0; i <= nX; i++) {
+        const t = t0 + (t1 - t0) * i / nX;
+        const anchor = i === 0 ? "start" : (i === nX ? "end" : "middle");
+        g += `<text x="${X(t)}" y="${H - 6}" text-anchor="${anchor}" font-size="10" fill="#9DAF88">${new Date(t * 1000).toLocaleDateString("en-US", { month: "short", year: "2-digit" })}</text>`;
+    }
+    for (const s of series) {
+        const pts = s.points.map(p => `${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`);
+        if (s.area) {
+            g += `<path d="M${pts.join(" L")} L${X(s.points[s.points.length - 1].t).toFixed(1)},${Y(v0)} L${X(s.points[0].t).toFixed(1)},${Y(v0)} Z" fill="${s.color}" opacity="0.10"/>`;
+        }
+        g += `<path d="M${pts.join(" L")}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" ${s.step ? "" : ""}/>`;
+    }
+    for (const d of (dots || [])) {
+        g += `<circle cx="${X(d.t).toFixed(1)}" cy="${Y(d.v).toFixed(1)}" r="2.5" fill="#4A6B25" opacity="0.4" stroke="#FFFFFF" stroke-width="1"/>`;
+    }
+    g += `<line id="xh" x1="0" x2="0" y1="${PAD.t}" y2="${H - PAD.b}" stroke="rgba(80,100,60,0.35)" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>`;
+
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.label}">${g}</svg><div class="tooltip"></div>`;
+    const svg = el.querySelector("svg"), tip = el.querySelector(".tooltip"), xh = el.querySelector("#xh");
+
+    svg.addEventListener("mousemove", ev => {
+        const rect = svg.getBoundingClientRect();
+        const t = t0 + (t1 - t0) * ((ev.clientX - rect.left) / rect.width * W - PAD.l) / (W - PAD.l - PAD.r);
+        if (t < t0 || t > t1) { tip.style.display = "none"; xh.style.display = "none"; return; }
+        let rows = `<div class="tt-date">${fmtDate(t)}</div>`;
+        for (const s of series) {
+            let best = s.points[0];
+            for (const p of s.points) if (Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;
+            rows += `<div class="tt-row"><span class="swatch" style="background:${s.color}"></span>${s.name}: <b>${opts.fmt(best.v)}</b></div>`;
+        }
+        tip.innerHTML = rows;
+        tip.style.display = "block";
+        const px = (ev.clientX - rect.left), flip = px > rect.width * 0.65;
+        tip.style.left = flip ? (px - tip.offsetWidth - 12) + "px" : (px + 12) + "px";
+        tip.style.top = (ev.clientY - rect.top - 10) + "px";
+        xh.setAttribute("x1", X(t)); xh.setAttribute("x2", X(t));
+        xh.style.display = "block";
+    });
+    svg.addEventListener("mouseleave", () => { tip.style.display = "none"; xh.style.display = "none"; });
+}
+
+const costSeries = [];
+if (DATA.price_history.length > 1) {
+    costSeries.push({ name: "BTC price", color: "#4A6B25", points: DATA.price_history });
+}
+if (DATA.avg_cost.length > 1) {
+    costSeries.push({ name: "Avg cost", color: "#B8860B", points: DATA.avg_cost });
+}
+drawChart(document.getElementById("chart-cost"), costSeries, DATA.buys,
+    { fmt: fmtUsd, zeroBase: false, label: "Average cost versus market price over time" });
+
+drawChart(document.getElementById("chart-btc"),
+    [{ name: "BTC held", color: "#4A6B25", points: DATA.total_btc, area: true }], null,
+    { fmt: v => v.toFixed(4), zeroBase: true, label: "Total BTC accumulated over time" });
+</script>
+</body>
+</html>
