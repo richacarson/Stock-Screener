@@ -79,6 +79,28 @@ def cmd_add(args: argparse.Namespace) -> None:
     cmd_build(args)
 
 
+def cmd_publish(args: argparse.Namespace) -> None:
+    """Build, then push the dashboard HTML to the password-gated live URL."""
+    import requests
+
+    url = config.get_env("BTC_DASHBOARD_URL").rstrip("/")
+    token = config.get_env("BTC_PUBLISH_TOKEN")
+    if not url or not token:
+        sys.exit("Set BTC_DASHBOARD_URL and BTC_PUBLISH_TOKEN in .env")
+    path = build.build()
+    html = Path(path).read_text()
+    resp = requests.post(
+        f"{url}/publish",
+        headers={"x-publish-token": token},
+        data=html.encode(),
+        timeout=60,
+    )
+    resp.raise_for_status()
+    if resp.text != "ok":
+        sys.exit(f"Publish failed: {resp.text}")
+    print(f"Published {len(html):,} bytes to {url}")
+
+
 def cmd_build(_: argparse.Namespace) -> None:
     txs = store.load()
     if not txs:
@@ -108,6 +130,7 @@ def main() -> None:
     p_add.add_argument("--note", default="")
 
     sub.add_parser("build", help="rebuild the dashboard from stored data")
+    sub.add_parser("publish", help="build and push to the live dashboard URL")
 
     args = parser.parse_args()
     {
@@ -115,6 +138,7 @@ def main() -> None:
         "import-csv": cmd_import_csv,
         "add": cmd_add,
         "build": cmd_build,
+        "publish": cmd_publish,
     }[args.command](args)
 
 

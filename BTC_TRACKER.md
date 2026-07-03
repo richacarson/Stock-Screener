@@ -1,5 +1,15 @@
 # BTC Tracker — Setup & Usage
 
+> **Live hosted version:** the dashboard is deployed behind a password at
+> https://ocovjbvrtbxptqtucyqw.supabase.co/functions/v1/btc-dashboard
+> (Supabase edge function `btc-dashboard`, project "Trade Instructions").
+> The tracker's long-term home is the **private** repo `richacarson/btc-tracker`
+> — Stock-Screener is public, so personal financial tooling moves there.
+> `deploy/btc-private-repo/bootstrap.sh` assembles that repo's contents
+> (including the daily GitHub Actions auto-update workflow) from this checkout.
+> `scripts/btc_tracker.py publish` pushes a freshly built dashboard to the
+> live URL (needs `BTC_DASHBOARD_URL` and `BTC_PUBLISH_TOKEN` in `.env`).
+
 A private Bitcoin cost-basis dashboard. It pulls your full trade history from
 Kraken and Coinbase with **read-only** API keys, treats sends to Phantom as
 transfers (not sales — your cost basis carries over), and computes:
