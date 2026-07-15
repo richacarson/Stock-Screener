@@ -45,7 +45,19 @@ The screening routine runs on `claude/...` branches. Pull any opportunity files 
 git fetch origin
 
 python3 -c "
-import subprocess, os
+import subprocess, os, json
+
+# Build zombie skip-list from ledger.json — any opp slug already closed
+# should NEVER be resurrected by a checkout from a stale screening branch.
+# (Team feedback 2026-07-09 and 2026-07-10 documented this recurring problem.)
+zombie_slugs = set()
+ledger_path = 'opportunities/ledger.json'
+if os.path.exists(ledger_path):
+    with open(ledger_path) as fh:
+        for entry in json.load(fh):
+            slug = entry.get('id')
+            if slug:
+                zombie_slugs.add(slug)
 
 result = subprocess.run(['git', 'branch', '-r'], capture_output=True, text=True)
 screening_branches = [b.strip() for b in result.stdout.splitlines()
@@ -58,10 +70,23 @@ for branch in sorted(set(screening_branches + opp_branches)):
                           capture_output=True, text=True)
     new_files = [f for f in diff.stdout.splitlines()
                  if (f.startswith('opportunities/') or f.startswith('reports/')) and f.endswith('.json')]
-    truly_new = [f for f in new_files if not os.path.exists(f)]
+    truly_new = []
+    skipped_zombies = []
+    for f in new_files:
+        if os.path.exists(f):
+            continue
+        # Skip resurrected zombies — opps already in the ledger.
+        if f.startswith('opportunities/'):
+            slug = os.path.splitext(os.path.basename(f))[0]
+            if slug in zombie_slugs:
+                skipped_zombies.append(slug)
+                continue
+        truly_new.append(f)
     if truly_new:
         print(f'{branch}: pulling {len(truly_new)} new files')
         subprocess.run(['git', 'checkout', branch, '--'] + truly_new)
+    if skipped_zombies:
+        print(f'{branch}: skipped {len(skipped_zombies)} zombie(s) already in ledger: {skipped_zombies}')
 "
 
 git add reports/*.json opportunities/*.json 2>/dev/null
