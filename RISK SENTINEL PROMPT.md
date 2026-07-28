@@ -47,14 +47,30 @@ result = subprocess.run(['git','branch','-r'], capture_output=True, text=True)
 branches = [b.strip() for b in result.stdout.splitlines()
             if ('sentinel' in b.lower() or 'risk' in b.lower() or b.strip().startswith('origin/claude/'))
             and b.strip().startswith('origin/')]
+# IMPORTANT: rank candidates by commit date on risk/, NOT alphabetically by branch name.
+# Branch-name suffixes are random IDs with no chronological meaning — sorted(set(branches))
+# previously picked whichever branch sorted first alphabetically among those touching risk/,
+# which silently discarded newer state in favor of an arbitrary older snapshot. This caused
+# ~26 days (2026-07-01 to 2026-07-26) of real Sentinel output to be dropped even though the
+# runs succeeded, because each fresh session started from origin/main (which has never had
+# risk/ merged into it — see Step 9) and then recovered a stale sibling instead of yesterday's.
+dated = []
 for branch in sorted(set(branches)):
+    log = subprocess.run(['git','log','-1','--format=%ct',branch,'--','risk/'],
+                         capture_output=True, text=True).stdout.strip()
+    if log:
+        dated.append((int(log), branch))
+dated.sort(reverse=True)  # most recent commit touching risk/ first
+for _, branch in dated:
     diff = subprocess.run(['git','diff','--name-only','HEAD',branch,'--','risk/'],
                           capture_output=True, text=True)
     new = [f for f in diff.stdout.splitlines() if f.startswith('risk/') and f.endswith('.json')
            and not os.path.exists(f)]
     if new:
-        print(f'{branch}: pulling {len(new)} files')
+        print(f'{branch}: pulling {len(new)} files (most recent candidate)')
         subprocess.run(['git','checkout',branch,'--']+new)
+    if new:
+        break  # only need the single most-recent branch that actually has the files
 "
 git add risk/*.json 2>/dev/null
 git diff --cached --quiet || git commit -m "Sync risk files from prior runs"
@@ -296,7 +312,9 @@ cp risk/risk-history.json  ../Dashboard/public/risk-history.json
 cp risk/deal-watch.json    ../Dashboard/public/deal-watch.json
 ```
 
-Commit the `risk/` files to `Stock-Screener` (on the run branch), and commit the synced files to `Dashboard`. Then deploy the Dashboard per its `CLAUDE.md`: `npm run build`, push, open a PR via `gh api`, merge it — merging to main triggers the Pages deploy. The Risk view will pick up the new JSON on next load (the app cache-busts with a timestamp query param).
+Commit the `risk/` files to `Stock-Screener` (on the run branch), **then merge that branch's `risk/` files into Stock-Screener `main`** (PR-and-merge, same as the daily-screening and opportunity-finder routines already do for `reports/`) — do not leave them stranded on an ephemeral run branch. Prior to 2026-07-28, this step was skipped; risk/ only ever lived on throwaway branches, main never had it, and Step 0's alphabetical (not chronological) branch pick meant most days' output was silently lost rather than recovered. Both failures are now fixed — keep merging to main every run so Step 0 stays a no-op fallback, not the primary path.
+
+Then commit the synced files to `Dashboard`, and deploy per its `CLAUDE.md`: `npm run build`, push, open a PR via `gh api`, merge it — merging to main triggers the Pages deploy. The Risk view will pick up the new JSON on next load (the app cache-busts with a timestamp query param).
 
 > Future optimization (not v1): have the app fetch `risk-monitor.json` at runtime from `raw.githubusercontent.com` (the way it already pulls briefs), so the morning risk read goes live without a full rebuild. Flag this to Carson; it's an app-code change, not a Sentinel change.
 
