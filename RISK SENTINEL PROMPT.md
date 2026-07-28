@@ -52,8 +52,10 @@ branches = [b.strip() for b in result.stdout.splitlines()
 # previously picked whichever branch sorted first alphabetically among those touching risk/,
 # which silently discarded newer state in favor of an arbitrary older snapshot. This caused
 # ~26 days (2026-07-01 to 2026-07-26) of real Sentinel output to be dropped even though the
-# runs succeeded, because each fresh session started from origin/main (which has never had
-# risk/ merged into it — see Step 9) and then recovered a stale sibling instead of yesterday's.
+# runs succeeded: each fresh session's base branch never carried risk/ forward on its own
+# (this repo's daily routines chain branch-to-branch, not through origin/main — see the
+# Step 9 correction below), so recovering the single most-recent branch here is the only
+# mechanism that carries risk/ state forward. Picking it correctly is what this fixes.
 dated = []
 for branch in sorted(set(branches)):
     log = subprocess.run(['git','log','-1','--format=%ct',branch,'--','risk/'],
@@ -312,9 +314,9 @@ cp risk/risk-history.json  ../Dashboard/public/risk-history.json
 cp risk/deal-watch.json    ../Dashboard/public/deal-watch.json
 ```
 
-Commit the `risk/` files to `Stock-Screener` (on the run branch), **then merge that branch's `risk/` files into Stock-Screener `main`** (PR-and-merge, same as the daily-screening and opportunity-finder routines already do for `reports/`) — do not leave them stranded on an ephemeral run branch. Prior to 2026-07-28, this step was skipped; risk/ only ever lived on throwaway branches, main never had it, and Step 0's alphabetical (not chronological) branch pick meant most days' output was silently lost rather than recovered. Both failures are now fixed — keep merging to main every run so Step 0 stays a no-op fallback, not the primary path.
+Commit the `risk/` files to `Stock-Screener` (on the run branch). **Correction (2026-07-28):** an earlier version of this step said to also merge `risk/` into Stock-Screener `main` via PR, on the assumption that `main` is this repo's trunk (as it is for Dashboard). That assumption was wrong — investigation on 2026-07-28 found `origin/main` stale since ~2026-06-17 with no clean common history with the actual working lineage; daily-screening and opportunity-finder sessions have been chaining branch-to-branch (each day off the previous day's branch, never through `main`) for well over a month. Opening a PR to merge `risk/` into `main` as part of a routine Sentinel run would therefore sweep in weeks of unrelated accumulated changes — do not do this. That reconciliation is a repo-topology decision for Carson, out of scope for this routine. Instead, rely on Step 0's recovery (now fixed to rank candidate branches by commit date, not alphabetically) as the mechanism that carries `risk/` state forward from one run branch to the next — just keep committing `risk/` to the run branch every time, same as before.
 
-Then commit the synced files to `Dashboard`, and deploy per its `CLAUDE.md`: `npm run build`, push, open a PR via `gh api`, merge it — merging to main triggers the Pages deploy. The Risk view will pick up the new JSON on next load (the app cache-busts with a timestamp query param).
+Then commit the synced files to `Dashboard` (whose `main` genuinely is its trunk — this correction does not apply there), and deploy per its `CLAUDE.md`: `npm run build`, push, open a PR via `gh api`, merge it — merging to main triggers the Pages deploy. The Risk view will pick up the new JSON on next load (the app cache-busts with a timestamp query param).
 
 > Future optimization (not v1): have the app fetch `risk-monitor.json` at runtime from `raw.githubusercontent.com` (the way it already pulls briefs), so the morning risk read goes live without a full rebuild. Flag this to Carson; it's an app-code change, not a Sentinel change.
 
