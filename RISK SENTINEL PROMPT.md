@@ -44,17 +44,25 @@ git fetch origin
 python3 -c "
 import subprocess, os
 result = subprocess.run(['git','branch','-r'], capture_output=True, text=True)
-branches = [b.strip() for b in result.stdout.splitlines()
+branches = [b.strip()[len('origin/'):] for b in result.stdout.splitlines()
             if ('sentinel' in b.lower() or 'risk' in b.lower() or b.strip().startswith('origin/claude/'))
             and b.strip().startswith('origin/')]
-for branch in sorted(set(branches)):
-    diff = subprocess.run(['git','diff','--name-only','HEAD',branch,'--','risk/'],
-                          capture_output=True, text=True)
-    new = [f for f in diff.stdout.splitlines() if f.startswith('risk/') and f.endswith('.json')
-           and not os.path.exists(f)]
-    if new:
-        print(f'{branch}: pulling {len(new)} files')
-        subprocess.run(['git','checkout',branch,'--']+new)
+# Rank by commit date on risk/risk-monitor.json (most recent first), not alphabetically --
+# an alphabetical scan picks an essentially random stale snapshot instead of yesterday's.
+dated = []
+for branch in set(branches):
+    r = subprocess.run(['git','log','-1','--format=%ct','origin/'+branch,'--','risk/risk-monitor.json'],
+                        capture_output=True, text=True)
+    if r.stdout.strip():
+        dated.append((int(r.stdout.strip()), branch))
+dated.sort(reverse=True)
+if dated:
+    _, branch = dated[0]
+    files = ['risk/risk-monitor.json','risk/risk-history.json','risk/deal-watch.json','risk/sentinel_notes.json']
+    existing = [f for f in files if subprocess.run(['git','cat-file','-e','origin/'+branch+':'+f]).returncode == 0]
+    if existing:
+        print(f'{branch}: most recent risk/ snapshot -- pulling {len(existing)} files')
+        subprocess.run(['git','checkout','origin/'+branch,'--']+existing)
 "
 git add risk/*.json 2>/dev/null
 git diff --cached --quiet || git commit -m "Sync risk files from prior runs"
@@ -70,7 +78,7 @@ The book you monitor is only as good as the roster. Load the universe and verify
 2. For each ticker, confirm tradability (Alpaca `/v2/assets/{ticker}` or a Finnhub `/quote` that returns a live price).
 3. **Flag any ticker that is not tradable or returns no data as a RED roster-integrity issue** with a probable cause (merged / delisted / renamed) and the corrective action ("update portfolios.json").
 
-> **Known issue at authoring time:** `portfolios.json` lists `CTRA`, but Coterra merged into **Devon (DVN)** on 2026-05-07 and the position trades as DVN. A `reports/DVN.json` already exists. Until `portfolios.json` is corrected, map CTRA→DVN for monitoring and raise the roster flag every run until fixed.
+> **Known issue at authoring time:** `portfolios.json` previously listed `CTRA` (Coterra merged into **Devon (DVN)** on 2026-05-07); this has been corrected. Currently open: `CWAN` was taken private and delisted 2026-06-25 but keeps reappearing in `portfolios.json` on `main` because no Stock-Screener run branch has ever been merged back — see PR #11/#12. Remove it again each run and raise the roster flag until one of those PRs lands.
 
 4. Confirm the **count**. The two sleeves currently list ~50 names; the firm describes 52 holdings across Dividend, Growth, and a Digital-Asset-ETF sleeve. If the ETF sleeve isn't represented in `portfolios.json`, note `"universe_incomplete": true` so the desk knows coverage is partial. Do not silently monitor a subset.
 
