@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen MDT — Medtronic plc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/MDT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('MDT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            MDT
+            <span class="stock-name-full">Medtronic plc</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-25</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">72</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Medical Devices</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Ireland</span>
+    </div>
+    
+    <div class="profile-desc">Medtronic plc is the world's largest medical device company, developing and manufacturing therapeutic medical devices across four segments: Cardiovascular, Medical Surgical, Neuroscience, and Diabetes. Products include cardiac pacemakers, defibrillators, surgical robotics (Hugo RAS), spinal implants, insulin pumps, and AI-powered diagnostic tools. Founded in 1949 in Minneapolis, operationally headquartered in Dublin, Ireland. Market cap approximately $103 billion.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>95,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.medtronic.com" target="_blank" rel="noopener">www.medtronic.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Medtronic secured FDA clearance for Hugo robotic-assisted surgery for urologic procedures in December 2025, with first U.S. cases completed in Q3 FY2026 — a major entry into a market dominated by Intuitive Surgical <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Cardiac ablation solutions surged 78% globally and 124% in the U.S. in Q4 FY2026, demonstrating breakthrough execution in pulsed field ablation (PFA) technology <span class="source-ref">[1]</span>. GI Genius, the first FDA-cleared AI-powered endoscopy tool, continues to expand clinical adoption. However, Medtronic has been a follower rather than first-mover in surgical robotics. AI Deployment (1/2): AI is embedded across multiple product lines — GI Genius AI-assisted colonoscopy detection, AI-enhanced cardiac monitoring algorithms, and machine learning integration into Hugo surgical planning <span class="source-ref">[5]</span>. These deployments are clinically validated but not yet generating separately quantified revenue. Market Share (2/2): Global leader in cardiac rhythm management, spinal surgery, neuromodulation, and insulin pumps. Cardiovascular segment grew 10.1% organically in Q4 FY2026 <span class="source-ref">[1]</span>. The installed base across 150+ countries creates deep clinical relationships and switching costs. Product Pipeline (2/2): Hugo RAS expanding into gynecology trials <span class="source-ref">[4]</span>; next-generation PFA catheters; MiniMed 780G CGM platform; FY27 organic growth guidance of 6.75-7.25% reflects confidence in pipeline conversion <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): R&amp;D spending of approximately $2.7B annually (~7.5% of revenue), consistent with medical device industry leaders and supporting a broad innovation portfolio <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Medtronic&#39;s mission — &#39;to alleviate pain, restore health, and extend life&#39; — was articulated by founder Earl Bakken in 1960 and has guided the company through 77 years of medical device innovation <span class="source-ref">[3]</span>. The mission directly connects to patient outcomes and has survived multiple leadership transitions. Under Geoff Martha, the &#39;Medtronic Mindset&#39; promotes risk-taking, rapid execution, and ethical behavior <span class="source-ref">[5]</span>. However, the mission, while genuine and well-executed, is more operational than transformational — it describes what Medtronic does rather than articulating a vision of where healthcare should go. Community Impact (2/2): The Medtronic Foundation invests significantly in global health equity, including programs to expand access to cardiac and diabetes care in underserved markets <span class="source-ref">[3]</span>. Named one of the 2026 World&#39;s Most Ethical Companies by Ethisphere and recognized as an Industry Leader among America&#39;s Most JUST Companies <span class="source-ref">[6]</span>. Product Access and Affordability initiatives extend device availability to developing nations. Employee Retention (1/2): Approximately 95,000 employees across six continents with a culture described as promoting inclusion and innovation <span class="source-ref">[5]</span>. The company has undergone restructuring under activist investor pressure from Elliott Management, which may have impacted morale, though workforce has grown 3.3% year-over-year <span class="source-ref">[7]</span>. Insider Buying (0/2): No significant net insider buying identified in the trailing 12 months. Executive compensation is equity-heavy, but insider ownership levels are not notable for a company of this size.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on financial metrics. Medtronic delivered its strongest annual revenue growth in a decade in FY2026 — $36.4B in total revenue, up 8.4% as reported and 5.8% organic <span class="source-ref">[1]</span>. Q4 FY2026 revenue of $9.8B grew 9.9%, with broad-based strength across all four segments. Forward P/E of 13.5x is well below the 20x target, offering attractive valuation relative to growth <span class="source-ref">[8]</span>. Debt-to-equity of 57% is conservatively managed within target, supported by investment-grade credit ratings <span class="source-ref">[8]</span>. Profit margin of 13.2% is above the medical device industry median of 6.6% but below the 20% target for higher-margin businesses <span class="source-ref">[8]</span>. ROE of 9.8% reflects the capital-intensive nature of medical devices and Medtronic&#39;s substantial goodwill from the Covidien acquisition, rather than operational weakness. The 49-year dividend increase streak and 50 years of consecutive payments demonstrate exceptional capital return discipline <span class="source-ref">[9]</span>. The elevated payout ratio of 76.4% is the primary weakness, limiting reinvestment flexibility, though management&#39;s FY27 EPS guidance of $5.90-$6.00 suggests coverage will improve <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Medtronic demonstrates meaningful infinite game characteristics rooted in its 77-year mission of alleviating pain and extending life, with a Just Cause that has survived multiple leadership transitions. Under Geoff Martha, the company has shown existential flexibility by pivoting toward robotics and digital health, partially IPO-ing the diabetes business, and embracing the &#39;Medtronic Mindset&#39; culture of innovation. However, activist investor pressure from Elliott Management, restructuring initiatives, and the tension between dividend aristocrat obligations and growth investment create finite-game pressures that temper the infinite orientation. The company plays to keep playing, but quarterly earnings expectations and shareholder return commitments sometimes constrain long-term thinking.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Medtronic&#39;s mission — &#39;to alleviate pain, restore health, and extend life&#39; — was written by founder Earl Bakken in 1960 and remains the company&#39;s stated purpose 66 years later <span class="source-ref">[3]</span>. This is a genuine, patient-centered cause that has guided strategic decisions across multiple CEO transitions and through the transformative Covidien acquisition. The mission directly connects to measurable human impact — millions of patients worldwide depend on Medtronic devices for cardiac rhythm management, diabetes care, and pain relief. However, the mission is more descriptive of what Medtronic does than aspirational about what healthcare should become, and the company&#39;s operational execution sometimes prioritizes market share defense over mission-driven innovation, limiting the score to 2/3.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The &#39;Medtronic Mindset&#39; culture initiative under Geoff Martha promotes risk-taking, rapid execution, inclusion, and ethical behavior <span class="source-ref">[5]</span>. The company was named one of the 2026 World&#39;s Most Ethical Companies by Ethisphere, suggesting genuine organizational values <span class="source-ref">[6]</span>. However, Elliott Management&#39;s activist investor involvement and resulting restructuring created organizational disruption, and the partial diabetes business IPO introduced uncertainty for employees in that segment <span class="source-ref">[4]</span>. At 95,000 employees across six continents, trust inevitably varies by geography and business unit.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Medtronic explicitly acknowledges Intuitive Surgical&#39;s dominance in surgical robotics and has used that rivalry constructively — developing the Hugo RAS platform not as a copycat but with differentiated positioning around cost-effectiveness, modular design, and open platform architecture <span class="source-ref">[4]</span>. Rather than attacking Intuitive directly, Medtronic focuses on expanding the total robotics market and bringing robotic-assisted surgery to procedures and geographies that Intuitive hasn&#39;t reached. This &#39;grow the pie&#39; mentality is textbook worthy rivalry.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Medtronic has demonstrated meaningful strategic flexibility — the partial IPO of the diabetes business to unlock value, the pivot toward surgical robotics with Hugo despite being decades behind Intuitive Surgical, and the embrace of AI and digital health as core strategic pillars represent genuine pivots <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. The company is evolving from a traditional device manufacturer into a technology-enabled healthcare platform. However, these pivots have been incremental rather than existential — the core business model of selling physical medical devices through hospital relationships remains unchanged, and the pace of transformation has been criticized as too slow relative to the opportunities.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Geoff Martha has made several courageous decisions — investing billions in Hugo robotic surgery to challenge Intuitive Surgical&#39;s near-monopoly, pursuing the diabetes business partial IPO over objections, and restructuring operations in response to Elliott Management&#39;s activist campaign while maintaining the company&#39;s mission focus <span class="source-ref">[4]</span><span class="source-ref">[7]</span>. The $550M Scientia Vascular acquisition in 2026 demonstrates continued willingness to invest for growth <span class="source-ref">[2]</span>. However, Martha&#39;s transformation has been described as a &#39;pivot&#39; rather than a bold leap, and the company&#39;s dividend aristocrat obligations constrain truly bold capital allocation.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Medtronic delivered its strongest fiscal year in a decade in FY2026, posting $36.4B in revenue (+8.4% YoY, +5.8% organic) with accelerating momentum across all four segments <span class="source-ref">[1]</span>. The cardiovascular business was the standout, with cardiac ablation revenue surging 78% globally on PFA technology adoption, while the Hugo robotic surgery platform secured FDA clearance and completed first U.S. cases <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. At 13.5x forward earnings, MDT trades at a significant discount to both the S&amp;P 500 and medical device peers, offering an attractive entry point for a company guiding to 6.75-7.25% organic growth in FY27 <span class="source-ref">[1]</span><span class="source-ref">[8]</span>. The 3.54% dividend yield, backed by 49 consecutive years of increases and an investment-grade balance sheet (57% D/E), provides meaningful income while investors wait for the growth transformation to fully materialize.</div>
+    <div class="thesis-text">The primary concern is whether Medtronic&#39;s growth acceleration is sustainable or cyclical. The 76.4% payout ratio limits the company&#39;s ability to fund aggressive R&amp;D and M&amp;A simultaneously with dividend growth, creating tension between its dividend aristocrat identity and growth ambitions <span class="source-ref">[8]</span><span class="source-ref">[9]</span>. ROE of 9.8% remains below the 15% target, weighed down by $40B+ in goodwill from the Covidien acquisition that has yet to fully deliver on its strategic promise. Hugo robotic surgery, while promising, faces an entrenched competitor in Intuitive Surgical with over 9,000 installed systems versus Hugo&#39;s nascent installed base <span class="source-ref">[4]</span>. The GLP-1 pharmaceutical revolution poses a structural risk to procedure volumes in bariatric, cardiovascular, and diabetes markets — segments representing a meaningful portion of Medtronic&#39;s revenue <span class="source-ref">[4]</span>. Currency headwinds from international operations (approximately 50% of revenue) add earnings volatility that the organic growth rate masks.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Hugo robotic-assisted surgery U.S. commercial ramp expanding from urology into gynecology and general surgery, potentially capturing share in a $7B+ global surgical robotics market against Intuitive Surgical&#39;s installed base <span class="source-ref">[4]</span></li>
+        
+        <li>Cardiac ablation PFA technology sustaining 70%+ growth rates as the platform expands indications and geographies, driving cardiovascular segment toward double-digit organic growth <span class="source-ref">[1]</span></li>
+        
+        <li>FY27 EPS guidance of $5.90-$6.00 implies significant earnings acceleration from $3.73 TTM GAAP EPS, potentially driving multiple re-rating from the current 13.5x forward P/E toward medical device peer averages of 20-25x <span class="source-ref">[1]</span><span class="source-ref">[8]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>GLP-1 drug adoption (Ozempic, Mounjaro, and next-generation compounds) could structurally reduce procedure volumes in bariatric surgery, certain cardiovascular interventions, and diabetes device demand, compressing Medtronic&#39;s addressable market <span class="source-ref">[4]</span></li>
+        
+        <li>Elevated 76.4% dividend payout ratio constrains capital allocation flexibility — if earnings growth disappoints, maintaining the 49-year dividend increase streak may require reducing R&amp;D or M&amp;A investment <span class="source-ref">[8]</span><span class="source-ref">[9]</span></li>
+        
+        <li>Hugo robotic surgery faces Intuitive Surgical&#39;s massive installed base advantage (9,000+ systems), established surgeon training ecosystem, and network effects — Medtronic must demonstrate differentiated clinical outcomes to gain meaningful share <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Medtronic&#39;s core business — implantable cardiac devices, spinal hardware, surgical robotics, and insulin pumps — consists of physical, FDA-regulated products that cannot be replaced by software or AI models <span class="source-ref">[5]</span>. The regulatory moat is formidable: FDA 510(k) and PMA approval processes take years and cost hundreds of millions, creating barriers that no AI startup can circumvent. Manufacturing complexity (cleanroom production, biocompatible materials, sterilization) adds further protection. Clinical relationships with surgeons and hospitals create deep switching costs reinforced by training, procedural workflows, and reimbursement codes. However, AI-powered diagnostics could potentially displace some monitoring and detection devices over time, and the broader threat of pharmaceutical disruption (GLP-1 drugs reducing bariatric and some cardiovascular procedure volumes) represents a technology-adjacent risk that could compress Medtronic&#39;s addressable market in specific segments <span class="source-ref">[4]</span>. AI Opportunity (1/1): Medtronic is actively deploying AI as a competitive advantage rather than facing it as a threat. GI Genius AI-powered colonoscopy detection is the first FDA-cleared AI endoscopy tool <span class="source-ref">[5]</span>. Hugo robotic surgery incorporates AI-assisted surgical planning. The company&#39;s proprietary clinical data from millions of implanted devices creates a flywheel for training superior AI models — better data leads to better AI, which makes devices more indispensable to clinicians, generating more data <span class="source-ref">[5]</span>. Cardiac monitoring algorithms increasingly use machine learning for arrhythmia detection.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Medtronic Q4 and Full Year FY2026 Earnings Release — prnewswire.com, June 3, 2026</li>
+        
+        <li><span class="src-num">2.</span> Yahoo Finance — MDT Quote and Market Data, accessed June 2026</li>
+        
+        <li><span class="src-num">3.</span> Eglobalis — Built to Serve, Designed to Last: Medtronic's CX-Driven Culture Over 76 Years, 2026</li>
+        
+        <li><span class="src-num">4.</span> The Martha Transformation: A Deep Dive into Medtronic's 2026 Pivot — FinancialContent, April 3, 2026</li>
+        
+        <li><span class="src-num">5.</span> Klover.ai — Medtronic's AI Strategy: Analysis of Dominance in Healthcare, 2026</li>
+        
+        <li><span class="src-num">6.</span> Ethisphere — 2026 World's Most Ethical Companies Recognition</li>
+        
+        <li><span class="src-num">7.</span> MacroTrends — Medtronic Number of Employees 2012-2026</li>
+        
+        <li><span class="src-num">8.</span> StockAnalysis.com — MDT Statistics and Valuation, accessed June 2026</li>
+        
+        <li><span class="src-num">9.</span> Medtronic Dividend Aristocrat History — SureDividend and Medtronic Investor Relations, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

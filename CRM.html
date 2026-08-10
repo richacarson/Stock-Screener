@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CRM — Salesforce, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CRM_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CRM')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CRM
+            <span class="stock-name-full">Salesforce, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-17</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -67</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">74</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Salesforce, Inc. is the world's largest CRM platform, providing cloud-based customer relationship management, AI-powered autonomous agents (Agentforce), data management (Data 360, Informatica), marketing automation, commerce, and collaboration (Slack) solutions to enterprises worldwide. Founded in 1999 by Marc Benioff, headquartered in San Francisco, California. Market cap approximately $132 billion.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>83,334 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.salesforce.com" target="_blank" rel="noopener">www.salesforce.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): Salesforce executed multiple transformative moves in 5 years — launched Agentforce AI agent platform (now $1.2B ARR), acquired Slack ($27.7B) for enterprise collaboration, completed the Informatica acquisition for enterprise data management, and pivoted the entire company from CRM vendor to agentic enterprise platform <span class="source-ref">[1]</span>. Agentforce represents a genuine platform shift comparable to the original cloud CRM disruption. AI Deployment (2/2): Agentforce is shipping at enterprise scale with $1.2B ARR (up 205% YoY), 29,000+ deals closed, 3.8 billion agentic work units delivered, and nearly 20 trillion tokens consumed in Q1 FY2027 <span class="source-ref">[1]</span>. This is quantified, shipping AI revenue at meaningful scale. Market Share (2/2): Salesforce maintains ~20% global CRM market share, the dominant category leader that defines enterprise customer relationship management <span class="source-ref">[2]</span>. Data Cloud ingested 52 trillion records (up 136% YoY) in Q1 FY2027, expanding the data moat. Product Pipeline (1/2): Agentforce roadmap includes expansion into marketing, commerce, and IT agents; Informatica integration for unified data-to-agent pipeline; FY2030 revenue target of $63B <span class="source-ref">[1]</span>. Specific but without the hardware-cycle precision of NVDA&#39;s product roadmap. R&amp;D Intensity (1/1): Approximately $6B+ annually in R&amp;D (~14% of revenue), well above enterprise software averages, with heavy concentration in AI/ML and agent infrastructure.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (4/4): Salesforce&#39;s founding purpose — &#39;to improve the state of the world&#39; embodied through the 1-1-1 philanthropic model (1% equity, 1% product, 1% employee time) — is transformative and validated by 27 years of consistent execution <span class="source-ref">[3]</span>. The 1-1-1 model spawned the Pledge 1% movement adopted by 10,000+ companies in 100+ countries. Strategic decisions — product donations to 39,000+ nonprofits, ESG integration, stakeholder capitalism advocacy — clearly trace to this purpose. Community Impact (2/2): The 1-1-1 model has generated extraordinary impact: $240M+ in grants, 3.5 million volunteer hours, technology donated to 39,000+ nonprofits and educational institutions <span class="source-ref">[3]</span>. Salesforce co-founded Pledge 1%, generating over $1 billion in collective value. This is among the most significant corporate philanthropic programs in technology. Employee Retention (0/2): Salesforce underwent approximately 5,000-6,000 layoffs across 2024-2026 — 4,000 customer support workers replaced by AI in September 2025, plus 1,000 additional cuts in marketing, analytics, and Agentforce teams in February 2026 <span class="source-ref">[4]</span>. The legendary &#39;Ohana&#39; culture has been severely damaged by repeated workforce reductions. Insider Buying (0/2): CEO Marc Benioff executed 669 sell transactions and zero buys over the past 5 years, with the most recent sale in November 2025 <span class="source-ref">[5]</span>. While Benioff retains a $3.6B stake (22M shares), the persistent selling pattern demonstrates no incremental conviction at current prices.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics, Salesforce delivers near-perfect infrastructure fundamentals. Q1 FY2027 revenue reached $11.13B (up 13% YoY), with FY2026 full-year revenue of $41.5B and operating cash flow of $15.0B — the highest in company history <span class="source-ref">[1]</span>. Forward P/E of 10.4x scores 1.00 (target &lt;=20). PEG of 0.77 scores 1.00 (target &lt;=1.0). ROE of 16.9% exceeds the 15% target (score 1.00). Revenue growth YoY of 13.3% exceeds 10% target (score 1.00). 5yr revenue CAGR of 14.3% exceeds 10% target (score 1.00). D/E of 124.3% scores 0.76 on the 70%/300% scale — moderate leverage from Informatica and Slack acquisitions. Profit margin of 18.7% scores 0.94, approaching the 20% target. Non-GAAP operating margin of 34.8% demonstrates world-class operational efficiency <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Salesforce under Marc Benioff has historically been one of the strongest infinite game players in enterprise software — the 1-1-1 model, stakeholder capitalism advocacy, and consistent strategic reinvention (on-premise to cloud to mobile to AI to agents) demonstrate genuine infinite thinking. However, recent signals reveal finite pressures: capitulation to activist investors (Elliott Management), 5,000+ layoffs replacing humans with AI, leadership overhaul replacing five senior executives, and Benioff&#39;s &#39;digital labor revolution&#39; framing suggest a company increasingly playing to win the AI race rather than playing to keep playing.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Salesforce&#39;s founding purpose — democratizing enterprise software through cloud computing and &#39;improving the state of the world&#39; through the 1-1-1 model — is genuine and has been validated by 27 years of consistent execution <span class="source-ref">[3]</span>. The 1-1-1 model spawned a global movement (Pledge 1%, 10,000+ companies). Benioff&#39;s stakeholder capitalism advocacy distinguishes the cause from typical corporate positioning. However, the tension between &#39;improving the state of the world&#39; and aggressively replacing human workers with AI agents, combined with activist investor capitulation, creates genuine inconsistency that prevents a 3.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Salesforce&#39;s once-legendary &#39;Ohana&#39; (family) culture has been severely damaged by repeated workforce reductions — 4,000 customer support workers laid off in September 2025, 1,000 additional cuts across marketing, product, and Agentforce teams in February 2026, and a sweeping leadership overhaul replacing five senior executives with six new hires <span class="source-ref">[4]</span>. Benioff stated &#39;almost no one is being hired except in sales&#39; and described a &#39;digital labor revolution&#39; where AI replaces human workers. In Sinek&#39;s framework, this is a low-trust environment where employees spend energy protecting themselves from being automated rather than advancing the Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Salesforce consistently engages with Microsoft&#39;s strengths — Copilot integration, enterprise distribution, M365 ecosystem — as motivation to build a superior AI agent platform rather than simply defending CRM market share <span class="source-ref">[2]</span>. Benioff&#39;s competitive framing focuses on innovation (&#39;AI is the single biggest opportunity in the history of the tech industry&#39;) rather than destruction. The company uses competitive pressure from Microsoft, HubSpot, and AI-native startups to drive Agentforce development.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Salesforce has fundamentally reinvented itself multiple times — from on-premise CRM disruptor to cloud platform to mobile enterprise to Einstein AI analytics to the current agentic enterprise pivot with Agentforce <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The Agentforce transformation represents a willingness to cannibalize the traditional seat-based SaaS licensing model (a $41.5B revenue franchise) in favor of consumption-based AI agent pricing. Each pivot was driven by the Just Cause of making enterprise technology more accessible, not by desperation. This is textbook existential flexibility.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Benioff made the courageous decision to pivot Salesforce toward Agentforce even as it potentially cannibalizes traditional seat-based licensing — a $41.5B revenue stream <span class="source-ref">[1]</span>. The $25B share repurchase during a 30% stock decline shows conviction. The 1-1-1 philanthropic model has sacrificed billions in potential shareholder returns since founding <span class="source-ref">[3]</span>. However, capitulation to activist investor pressure (Elliott Management) in 2024, large-scale layoffs presented as &#39;digital labor revolution,&#39; and the removal of workforce-friendly policies demonstrate that when profits are threatened, Salesforce defaults to conventional cost-cutting rather than investing through the downturn.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Salesforce represents a compelling value opportunity in enterprise AI at 10.4x forward earnings and 0.77 PEG ratio following a 30% pullback from highs <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. The company is successfully monetizing AI through Agentforce ($1.2B ARR, 205% YoY growth, 29,000+ deals) while maintaining world-class financial metrics: Q1 FY2027 revenue of $11.13B (up 13%), FY2026 operating cash flow of $15.0B (record), profit margin of 18.7%, and ROE of 16.9% <span class="source-ref">[1]</span>. FY2027 guidance exceeds $46B with a $63B target by FY2030, driven by Agentforce consumption pricing layering on top of subscription CRM. The 5yr revenue CAGR of 14.3% demonstrates sustained topline momentum, and the non-GAAP operating margin of 34.8% shows operational discipline. At $132B market cap, Salesforce&#39;s dominant CRM market share (~20% globally), 52 trillion-record data moat, and 27-year track record of platform reinvention provide a durable competitive foundation <span class="source-ref">[2]</span>.</div>
+    <div class="thesis-text">The primary risk is whether Agentforce&#39;s consumption-based model creates net-new growth or cannibalizes traditional seat-based CRM subscriptions. The &#39;SaaSpocalypse&#39; narrative — that AI agents reduce enterprise need for traditional SaaS seats — is a genuine structural concern, and the 30% stock decline reflects market skepticism about the transition <span class="source-ref">[4]</span>. D/E of 124.3% represents moderate leverage from the Informatica and Slack acquisitions. The 5,000-6,000 layoffs in 2024-2026 severely damaged the legendary &#39;Ohana&#39; culture that was a competitive advantage in talent retention — Benioff&#39;s statement that &#39;almost no one is being hired except in sales&#39; signals a fundamentally different employer proposition <span class="source-ref">[4]</span>. Microsoft Copilot integration into Dynamics 365 offers a bundled AI-CRM alternative with superior enterprise distribution. CEO Benioff&#39;s 669 insider sales with zero buys over 5 years raises questions about long-term conviction despite his $3.6B retained stake <span class="source-ref">[5]</span>. At $132B market cap, Salesforce requires sustained double-digit growth and successful Agentforce scaling to justify current valuations.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Agentforce ARR scaling beyond $1.2B toward $3-5B by FY2028, with consumption-based pricing demonstrating that AI agents create incremental revenue rather than cannibalizing traditional CRM seats</li>
+        
+        <li>FY2027 revenue exceeding $46B guidance with operating margin expansion, validating the path to $63B by FY2030 and dispelling &#39;SaaSpocalypse&#39; concerns about enterprise software demand</li>
+        
+        <li>Informatica integration enabling a unified data-to-agent pipeline (52 trillion records, 136% growth) that strengthens Salesforce&#39;s competitive moat against Microsoft Copilot and AI-native CRM alternatives</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Seat-based CRM cannibalization risk — Agentforce&#39;s consumption model may reduce enterprise need for traditional per-user licenses, undermining the $41.5B subscription base before agent revenue fully compensates</li>
+        
+        <li>Microsoft Copilot integration into Dynamics 365 and the broader M365 ecosystem offers a bundled AI-CRM alternative that could erode Salesforce&#39;s premium pricing power and ~20% market share</li>
+        
+        <li>Cultural deterioration from 5,000+ layoffs and leadership overhaul may impair Salesforce&#39;s ability to attract and retain top AI engineering talent during the most critical technology transition in the company&#39;s history</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): Salesforce&#39;s CRM platform benefits from massive enterprise switching costs — customers have deeply integrated Salesforce into sales, service, marketing, and commerce workflows with years of customization, data, and training that AI cannot simply replicate <span class="source-ref">[1]</span>. The data moat (52 trillion records in Data Cloud) creates structural defensibility. However, AI poses genuine disruptive risk to the traditional SaaS model: the &#39;SaaSpocalypse&#39; narrative holds that AI agents reduce enterprise need for per-seat software licenses, and the 30% stock decline from highs reflects market pricing of this structural concern <span class="source-ref">[4]</span>. Microsoft Copilot integration into Dynamics 365 offers a bundled AI-CRM alternative. AI-native startups could target simpler use cases at lower price points. Salesforce is adapting by building Agentforce on top of CRM, but the transition from seat-based to consumption-based pricing creates revenue model uncertainty. AI Opportunity (1/1): Agentforce generates substantial, quantified AI revenue — $1.2B ARR with 205% YoY growth, 3.8 billion agentic work units delivered, and 29,000+ deals closed in Q1 FY2027 <span class="source-ref">[1]</span>. Salesforce is one of the most successful AI monetizers in enterprise software.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -67
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Abortion Activism</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Salesforce Q1 FY2027 Earnings Release, Q4 FY2026 Results, and Agentforce Metrics — Salesforce IR, SEC, February-May 2026</li>
+        
+        <li><span class="src-num">2.</span> Salesforce Market Position, 1-1-1 Model, and Corporate Strategy — Salesforce.com, Cyntexa Statistics, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Salesforce 1-1-1 Philanthropic Model, Pledge 1% Movement, and Community Impact — Salesforce.com, Medium, SiliconValley.um.dk, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> Salesforce Leadership Overhaul, AI Workforce Disruption, and Layoffs Coverage — Fortune, GovTech, Grand Pinnacle Tribune, 2025-2026</li>
+        
+        <li><span class="src-num">5.</span> Marc Benioff Insider Trading Activity — GuruFocus, SEC Form 4 Filings, 2021-2026</li>
+        
+        <li><span class="src-num">6.</span> Yahoo Finance — CRM Key Statistics and Financial Data, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

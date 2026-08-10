@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FCX — Freeport-McMoRan Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FCX_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FCX')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FCX
+            <span class="stock-name-full">Freeport-McMoRan Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-04</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 39</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">75</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Basic Materials</span>
+        <span class="sep">&middot;</span><span>Copper</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Freeport-McMoRan is the world's largest publicly traded copper producer, operating the massive Grasberg minerals district in Indonesia along with significant mining operations in the Americas (Arizona, New Mexico, Colorado, Peru, Chile). The company produces copper, gold, and molybdenum, supplying approximately 8.5% of the world's mined copper. Under CEO Kathleen Quirk since June 2024, the company is positioned as a primary beneficiary of copper demand from AI data centers, electrification, and the energy transition.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>29,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://fcx.com" target="_blank" rel="noopener">fcx.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Freeport executed one of mining history&#39;s most complex engineering transitions at Grasberg from open-pit to underground block-cave mining, while simultaneously deploying its Americas Concentrator AI program to unlock incremental copper production equivalent to a new processing facility <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Under CEO Kathleen Quirk, the company has pioneered advanced leaching technologies that create &#39;new&#39; copper from existing assets without the decade-long lead times of greenfield mines, a capital-efficient brownfield expansion model that differentiates FCX from acquisition-driven peers <span class="source-ref">[3]</span>. AI Deployment (2/2): Freeport is an industry leader in AI-driven mining optimization, partnering with McKinsey to deploy machine learning across concentrator operations, achieving measurable increases in copper recovery rates and throughput <span class="source-ref">[2]</span>. Robotics and AI-powered machinery now assist in ore extraction, reducing labor risks and enhancing equipment productivity across operations. Market Share (2/2): As the world&#39;s largest publicly traded copper producer supplying ~8.5% of global mined copper, Freeport holds a dominant position in a commodity increasingly called &#39;the new oil&#39; as electrification and AI infrastructure drive a projected 150,000 metric ton supply deficit in 2026 <span class="source-ref">[3]</span>. Pipeline (1/2): Grasberg phased restart began in Q2 2026 following the September 2025 mud rush, targeting ~1.0B lbs copper in 2026 (similar to 2025) ramping to 1.6B lbs annual average for 2027-2029; consolidated 2026 copper sales guidance of 3.08B lbs reflects Americas operations carrying the load while Grasberg recovers <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Mining sector R&amp;D is modest; Freeport invests heavily in operational technology and leaching innovation but not at levels that distinguish it from peers on traditional R&amp;D spend metrics.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Freeport&#39;s stated purpose under Quirk centers on &#39;driving long-term value through efficiency, innovation and disciplined execution,&#39; paired with the sustainability strategy &#39;Accelerate the Future, Responsibly&#39; <span class="source-ref">[4]</span>. The messaging connects copper mining to the energy transition and electrification, but reads as corporate strategy language rather than a transformative purpose that shapes behavior beyond profit. Community Impact (1/2): The company operates community development programs near mine sites in Papua and the Americas, uses 44% clean energy, and is expanding its electric vehicle fleet <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. However, the September 2025 Grasberg mud rush that killed seven team members, combined with 50+ years of tailings disposal into the Ajikwa River ecosystem, creates significant tension with community and safety claims <span class="source-ref">[5]</span><span class="source-ref">[6]</span>. Employee Retention (1/2): Quirk assumed leadership in June 2024 after Adkerson&#39;s 20+ year tenure as chairman, providing an exceptionally smooth CEO transition that preserved institutional knowledge; the 29,000-person specialized workforce shows generally stable retention for the mining industry, though no standout tenure or voluntary turnover data is publicly available <span class="source-ref">[3]</span>. Insider Buying (1/2): Insider activity is roughly neutral; former CEO Adkerson sold approximately 153,000 shares in February 2026 representing 4.8% of his direct holding, while Quirk maintains significant equity exposure through her compensation structure but no notable net insider buying was identified in recent quarters <span class="source-ref">[7]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Q1 2026 delivered revenues of $6.23B (up 8.7% YoY) with net income more than doubling to $881M on average realized copper prices of $5.78/lb and unit net cash costs of $1.91/lb, beating EPS estimates by 21% at $0.57/share <span class="source-ref">[1]</span>. D/E of 34.1% is exceptionally low for a capital-intensive miner with $3.82B cash against $10.49B total debt. Forward PEG of 0.49 is outstanding, reflecting projected 44.6% EPS growth as Grasberg restores capacity and copper prices support earnings acceleration. Revenue growth 5yr CAGR of 10.2% meets target, and Forward P/E of 22.94x is modestly above the 20 target but reasonable given 2026 OCF guidance of $8.7B assuming $6/lb copper. ROE of 13.95% is slightly below the 15% target but improving. Profit margin of 8.5% is the primary weakness, typical for capital-intensive mining but well below the 20% ideal. Liquidity floor easily cleared at ~$1.26B daily traded value <span class="source-ref">[8]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Freeport demonstrates meaningful infinite game qualities across the Adkerson-to-Quirk leadership era — the patient multi-billion dollar Grasberg underground conversion, the decisive exit from oil and gas to refocus entirely on copper&#39;s long-term role in electrification, and the AI-driven operational transformation reflect a company built to endure through commodity cycles. Quirk&#39;s transparent handling of the fatal September 2025 Grasberg mud rush and decision to maintain dividends despite the production halt showed leadership consistency under crisis. However, the commodity nature of the business, Grasberg&#39;s environmental and safety legacy, and the inherently cyclical earnings profile temper the infinite game assessment.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Freeport&#39;s purpose of responsibly producing copper to enable the global energy transition is genuine and increasingly validated — copper is essential infrastructure for AI data centers, EV adoption, renewable energy, and grid electrification, and Quirk has framed this as the &#39;new oil&#39; thesis positioning the company&#39;s work as critical to the world&#39;s energy future <span class="source-ref">[3]</span><span class="source-ref">[4]</span>. However, the 50-year environmental record at Grasberg, including massive tailings disposal into the Ajikwa River system, and the September 2025 mud rush that killed seven workers, create significant tension with the &#39;responsibly&#39; component of this cause. The cause is partially lived — connecting the company&#39;s work to something bigger — but not yet fully validated through multi-decade consistency of responsible execution.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The CEO transition from Adkerson to Quirk in June 2024 was exceptionally smooth, with Quirk having served as CFO and President for years, preserving institutional continuity and demonstrating a culture of planned succession <span class="source-ref">[3]</span>. The successful deployment of AI and machine learning across mining operations required genuine cross-functional trust between traditional miners, metallurgists, and data scientists — a culture shift that speaks to organizational adaptability <span class="source-ref">[2]</span>. However, the September 2025 mud rush fatalities raise questions about safety culture at Grasberg, and mining industry culture is inherently hierarchical with trust varying significantly across 29,000 employees at sites spanning four countries.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Quirk explicitly differentiates Freeport&#39;s strategy from peers like BHP, choosing advanced leaching technologies and brownfield optimization over BHP&#39;s high-cost, high-risk acquisition approach — acknowledging the rival&#39;s scale while using its strategic posture to sharpen Freeport&#39;s own capital-efficient path <span class="source-ref">[3]</span>. Management frames competition as motivation to innovate rather than a zero-sum war, recognizing that Southern Copper, Rio Tinto, and other producers drive industry-wide technology adoption that raises operational standards for all participants.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Freeport has fundamentally reinvented itself twice — first by divesting its entire oil and gas business in 2016 (acquired through the McMoRan and Plains Exploration acquisitions in 2013) to become a pure-play copper/gold miner when copper prices were depressed, a painful but strategically clarifying move that cost billions in write-downs <span class="source-ref">[4]</span>. Second, the multi-billion dollar transition at Grasberg from open-pit to underground block-cave mining fundamentally changed the extraction method at the company&#39;s most important asset, extending its productive life by decades at enormous cost and engineering risk. Under Quirk, the pivot from traditional high-capex greenfield expansion to leaching innovation represents a third strategic evolution — creating &#39;new&#39; copper from existing stockpiles without decade-long development timelines <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Freeport committed billions to the Grasberg underground transition during a copper price downturn, and continues investing $4.3-4.5B annually in capex for 2026-2027 through the uncertainty of the mud rush recovery <span class="source-ref">[1]</span>. Quirk&#39;s decision to maintain dividend payments despite the September 2025 Grasberg production halt and force majeure declaration demonstrated confidence in the long-term business when cutting would have been the financially conservative choice <span class="source-ref">[3]</span><span class="source-ref">[6]</span>. The oil and gas divestiture under Adkerson showed willingness to exit a major business segment. These represent meaningful courage, but the decisions were partly shaped by financial necessity rather than purely voluntary sacrifice for long-term capability.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Freeport-McMoRan is the world&#39;s premier pure-play copper producer positioned at the intersection of three secular demand drivers: AI data center construction, renewable energy infrastructure, and vehicle electrification. Q1 2026 results beat estimates decisively with revenue of $6.23B (up 8.7% YoY), net income of $881M (more than doubled), and EPS of $0.57 beating consensus by 21% on average realized copper prices of $5.78/lb and unit net cash costs of just $1.91/lb <span class="source-ref">[1]</span>. Management guides 2026 consolidated copper sales of 3.08B lbs and operating cash flow of $8.7B assuming $6/lb copper and $4,500/oz gold, while the forward PEG of 0.49 reflects projected 44.6% EPS growth as the copper supply deficit reaches an estimated 150,000 metric tons in 2026 <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. D/E of 34.1% provides balance sheet strength unusual for a capital-intensive miner, and Quirk&#39;s leaching innovation strategy creates incremental copper from existing assets without the multi-billion dollar cost and decade-long timelines of greenfield development <span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case centers on Grasberg execution risk and copper price cyclicality. The September 2025 mud rush — which killed seven workers and triggered force majeure — forced management to revise Grasberg production down approximately 9% for copper and 7% for gold over five years, with 2026 Grasberg output limited to ~1.0B lbs copper while the phased restart targets only 65% capacity in H2 2026 and 80% by mid-2027 <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. At current copper prices above $5.50/lb, FCX generates strong cash flow, but profit margin of 8.5% and ROE of 13.95% remain below targets — a copper correction to $3.50/lb would compress EBITDA by 40%+ and strain the $4.3-4.5B annual capex commitment. Forward P/E of 22.94x is above the 20 target, and the trailing P/E of 31.60x reflects the Grasberg-impacted earnings base. Indonesian political risk persists — the government&#39;s 51% ownership of PT Freeport Indonesia and history of using export permits and tax policy as regulatory leverage creates structural uncertainty around FCX&#39;s most important asset <span class="source-ref">[5]</span>. Grasberg&#39;s environmental legacy, including 50+ years of tailings disposal and the 2025 fatalities, exposes FCX to future remediation costs, regulatory action, and ESG-driven investor exclusion.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Grasberg phased restart targeting 65% capacity in H2 2026 and 80% by mid-2027, with average annual production of 1.6B lbs copper and 1.3M oz gold for 2027-2029 driving substantial earnings recovery from the mud-rush-impacted base <span class="source-ref">[1]</span></li>
+        
+        <li>Structural copper supply deficit of 150,000 metric tons in 2026 driven by AI data center construction, EV adoption, and grid electrification supporting sustained $5+/lb copper prices and multi-year demand visibility <span class="source-ref">[3]</span></li>
+        
+        <li>Quirk&#39;s leaching innovation strategy creating incremental copper production from existing stockpiles and brownfield assets without greenfield capital intensity, potentially unlocking billions of lbs of additional recoverable copper <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Copper price cyclicality — a correction from current $5.50+/lb to $3.50/lb would slash EBITDA by 40%+ and stress the $4.3-4.5B annual capex program, as profit margin of 8.5% provides thin cushion against commodity downturns <span class="source-ref">[1]</span></li>
+        
+        <li>Grasberg execution risk — the September 2025 mud rush killed seven workers, triggered force majeure, and forced a 9% reduction in 5-year copper production guidance; underground block-cave operations face ongoing geological uncertainties as the restart progresses <span class="source-ref">[1]</span><span class="source-ref">[6]</span></li>
+        
+        <li>Indonesian political and regulatory risk — the government&#39;s 51% ownership of PT Freeport Indonesia and history of using export permits, tax policy, and environmental compliance as leverage creates structural uncertainty around the company&#39;s highest-value asset <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Freeport-McMoRan is structurally immune to AI disruption — copper mining involves physical extraction, processing, and global logistics that AI cannot replace <span class="source-ref">[2]</span>. More critically, AI is a direct demand driver for Freeport&#39;s core product: each AI data center requires massive copper wiring for power distribution, cooling systems, and networking infrastructure, contributing to a projected 150,000 metric ton copper supply deficit in 2026 <span class="source-ref">[3]</span>. CEO Quirk has positioned copper as &#39;the new oil&#39; for the AI era, and no analysts identify AI as a substitution risk — the convergence of electrification, EV adoption, and renewable energy infrastructure further insulates the business from any AI-driven demand destruction. AI Opportunity (1/1): Freeport generates measurable operational value from AI through its Americas Concentrator program, using machine learning to optimize copper recovery rates and processing throughput, effectively creating the equivalent of a new processing facility&#39;s output without capital expenditure <span class="source-ref">[2]</span>. AI-powered predictive maintenance and robotics-assisted ore extraction reduce downtime and labor risk across operations.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            39
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Freeport-McMoRan Q1 2026 Earnings Release (8-K Filing), April 23, 2026 — $6.23B revenue, $881M net income, 657M lbs copper at $5.78/lb, 2026 guidance of 3.08B lbs copper and $8.7B OCF</li>
+        
+        <li><span class="src-num">2.</span> McKinsey Digital — 'How Freeport is Leading AI in Mining' — Americas Concentrator AI program, machine learning deployment for copper recovery optimization</li>
+        
+        <li><span class="src-num">3.</span> Skillings Mining Review — 'The Tech-Mining Power List: 5 CEOs Leading the AI-Energy Nexus in 2026' — Quirk's leaching innovation strategy and copper-as-'new-oil' positioning</li>
+        
+        <li><span class="src-num">4.</span> Freeport-McMoRan Sustainability Report and Corporate Purpose — 'Accelerate the Future, Responsibly' strategy</li>
+        
+        <li><span class="src-num">5.</span> AInvest — 'Freeport-McMoRan and Corporate Governance Risks in the Mining Sector' — ESG compliance, environmental liability, and governance analysis, 2025</li>
+        
+        <li><span class="src-num">6.</span> Freeport-McMoRan Investor Relations — Grasberg mud rush incident update, September-October 2025; seven fatalities, force majeure declaration, phased restart plan</li>
+        
+        <li><span class="src-num">7.</span> MarketBeat / InsiderTrades — FCX insider trading activity 2026, Adkerson share sales February 2026</li>
+        
+        <li><span class="src-num">8.</span> Yahoo Finance / StockAnalysis — FCX key statistics, valuation metrics, and financial data, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

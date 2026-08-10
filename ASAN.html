@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen ASAN — Asana, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/ASAN_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('ASAN')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            ASAN
+            <span class="stock-name-full">Asana, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-28</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Asana, Inc. operates a work management platform that enables organizations to orchestrate work from daily tasks to strategic initiatives. Products include AI Teammates and AI Studio for AI-powered workflow automation. Founded in 2008 by Dustin Moskovitz (Facebook co-founder) and Justin Rosenstein, the company transitioned CEO to Dan Rogers in mid-2025, with Moskovitz becoming Executive Chair focused on AI strategy. FY2026 revenue of $790.8M (+9.2% YoY) and market cap ~$1.5B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,800 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://asana.com" target="_blank" rel="noopener">asana.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Asana launched AI Teammates and AI Studio in 2025-2026, adding agentic workflow automation capabilities to its core work management platform, but these represent incremental AI features layered onto an existing product rather than a transformative new business model or market category <span class="source-ref">[4]</span>. The underlying platform architecture remains fundamentally unchanged since founding. AI Deployment (2/2): AI Teammates and AI Studio are shipping to customers as integrated platform capabilities, enabling automated workflow execution and intelligent task routing across enterprise teams <span class="source-ref">[4]</span>. Moskovitz&#39;s transition to Executive Chair specifically to drive AI strategy signals organizational commitment to embedding AI throughout the product experience. Market Share (1/2): Asana holds a meaningful position in the $10B+ work management software market but is not the category leader, competing against Microsoft Planner/Copilot, Monday.com, Smartsheet, and Notion <span class="source-ref">[7]</span>. Revenue growth deceleration from 31% 5-year CAGR to 9.5% YoY suggests market share gains have stalled as larger platform competitors integrate work management features natively. Product Pipeline (1/2): The &#39;Enterprise 2.0&#39; and &#39;agentic enterprise&#39; vision articulated by new CEO Dan Rogers provides strategic direction, but specific product launch timelines and named initiatives beyond AI Teammates remain limited <span class="source-ref">[3]</span><span class="source-ref">[4]</span>. R&amp;D Intensity (1/1): Engineering and product development consume a significant share of revenue, consistent with high-growth SaaS companies investing aggressively in platform capabilities and AI integration.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): &#39;To help humanity thrive by enabling the world&#39;s teams to work together effortlessly&#39; is specific, aspirational, and differentiates Asana from generic productivity software by connecting work management to human flourishing <span class="source-ref">[4]</span>. Moskovitz has articulated this vision consistently since the company&#39;s founding in 2008, and it has shaped product decisions around reducing &#39;work about work.&#39; However, the company is only 18 years old and the mission has not been tested through multi-decade consistency or existential crisis. Community Impact (1/2): Asana has been carbon neutral since FY2022 and operates on 100% renewable electricity globally, with published ESG reports documenting environmental commitments <span class="source-ref">[6]</span>. However, no distinctive community investment programs with specific dollar amounts or measurable social impact beyond standard corporate sustainability practices were identified. Employee Retention (1/2): Asana has been consistently recognized as one of the best workplaces globally, and Moskovitz&#39;s leadership fostered a human-focused culture that prioritizes employee wellbeing as a competitive advantage <span class="source-ref">[6]</span>. However, the CEO transition to Dan Rogers and decelerating growth introduce uncertainty, and no specific retention or tenure metrics are publicly available. Insider Buying (0/2): Net insider selling in 2026 — CEO Rogers sold 26,975 shares ($179,626) and CFO Aziz sold 31,696 shares ($210,991) in June 2026, with total insider sales of ~$1.96M over 90 days and no open-market purchases identified <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Asana&#39;s financial profile reflects a high-gross-margin SaaS business (88.51%) still transitioning toward GAAP profitability <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. D/E of 27.96% is healthy and well below the 70% target, providing balance sheet flexibility with $424.6M cash against $248.2M debt. Forward P/E of 17.05 is reasonable for a growth software company. However, ROE of -87.55% and net profit margin of -20.21% both score at floor, reflecting persistent GAAP unprofitability despite achieving non-GAAP operating income of $18.2M (9% margin) in Q4 FY2026 for the first time <span class="source-ref">[1]</span>. Revenue growth of 9.5% YoY is decelerating sharply from a 31.44% 5-year CAGR as the company scales, and Q1 FY2027 revenue of $205.1M grew only 9.52% YoY <span class="source-ref">[2]</span>. PEG ratio is unavailable due to negative earnings. Liquidity floor cleared: $6.67 x 5,420,000 = $36.15M daily trading value <span class="source-ref">[7]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Asana demonstrates genuine infinite game characteristics through Moskovitz&#39;s consistent 18-year articulation of the company&#39;s mission, a culture repeatedly recognized as industry-leading, and a willingness to evolve the platform toward AI-powered work orchestration rather than defending the status quo. The CEO transition to Dan Rogers, while well-planned, introduces execution risk as the company shifts from founder-led to professional management during a critical competitive inflection point. The &#39;Enterprise 2.0&#39; vision reflects forward-looking strategy, but decelerating growth and persistent GAAP losses create finite-game pressures around near-term profitability.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): &#39;To help humanity thrive by enabling the world&#39;s teams to work together effortlessly&#39; is a genuine cause that has shaped Asana&#39;s product decisions, culture, and strategic direction since founding in 2008 <span class="source-ref">[4]</span>. Moskovitz has consistently articulated this vision and structured the company around reducing &#39;work about work&#39; — the hours spent on coordination rather than meaningful contribution. The mission is specific enough to guide decisions (what to build, how to price, which markets to enter) and aspirational enough to outlast any single product cycle. However, it has not been tested through a multi-decade track record or existential crisis — and the CEO succession to Dan Rogers introduces uncertainty about whether the cause will remain the primary strategic compass.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (2/2): Asana has been consistently recognized as one of the best workplaces globally, with Moskovitz&#39;s leadership deliberately building a high-trust culture where &#39;product work could be rigorous while staying human-focused&#39; <span class="source-ref">[6]</span>. The company&#39;s emphasis on employee wellbeing as a competitive advantage — evidenced by its Chief People Officer role, published ESG commitments to employee welfare, and multiple workplace awards — reflects genuine investment in psychological safety and team autonomy. The planned CEO transition from Moskovitz to Dan Rogers was executed with transparency and a clear delineation of roles (Rogers on operations, Moskovitz on AI vision), suggesting organizational trust extending through leadership changes <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Asana acknowledges competitive pressure from Microsoft Planner/Copilot, Monday.com, Smartsheet, and Notion as motivation to accelerate AI innovation and deepen enterprise capabilities rather than engaging in zero-sum competitive rhetoric <span class="source-ref">[4]</span>. The company&#39;s strategic response to Microsoft&#39;s growing work management features has been to differentiate on workflow complexity and AI-powered orchestration, treating rival capabilities as a signal to evolve rather than a threat to attack. Moskovitz&#39;s decision to focus full-time on AI strategy as Executive Chair was partly motivated by the competitive imperative to stay ahead of platform giants embedding work management natively.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Asana is evolving from a task management tool to an AI-powered work orchestration platform, with AI Teammates and AI Studio representing a meaningful expansion of the product&#39;s value proposition beyond simple project tracking <span class="source-ref">[4]</span>. The company&#39;s willingness to restructure leadership — moving Moskovitz from CEO to Executive Chair to focus on AI — demonstrates strategic flexibility. However, the core business model (SaaS subscription for work management) remains fundamentally unchanged, and the AI pivot is additive rather than transformative. The company has not demonstrated willingness to cannibalize existing revenue streams or enter entirely new markets.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Moskovitz&#39;s decision to step back from the CEO role to focus full-time on AI strategy as Executive Chair demonstrates conviction that the company&#39;s future depends on AI transformation rather than incremental growth <span class="source-ref">[3]</span>. This is a non-trivial organizational bet — founder CEO transitions often destabilize companies. However, the company&#39;s path toward profitability has been primarily through cost discipline rather than courageous long-term investment against short-term pressure. Revenue growth decelerated from 31% CAGR to 9.5% without a corresponding bold strategic pivot, and the stock&#39;s decline following the CEO succession announcement suggests the market is not yet convinced by the courage of the transition <span class="source-ref">[3]</span><span class="source-ref">[7]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Asana at 17.05x forward earnings with an 88.5% gross margin and $424.6M cash represents a discounted option on the AI-powered work management category, trading at just 1.94x trailing revenue ($1.53B market cap / $790.8M revenue) <span class="source-ref">[1]</span><span class="source-ref">[7]</span>. The company achieved its first non-GAAP profitability in Q4 FY2026 with $18.2M operating income (9% margin), demonstrating the operating leverage inherent in the SaaS model as growth moderates. AI Teammates and AI Studio position Asana at the intersection of two massive trends — enterprise AI adoption and agentic workflow automation — with Moskovitz&#39;s full-time focus as Executive Chair providing strategic continuity through the CEO transition to Dan Rogers <span class="source-ref">[3]</span><span class="source-ref">[4]</span>. The 31.44% 5-year revenue CAGR and 88.5% gross margin reflect a business with strong unit economics that has yet to translate into sustained profitability.</div>
+    <div class="thesis-text">The bear case centers on competitive moat erosion and growth deceleration. Revenue growth has slowed dramatically from 31% 5-year CAGR to 9.5% YoY, and Q1 FY2027 showed only 9.52% growth to $205.1M, suggesting the deceleration has not yet bottomed <span class="source-ref">[2]</span>. Microsoft&#39;s integration of work management and AI copilot features into its dominant 365 ecosystem poses an existential competitive threat — enterprises may consolidate on platforms they already own rather than maintain standalone work management subscriptions. ROE of -87.55% and net profit margin of -20.21% reflect a company that remains GAAP unprofitable after 18 years of operation, with persistent stock-based compensation masking the true cost structure <span class="source-ref">[7]</span>. Net insider selling of $1.96M over 90 days, including sales by both the new CEO and CFO, does not signal management conviction at current prices <span class="source-ref">[5]</span>. The CEO succession announced in March 2026 triggered a stock decline and introduced execution risk during a critical competitive inflection.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI Teammates and AI Studio adoption driving net revenue retention expansion and enterprise upsell as AI-powered workflow automation becomes a premium feature that differentiates Asana from commodity task management tools <span class="source-ref">[4]</span></li>
+        
+        <li>Path to sustained GAAP profitability following Q4 FY2026 non-GAAP operating income of $18.2M (9% margin), with further operating leverage as revenue scales above $800M against a stabilizing cost base <span class="source-ref">[1]</span></li>
+        
+        <li>Enterprise 2.0 strategy under CEO Dan Rogers targeting larger enterprise deals and deeper platform integration, potentially reaccelerating revenue growth above the current 9.5% trajectory <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Microsoft Copilot and integrated AI assistants within dominant productivity suites (Microsoft 365, Google Workspace) could render standalone work management platforms redundant for most enterprise use cases, compressing Asana&#39;s addressable market <span class="source-ref">[4]</span><span class="source-ref">[7]</span></li>
+        
+        <li>Revenue growth deceleration from 31% 5-year CAGR to 9.5% YoY may reflect structural market saturation rather than cyclical headwinds, with Q1 FY2027 showing no improvement at 9.52% growth and the stock trading at $6.67 — down over 90% from its 2021 highs <span class="source-ref">[2]</span><span class="source-ref">[7]</span></li>
+        
+        <li>CEO succession from founder Moskovitz to professional manager Dan Rogers during a critical AI competitive transition introduces execution risk, with net insider selling of $1.96M and stock declines following the March 2026 announcement suggesting market skepticism <span class="source-ref">[3]</span><span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (4/9): Asana faces material AI substitution risk as its core value proposition — organizing, tracking, and coordinating work across teams — is increasingly replicable by AI assistants embedded in dominant productivity platforms <span class="source-ref">[4]</span><span class="source-ref">[7]</span>. Microsoft Copilot can automate task creation, status tracking, and workflow coordination natively within the Microsoft 365 ecosystem that enterprises already use, and Monday.com and Notion are deploying competitive AI features. Standalone work management tools risk becoming redundant layers as AI agents handle project coordination within existing collaboration platforms. Asana&#39;s differentiation rests on workflow complexity and enterprise-grade orchestration, but simpler use cases are directly threatened. AI Opportunity (1/1): AI Teammates and AI Studio are generating revenue as platform-integrated features, enabling automated workflow execution, intelligent prioritization, and agentic task completion <span class="source-ref">[4]</span>. Moskovitz&#39;s full-time focus on AI strategy as Executive Chair and the company&#39;s &#39;agentic enterprise&#39; positioning demonstrate genuine capability to convert AI from threat to growth driver, though the revenue contribution of AI-specific features is not yet broken out.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Abortion Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Asana Announces Fourth Quarter and Fiscal Year 2026 Results — BusinessWire, February 27, 2026</li>
+        
+        <li><span class="src-num">2.</span> Asana Announces First Quarter Fiscal 2027 Results — Asana Investor Relations, 2026</li>
+        
+        <li><span class="src-num">3.</span> Asana CEO Succession Plan — Asana Investor Relations, March 2026</li>
+        
+        <li><span class="src-num">4.</span> Asana AI Teammates and Agentic Enterprise Strategy — MyMotherLode Financial News, 2026</li>
+        
+        <li><span class="src-num">5.</span> Asana Insider Trading Activity — MarketBeat, June 2026</li>
+        
+        <li><span class="src-num">6.</span> Asana FY25 ESG Report: Accelerating Impact for People, Planet, and Product — asana.com, 2025</li>
+        
+        <li><span class="src-num">7.</span> Yahoo Finance — ASAN Key Statistics and Financial Data, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

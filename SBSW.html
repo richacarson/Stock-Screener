@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SBSW — Sibanye Stillwater Limited</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SBSW_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SBSW')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SBSW
+            <span class="stock-name-full">Sibanye Stillwater Limited</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-06-25</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">59</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Basic Materials</span>
+        <span class="sep">&middot;</span><span>Other Precious Metals & Mining</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>South Africa</span>
+    </div>
+    
+    <div class="profile-desc">Sibanye Stillwater Limited is a multinational mining and metals processing company headquartered in Weltevredenpark, South Africa. The company produces platinum group metals (PGMs including palladium, platinum, rhodium, iridium, and ruthenium), gold, chrome, lithium, zinc, nickel, silver, cobalt, and copper. Operations span South Africa (PGMs and gold), the United States (Stillwater PGM mine in Montana), Europe, and Australia. The company has diversified into battery metals through its Keliber lithium project in Finland. Founded in 2013 as a gold mining spinoff from Gold Fields, Sibanye Stillwater has grown through acquisitions into one of the world's largest PGM producers.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>85,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.sibanyestillwater.com" target="_blank" rel="noopener">www.sibanyestillwater.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Sibanye Stillwater has executed a significant strategic transformation over the past five years, diversifying from South African gold mining into PGMs (acquiring Stillwater Mining in Montana), battery metals (Keliber lithium project in Finland, completed construction in Q1 2026), and recycling operations <span class="source-ref">[1]</span>. This represents a genuine multi-commodity transformation that redefined the company from a single-commodity gold miner into a diversified critical metals producer. AI Deployment (0/2): No evidence of AI-powered products or quantified AI-driven operational savings. The appointment of a Chief Technical and Innovation Officer (Robert van Niekerk) in 2022 suggests some focus on technology adoption, but no specific AI deployments were disclosed <span class="source-ref">[2]</span>. Market Share (1/2): Sibanye Stillwater is one of the world&#39;s largest producers of PGMs (particularly platinum and palladium) and the largest gold producer in South Africa, holding meaningful market share in its core commodities <span class="source-ref">[1]</span>. However, PGM pricing power is limited by commodity market dynamics. Product Pipeline (1/2): The Keliber lithium project in Finland completed construction in Q1 2026, providing visibility into a new revenue stream in battery metals <span class="source-ref">[1]</span>. Additionally, the company&#39;s PGM recycling operations and hydrogen-related PGM applications offer future growth optionality. R&amp;D Intensity (1/1): The appointment of a dedicated Chief Technical and Innovation Officer and investment in battery metals, recycling technology, and hydrogen applications suggest above-average innovation commitment for the mining sector.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Sibanye Stillwater articulates a sustainability-focused vision centered on responsible mining, environmental stewardship, and community benefit, with commitments to net zero by 2050 and carbon neutrality by 2040 <span class="source-ref">[3]</span>. The mission is clear and includes measurable targets, but is not distinctive enough to differentiate from mining peers making similar net-zero pledges. Community Impact (1/2): The company is a constituent of the JSE Responsible Investment Index, received an A- CDP Water Security rating (above global and sector averages), and has published comprehensive sustainability reports <span class="source-ref">[3]</span>. As the largest employer in several South African mining communities (approximately 85,000 total employees), Sibanye Stillwater plays a significant socioeconomic role. However, no specific charitable foundation dollar amounts or distinctive community investment programs were identified. Employee Retention (0/2): No specific employee retention metrics, turnover data, or evidence of mission-driven retention were found. The mining industry in South Africa has historically experienced labor tensions, and the CEO transition from Neal Froneman to Richard Stewart in September 2025 represents recent leadership instability after Froneman&#39;s decade-long tenure <span class="source-ref">[2]</span>. Insider Buying (1/2): No insider transaction data was available from yfinance for SBSW. The company&#39;s ADR structure (South African primary listing) limits visibility into insider buying patterns for US-listed investors. The recent CEO transition and board changes make insider activity patterns uncertain.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Sibanye Stillwater&#39;s FY2025 revenue increased 14% to R129.7B ($7.3B), and Q1 2026 saw adjusted EBITDA surge 371% YoY to R19.4B ($1.2B) driven by rising PGM and gold prices <span class="source-ref">[1]</span>. However, the company remains unprofitable on a trailing basis with profit margin of -4.0% (score 0.0) and ROE of -10.3% (score 0.0), reflecting the severe PGM price downturn in 2023-2024 that produced losses. D/E of 99.4% is moderate (score 0.87). Forward P/E of 2.3x is exceptionally low (score 1.0), reflecting the market&#39;s skepticism about earnings sustainability. Revenue growth YoY of 31.6% scores maximum (1.0), but 3-year revenue CAGR of -2.1% scores only 0.19 due to the revenue decline from 2022 peak levels. PEG ratio is unavailable. Weighted sum 3.26/8 = Infrastructure 4. Liquidity is strong at $43.4M average daily traded value <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Sibanye Stillwater demonstrates meaningful infinite game characteristics through its transformative diversification strategy — pivoting from a pure South African gold miner into a global critical metals company spanning PGMs, gold, lithium, and recycling. The net-zero 2050 commitment and carbon neutrality by 2040 target reflect genuinely long-term thinking. However, the recent CEO transition from founder-era leader Neal Froneman to Richard Stewart in September 2025 introduces uncertainty about whether the transformative strategic vision will persist, and the company&#39;s financial instability (two years of losses) creates pressure for finite, short-term decision-making.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Sibanye Stillwater&#39;s stated purpose centers on responsible mining and providing critical metals for a sustainable future — including PGMs for hydrogen fuel cells and lithium for batteries <span class="source-ref">[3]</span>. This is a more specific and forward-looking purpose than most mining peers, as it connects the company&#39;s work to the energy transition and clean technology future. However, the purpose has not been validated by decades of consistent execution (the company was founded only in 2013) and is still more aspirational than proven. The frequent strategic pivots and commodity-driven decision-making suggest the cause is emergent rather than deeply embedded.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Sibanye Stillwater employs approximately 85,000 people, primarily in South African mining operations where labor relations are a defining challenge <span class="source-ref">[2]</span>. The company publishes a Code of Ethics emphasizing respect in the work environment and avoidance of conflicts of interest. The CEO transition from Neal Froneman (who led the company through its transformative growth phase) to Richard Stewart (promoted from COO) was orderly and internal. However, South African mining is historically associated with labor tensions, and no specific evidence of exceptional trust-building practices or employee satisfaction metrics was found.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Sibanye Stillwater&#39;s competitive language emphasizes being one of the world&#39;s largest PGM producers and its diversification into battery metals as competitive advantages <span class="source-ref">[1]</span>. No evidence was found of management acknowledging competitors&#39; strengths or framing competitive dynamics as opportunities for learning and self-improvement. The company&#39;s communications are oriented toward demonstrating scale and strategic positioning rather than competitive humility.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Sibanye Stillwater has demonstrated genuinely transformative strategic flexibility multiple times since its 2013 founding as a South African gold spinoff <span class="source-ref">[1]</span>. The company fundamentally reinvented itself through the acquisition of Stillwater Mining (entering US PGM production), the acquisition of Lonmin (becoming a PGM heavyweight), the Keliber lithium project (entering battery metals), and the development of PGM recycling operations. Each pivot represented a transformative expansion into new commodities, geographies, and value chains. The company went from a single-commodity, single-country gold miner to a diversified global critical metals producer within a decade — a remarkable transformation driven by strategic vision rather than desperation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Under Neal Froneman&#39;s leadership, Sibanye Stillwater made multiple courageous bets that transformed the company: the $2.2B Stillwater Mining acquisition (entering the US), the Lonmin acquisition during a PGM downturn, and the Keliber lithium project (a multi-hundred-million-dollar bet on battery metals with no near-term revenue) <span class="source-ref">[1]</span>. The company committed to net zero by 2050 and carbon neutrality by 2040, investing in renewable energy at its South African operations — bold commitments for a mining company in a country heavily dependent on coal power. These decisions prioritized long-term strategic positioning over short-term earnings at significant financial cost, including the losses incurred in 2023-2024 during the PGM price collapse.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Sibanye Stillwater is a deeply discounted turnaround play, trading at 2.3x forward earnings with forward EPS of $3.70 against an $8.59 stock price — a 60% discount to its 52-week high of $21.29 <span class="source-ref">[4]</span>. Q1 2026 adjusted EBITDA surged 371% YoY to $1.2B driven by rising PGM and gold prices, with South African PGM EBITDA up 393% and gold EBITDA up 160% <span class="source-ref">[1]</span>. The Keliber lithium project in Finland completed construction in Q1 2026, positioning the company for revenue diversification into battery metals. The company&#39;s strategic transformation from a single-commodity gold miner into a diversified critical metals producer (PGMs, gold, lithium, recycling) creates optionality across multiple commodity cycles. At current prices, the stock offers exceptional leverage to PGM price recovery and the hydrogen economy thesis.</div>
+    <div class="thesis-text">The bear case is substantial. Sibanye Stillwater has been unprofitable for two consecutive years with trailing profit margin of -4.0% and ROE of -10.3%, reflecting the devastating PGM price collapse in 2023-2024 that erased the earnings power built during the 2020-2022 PGM supercycle <span class="source-ref">[4]</span>. D/E of 99.4% represents meaningful leverage for a company with negative earnings, and the R43.9B ($2.5B) debt load requires consistent cash generation to service. The CEO transition from long-tenured Neal Froneman to Richard Stewart in September 2025 introduces execution uncertainty during a critical recovery period. South African mining operations face structural challenges including electricity supply instability (load shedding), labor costs, regulatory uncertainty, and deep-level mining safety risks. The Keliber lithium project, while strategically important, adds execution and ramp-up risk to an already complex operational portfolio. PGM demand faces long-term secular risk from battery electric vehicle adoption reducing catalytic converter demand.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>PGM price recovery sustaining Q1 2026 momentum, with palladium and rhodium prices improving from cyclical lows and gold at record highs, driving a potential return to profitability on a trailing basis in 2026</li>
+        
+        <li>Keliber lithium project ramp-up in Finland providing the first revenue from battery metals, diversifying the commodity mix and reducing dependence on cyclical PGM prices</li>
+        
+        <li>Hydrogen fuel cell adoption acceleration creating structural demand growth for platinum and palladium, leveraging Sibanye Stillwater&#39;s position as one of the world&#39;s largest PGM producers</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>PGM price decline from current recovery levels would reverse the Q1 2026 earnings improvement and extend the company&#39;s loss-making period, straining the $2.5B debt load and potentially requiring dividend suspension</li>
+        
+        <li>South African operational risks including electricity supply instability (Eskom load shedding), labor cost inflation, regulatory uncertainty, and deep-level mining safety hazards create persistent drag on margins and production reliability</li>
+        
+        <li>Battery electric vehicle adoption reducing long-term catalytic converter demand for palladium and platinum, creating secular headwinds for the company&#39;s largest revenue segment even as hydrogen fuel cells offer partial offset</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Sibanye Stillwater&#39;s core business — mining PGMs, gold, and battery metals from deep underground and open-pit operations — is a physical-world operation that AI structurally cannot displace <span class="source-ref">[1]</span>. Underground mining requires specialized heavy equipment, geological expertise, regulatory permitting, and labor-intensive extraction processes that exist entirely outside the digital domain. AI cannot mine palladium, extract platinum from ore, or manage the physical safety of underground operations. Furthermore, PGMs are essential components in catalytic converters, hydrogen fuel cells, and industrial processes that AI adoption may accelerate. Gold&#39;s role as a store of value is uncorrelated with AI disruption. The Keliber lithium project positions the company to benefit from battery demand driven partly by AI-related energy storage needs. No analysts have flagged AI as a substitution risk for PGM or gold miners. AI Opportunity (1/1): While Sibanye Stillwater does not sell AI products, its PGMs and battery metals are critical inputs for technology infrastructure. PGMs are essential for hydrogen fuel cell technology, and lithium from the Keliber project will supply battery manufacturing. The company&#39;s satellite and AI-enhanced mining intelligence capabilities also represent internal technology adoption <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Sibanye Stillwater Q1 2026 Operational Update and FY2025 Annual Results — SEC 6-K Filing, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Sibanye Stillwater CEO Transition and Leadership Team — Sibanye Stillwater Website and Discovery Alert, September 2025</li>
+        
+        <li><span class="src-num">3.</span> Sibanye Stillwater Sustainability Strategy, Net Zero Commitments, and ESG Ratings — Sibanye Stillwater Website and Mining Technology, 2025</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — SBSW Key Statistics and Financial Data, accessed June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

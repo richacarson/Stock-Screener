@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RMBS — Rambus Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RMBS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RMBS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RMBS
+            <span class="stock-name-full">Rambus Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 44</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">75</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Semiconductors</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Rambus Inc. provides semiconductor products and intellectual property (IP) for advanced memory and data center connectivity solutions. The company designs and sells memory interface chips, silicon IP, and security technologies used in data centers, AI infrastructure, and high-performance computing. Key products include DDR5 memory interface chips, HBM4E memory controller IP, and LPDDR5X server module chipsets. Rambus also licenses its extensive patent portfolio covering memory interface, security, and data center technologies. Founded in 1990 and headquartered in San Jose, California.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>850 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.rambus.com" target="_blank" rel="noopener">www.rambus.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Rambus delivered record 2025 annual product revenue of $347.8M (up 41% from 2024) and continued momentum into Q1 2026 with product revenue of $88.0M (up 15% YoY), with total Q1 2026 GAAP revenue of $180.2M exceeding guidance <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company has successfully transformed from a patent licensing company into a product-plus-licensing hybrid with genuine semiconductor product revenue now comprising roughly half of total revenue. AI Deployment (2/2): Rambus is at the cutting edge of AI-enabling semiconductor technology. The company announced the industry&#39;s fastest HBM4E memory controller IP and an LPDDR5X SOCAMM2 server module chipset specifically designed for AI server platforms <span class="source-ref">[2]</span>. These products are critical enablers of AI data center infrastructure — every AI accelerator requires high-bandwidth memory interfaces that Rambus designs. Market Share (2/2): Rambus holds a dominant position in DDR5 memory interface chips for server platforms and is a leading provider of memory IP to major semiconductor companies. The licensing portfolio covers fundamental memory technologies with broad industry adoption <span class="source-ref">[1]</span>. Product Pipeline (1/2): Q2 2026 guidance of $95-$101M in product revenue signals continued growth, and the HBM4E and LPDDR5X roadmap positions Rambus for the next generation of AI memory architectures <span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): Significant R&amp;D investment in next-generation memory interface and security technologies, with 80%+ gross margins reflecting the high IP content and engineering differentiation in products.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Rambus&#39;s purpose — advancing semiconductor technology to solve the data bottleneck in computing — is validated by 35+ years of execution through multiple computing paradigm shifts (SDRAM, DDR, DDR5, HBM) <span class="source-ref">[1]</span>. The company&#39;s technology fundamentally enables faster and more efficient data processing, which has increasing societal value as AI workloads grow. The mission has survived leadership transitions and a fundamental business model transformation from pure licensing to product revenue. Community Impact (1/2): Rambus has published CSR and ESG Impact Reports since 2020, following GRI and SASB standards <span class="source-ref">[4]</span>. The company focuses on ethical business practices, environmental responsibility, and workforce development. Limited direct community impact compared to consumer-facing companies given the B2B semiconductor IP model. Employee Retention (1/2): Glassdoor data shows 78% of employees would recommend Rambus, with a leadership score of B (75/100) and CEO Luc Seraphin receiving an 80/100 approval rating <span class="source-ref">[3]</span>. However, reviews cite frequent layoffs, inconsistent management feedback, and work-life balance concerns that dampen the culture score. Insider Buying (1/2): CEO Luc Seraphin has significant equity-based compensation aligned with shareholder returns, and the 52-week stock performance of +60.96% benefits management holdings <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Rambus demonstrates exceptional profitability with an 80.41% gross margin and 31.89% profit margin, reflecting the high-IP-content business model <span class="source-ref">[5]</span>. ROE of 18.02% is strong and improving with product revenue growth. The balance sheet is a fortress — D/E of just 0.02 with $762.74M net cash and a current ratio of 9.82 <span class="source-ref">[5]</span>. TTM revenue of $721.16M and net income of $230.01M demonstrate a profitable, cash-generative business. The valuation is the primary weakness: trailing P/E of 49.09 and forward P/E of 32.44 are premium multiples, though the PEG ratio of approximately 1.68 indicates growth partially justifies the premium <span class="source-ref">[5]</span>. Revenue growth forecast of 16.84% annually supports continued multiple expansion potential. Product revenue of $88.0M in Q1 2026 (up 15% YoY) with Q2 guidance of $95-$101M signals acceleration <span class="source-ref">[2]</span>. No dividend, consistent with reinvestment-focused growth strategy. Free cash flow yield of 3.01% provides moderate shareholder return potential.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Rambus demonstrates strong infinite game characteristics — most notably the successful transformation from a patent-litigation-dependent business model to a product-plus-licensing company that creates genuine technological value. The company has sustained its core purpose of advancing memory technology across 35+ years and multiple computing paradigm shifts, and the current AI-driven growth cycle validates decades of fundamental research investment.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Rambus&#39;s purpose — solving the data bottleneck in computing through advanced memory technology — is forward-looking, inclusive (all computing benefits from faster memory), and resilient across 35+ years <span class="source-ref">[1]</span>. The company&#39;s technology has been essential through multiple computing eras: from SDRAM to DDR to DDR5 to HBM for AI. This cause has survived near-death experiences (the patent litigation era controversies, business model transformation) and continues to drive strategic direction today. The cause gains increasing urgency as AI workloads demand exponentially more memory bandwidth.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor data shows 78% of employees would recommend Rambus, with CEO Luc Seraphin earning an 80/100 approval rating and an overall leadership score of B (75/100) <span class="source-ref">[3]</span>. These are above-average metrics. However, employee reviews cite frequent layoffs, inconsistent management feedback, and concerns about work-life balance. One review noted leadership struggles to &#34;pull people together to build a truly collaborative working environment.&#34; The management score of 69/100 is the weakest element, suggesting middle-management challenges even as senior leadership is reasonably well-regarded.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Rambus competes against formidable rivals including Synopsys and Cadence in semiconductor IP, and major memory manufacturers (Samsung, SK Hynix, Micron) who develop internal memory interface capabilities. The company&#39;s response has been to deepen its specialized expertise in memory interface technology rather than broaden into general semiconductor IP, and to build product revenue alongside licensing — using rivals&#39; scale as motivation to increase its own engineering differentiation <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Rambus&#39;s transformation from a patent licensing and litigation company to a product-plus-licensing business represents a textbook example of existential flexibility <span class="source-ref">[1]</span>. In the 2010s, the company was widely seen as a &#34;patent troll&#34; dependent on licensing revenue and legal enforcement. Under evolved leadership, Rambus invested heavily in building semiconductor product capabilities — DDR5 memory interface chips, security solutions, silicon IP — while maintaining its licensing foundation. Product revenue grew from a small fraction to roughly half of total revenue ($347.8M in 2025), fundamentally changing the company&#39;s growth profile, customer relationships, and market perception <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): The decision to invest heavily in product development capabilities while already generating profitable licensing revenue required genuine courage — cannibalizing a comfortable, high-margin licensing business to build a riskier but more sustainable product franchise <span class="source-ref">[1]</span>. Rambus bet on the trend toward higher-bandwidth memory interfaces years before the AI data center boom validated the thesis. The HBM4E and LPDDR5X product investments represent continued forward-looking bets on next-generation memory architectures <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Rambus is a premier AI infrastructure play hiding in a semiconductor IP company. With 80.41% gross margins, 31.89% profit margins, and essentially zero debt (D/E 0.02), Rambus combines software-like profitability with hardware-driven secular growth <span class="source-ref">[5]</span>. Record 2025 product revenue of $347.8M (up 41%) and continued Q1 2026 momentum ($88.0M product revenue, up 15% YoY) validate the company&#39;s positioning at the critical memory-bandwidth bottleneck in AI data centers <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The HBM4E memory controller IP and LPDDR5X SOCAMM2 chipset address the next generation of AI memory architectures, expanding Rambus&#39;s addressable market as AI workloads demand exponentially more memory bandwidth. Q2 2026 product revenue guidance of $95-$101M signals continued acceleration <span class="source-ref">[2]</span>. The $762.74M net cash position provides optionality for M&amp;A or shareholder returns.</div>
+    <div class="thesis-text">The bear case centers on valuation. At a trailing P/E of 49.09 and forward P/E of 32.44, Rambus is priced for continued strong execution with limited margin of safety <span class="source-ref">[5]</span>. Product revenue growth decelerated from 41% in 2025 to 15% YoY in Q1 2026, and any further deceleration could trigger multiple compression. The licensing revenue stream ($92.2M in Q1 2026 total minus $88.0M product = implied ~$92M) is lumpy and subject to contract renewal risk. While Rambus has successfully diversified beyond pure licensing, approximately half of revenue still comes from licensing and contract royalties. Competition from Synopsys, Cadence, and vertically integrated memory manufacturers could erode Rambus&#39;s technical differentiation over time. The Glassdoor reports of frequent layoffs and work-life balance challenges suggest organizational strain that could impair the engineering talent retention essential for a semiconductor IP company.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>HBM4E memory controller IP commercialization could open a significant new product revenue stream as next-generation AI accelerators adopt HBM4E memory, with product revenue guidance of $95-$101M for Q2 2026 signaling acceleration <span class="source-ref">[2]</span></li>
+        
+        <li>LPDDR5X SOCAMM2 server module chipset deployment in AI server platforms could expand the addressable market per server as AI inference workloads shift from GPU-heavy to memory-optimized architectures</li>
+        
+        <li>Potential capital return program (buyback or dividend initiation) from the $762.74M net cash position could catalyze multiple re-rating for income-oriented investors <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Premium valuation (49x trailing P/E, 32x forward P/E) leaves minimal margin of safety — product revenue growth deceleration from 41% in 2025 to 15% in Q1 2026 could trigger multiple compression if the trend continues <span class="source-ref">[5]</span></li>
+        
+        <li>Licensing revenue concentration risk — contract renewals and patent portfolio strength are subject to evolving IP law, and major licensees could negotiate lower rates or develop alternative technologies</li>
+        
+        <li>Semiconductor IP talent retention is critical, and Glassdoor reports of frequent layoffs and work-life balance issues could impair Rambus&#39;s ability to attract and retain the specialized engineers needed to maintain technology leadership <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Rambus is not merely AI-resilient — AI is the company&#39;s primary growth catalyst. Every AI accelerator (NVIDIA GPUs, Google TPUs, custom ASICs) requires high-bandwidth, low-latency memory interfaces that Rambus designs and sells <span class="source-ref">[2]</span>. The company&#39;s HBM4E memory controller IP and LPDDR5X server module chipsets are purpose-built for AI data center infrastructure. AI cannot disrupt Rambus because Rambus provides the physical semiconductor IP and chips that AI systems require to function. The memory bottleneck in AI training and inference is becoming more acute, not less, as model sizes grow — directly benefiting Rambus&#39;s product roadmap. The only risk vector is competitive: larger semiconductor IP companies (Synopsys, Cadence) or vertically integrated chipmakers could develop competing memory interface solutions, but Rambus&#39;s 35-year head start and extensive patent portfolio create significant barriers <span class="source-ref">[1]</span>. AI Opportunity (1/1): AI data center buildout is driving record demand for Rambus products. Management explicitly credited AI data center growth for the 41% product revenue increase in 2025 and continued momentum in Q1 2026 <span class="source-ref">[2]</span>. The transition from DDR5 to HBM and LPDDR5X architectures expands Rambus&#39;s addressable market within each AI server.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            44
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Air Quality</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Rambus 2025 Annual Results and Business Transformation Overview — investor.rambus.com, February 2026</li>
+        
+        <li><span class="src-num">2.</span> Rambus Q1 2026 Financial Results and Product Revenue Growth — rambus.com and MarketChameleon, April 2026</li>
+        
+        <li><span class="src-num">3.</span> Glassdoor and Comparably Employee Reviews — Rambus leadership scores and employee feedback, accessed July 2026</li>
+        
+        <li><span class="src-num">4.</span> Rambus Corporate Responsibility and ESG Impact Reports — rambus.com/corporate-social-responsibility, accessed July 2026</li>
+        
+        <li><span class="src-num">5.</span> Stock Analysis and Yahoo Finance — RMBS Key Statistics, Valuation Metrics, and Financial Data, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen IR — Ingersoll Rand Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/IR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('IR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            IR
+            <span class="stock-name-full">Ingersoll Rand Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-05</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 68</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">65</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Specialty Industrial Machinery</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Ingersoll Rand Inc. is a diversified industrial company providing mission-critical flow creation and industrial solutions. Products include compressors, blowers, pumps, vacuum systems, and power tools across diverse end markets including data centers, aerospace and defense, food and beverage, water management, and life sciences. The company was formed from the 2020 merger of Gardner Denver and Ingersoll-Rand's Industrial segment. Under CEO Vicente Reynal, IR has executed a disciplined M&A-driven growth strategy with 16 acquisitions in 2025.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>21,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.irco.com" target="_blank" rel="noopener">www.irco.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): The 2020 Gardner Denver and Ingersoll-Rand Industrial merger transformed a mid-cap compressor maker into a diversified $7.65B industrial platform <span class="source-ref">[1]</span>. IR closed 16 acquisitions in 2025 ($525M invested, ~$275M annualized inorganic revenue) and delivered Q1 2026 revenue of $1.85B, up 8% YoY <span class="source-ref">[1]</span>. The company doubled sustainable product launches to 364 in 2025 <span class="source-ref">[3]</span>. However, organic growth guidance of only 1% at midpoint for FY2026 indicates the growth engine is heavily acquisition-dependent rather than innovation-driven. AI Deployment (0/2): No evidence of AI-powered products or AI-driven operational efficiencies. The company has not disclosed any AI deployment with measurable results. Industrial equipment remains largely conventional in its technology stack. Market Share (2/2): Ingersoll Rand is a global leader in mission-critical compressors, pumps, and flow creation equipment, ranked #1 in North America on the Dow Jones Sustainability Index for the 4th consecutive year and in the top 0.5% globally in the Machinery and Electrical Equipment sector by Morningstar Sustainalytics <span class="source-ref">[3]</span>. Product Pipeline (1/2): FY2026 guidance projects 2.5-4.5% total revenue growth with M&amp;A contributing 400-500 bps and adjusted EPS of $3.45-$3.57 (+5% at midpoint) <span class="source-ref">[1]</span>. Aftermarket revenue at 37% of total provides recurring visibility. However, the organic growth outlook of flat to 2% is modest, and specific next-generation product launches with timelines are not disclosed. R&amp;D Intensity (1/1): Above-average R&amp;D for industrial machinery, with significant investment in energy-efficient compressor technology, sustainable product design, and 364 sustainable product launches doubled YoY <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Ingersoll Rand&#39;s &#39;Making Life Better&#39; purpose is backed by a decade of quantified sustainability execution: 67% progress toward a 42% GHG reduction target, 45.4% water consumption reduction, and 364 sustainable product launches <span class="source-ref">[3]</span>. The company has been named to the Dow Jones Sustainability World Index for 4 consecutive years, earned CDP A-List for 3 consecutive years, and identified as a 2026 ESG Leader by Morningstar Sustainalytics <span class="source-ref">[3]</span>. This level of sustained environmental commitment differentiates from industrial peers and demonstrates that &#39;Making Life Better&#39; is lived, not just stated. Community Impact (1/2): The Ownership Works program granted equity to approximately 3,600 employees, creating tangible wealth-building opportunities beyond salary <span class="source-ref">[2]</span>. Environmental sustainability achievements (GHG reduction, water conservation) benefit communities globally. However, no specific charitable foundation or community-directed philanthropy with dollar amounts was identified. Employee Retention (1/2): The Ownership Works equity program boosts engagement and loyalty among the 3,600 participating employees <span class="source-ref">[2]</span>. CEO Reynal emphasizes an &#39;entrepreneurial spirit and ownership mindset&#39; that inspires accountability and action. However, concerns about CEO decision centralization (&#39;every decision must go to the CEO&#39;) and diversity gaps (1 of 15 direct reports are women) temper the score. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO Vicente Reynal or other executives in recent filings.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Liquidity floor passed: 4,580,000 avg vol x $81.70 = $374.2M <span class="source-ref">[4]</span>. D/E of 46% scores 1.0 — strong balance sheet for an industrial company with total liquidity near $3.9B <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. ROE of 8.11% scores 0.54 (2x weight) — below the 15% target, dragged down by goodwill from the M&amp;A-heavy growth strategy <span class="source-ref">[4]</span>. Revenue growth YoY of 3.5% (FY2026 guidance midpoint) scores 0.783 <span class="source-ref">[1]</span>. Revenue growth 5yr CAGR of 11.64% scores 1.0 (2x weight) — reflecting strong compounding since the 2020 merger <span class="source-ref">[4]</span>. Forward P/E of 25.69 scores 0.858 — above the 20 target, reflecting premium valuation for a quality industrial compounder <span class="source-ref">[4]</span>. Profit margin of 9.19% scores 0.460 — a weaker metric reflecting acquisition integration costs and industrial sector economics <span class="source-ref">[4]</span>. Forward PEG of 2.0 scores 0.5 (2x weight) — above the 1.0 target, indicating the stock is expensive relative to near-term growth <span class="source-ref">[4]</span>. Weighted sum: 1.0 + 1.08 + 0.783 + 2.0 + 0.858 + 0.460 + 1.0 = 7.18 / max 10.0 x 10 = 7.2, rounded to 7.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Ingersoll Rand demonstrates meaningful infinite game characteristics under CEO Vicente Reynal&#39;s leadership. The deeply embedded sustainability mission (67% progress toward 42% GHG reduction since 2013), disciplined acquisition-driven growth strategy, and Ownership Works equity program reflect a company building for long-term capability rather than quarterly optimization. However, organic growth guidance of only 1% at midpoint for FY2026, heavy dependence on acquisitions for growth, and concerns about CEO decision centralization suggest some finite game tendencies in execution.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2 pts -&gt; 7/10 display): Ingersoll Rand&#39;s &#39;Making Life Better&#39; purpose is validated by over a decade of measurable sustainability execution — 67% progress toward GHG targets, 45% water reduction, CDP A-List for 3 consecutive years, and Dow Jones Sustainability World Index inclusion for 4 years <span class="source-ref">[3]</span>. The sustainability mission genuinely differentiates from industrial peers and connects the company&#39;s compressed air, water management, and energy-efficient products to tangible environmental outcomes. Strategic decisions (364 sustainable product launches, Ownership Works equity program) clearly trace back to this purpose <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. However, the &#39;Making Life Better&#39; articulation remains somewhat generic, and the company was essentially reborn in the 2020 merger, limiting multi-decade validation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1 pt -&gt; 6/10 display): The Ownership Works program granting equity to ~3,600 employees is a tangible trust-building initiative that creates shared financial ownership aligned with company performance <span class="source-ref">[2]</span>. CEO Reynal&#39;s emphasis on &#39;entrepreneurial spirit and ownership mindset&#39; signals a culture of empowerment and accountability. However, reports that &#39;every purchase and major decision must be brought to the CEO&#39; suggest centralized decision-making that may limit autonomy at lower levels, and diversity concerns (1 of 15 CEO direct reports are women) indicate room for improvement in inclusive leadership.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1 pt -&gt; 10/10 display): Ingersoll Rand&#39;s acquisition strategy explicitly involves studying competitors&#39; strengths and acquiring capabilities to fill gaps — 16 acquisitions in 2025 representing $525M in investment <span class="source-ref">[1]</span>. This &#39;improve through acquisition&#39; approach reflects a company that systematically identifies where rivals are stronger and incorporates those capabilities rather than trying to organically outcompete them. The M&amp;A program is oriented toward self-improvement and capability building rather than competitor destruction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1 pt -&gt; 6/10 display): The 2020 merger of Gardner Denver and Ingersoll-Rand&#39;s Industrial segment fundamentally transformed the company from a mid-cap compressor maker into a diversified $7.65B industrial platform <span class="source-ref">[1]</span>. The subsequent M&amp;A program (16 deals in 2025) continues to evolve the business model across new end markets and geographies. However, these are adjacency expansions within industrial equipment — the company has not fundamentally reinvented its business model or abandoned a core competency in service of the cause. The transformation is incremental and inorganic rather than organic and paradigm-shifting.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1 pt -&gt; 6/10 display): Deploying $525M across 16 acquisitions in 2025 while maintaining balance sheet discipline (46% D/E, $3.9B liquidity) demonstrates willingness to invest aggressively in long-term capability <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The decade-long commitment to sustainability metrics (67% GHG progress, 45% water reduction since 2013) shows consistency through market cycles <span class="source-ref">[3]</span>. Granting equity to 3,600 employees via Ownership Works represents a real cost accepted in service of employee alignment <span class="source-ref">[2]</span>. However, organic growth guidance of flat to 2% for 2026 suggests the company relies on acquisitions rather than courageous organic innovation to drive growth.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Ingersoll Rand is a premier industrial compounder delivering disciplined M&amp;A-driven growth through 16 acquisitions in 2025 ($525M invested), Q1 2026 revenue of $1.85B (+8% YoY), and adjusted EBITDA of $469M at 25.4% margin <span class="source-ref">[1]</span>. The company is an indirect beneficiary of AI infrastructure buildout — data centers require compressors, cooling systems, and fluid handling equipment that IR manufactures — providing a multi-year secular tailwind. D/E of 46% with $3.9B total liquidity supports continued deal execution, while aftermarket revenue at 37% of total provides recurring visibility <span class="source-ref">[1]</span>. The Inspire score of 68 (ALIGNED) with 18 positive attributions and zero negatives represents one of the cleanest ESG/faith profiles in the industrial sector <span class="source-ref">[3]</span>. Revenue growth 5yr CAGR of 11.64%, Dow Jones Sustainability World Index inclusion for 4 consecutive years, and Ownership Works equity program differentiate IR as a quality industrial franchise.</div>
+    <div class="thesis-text">The bear case focuses on valuation stretch, acquisition dependence, and margin weakness. Forward P/E of 25.7x and PEG of 2.0 are expensive for a company guiding only 2.5-4.5% revenue growth and 3-7% EPS growth in FY2026 <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Organic growth at just 1% midpoint means the growth narrative depends almost entirely on M&amp;A — if the acquisition pipeline dries up or target multiples become uneconomic, growth stalls. ROE of 8.11% and profit margin of 9.19% are weak for a company of this scale, suggesting that serial acquisitions are creating goodwill bloat and integration costs that depress returns on capital <span class="source-ref">[4]</span>. At $81.70 (trailing P/E 43.7x), the stock is priced for flawless execution, leaving minimal margin of safety. CEO decision centralization (&#39;every decision goes to the CEO&#39;) creates organizational bottleneck risk as the company scales through M&amp;A <span class="source-ref">[2]</span>. Free cash flow declined to $163M in Q1 2026 from $223M in Q1 2025, a concerning trend for an acquisition-dependent company <span class="source-ref">[1]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI data center infrastructure buildout driving demand for IR&#39;s compressors, cooling systems, and fluid handling equipment — a multi-year secular tailwind as hyperscalers invest hundreds of billions in compute capacity <span class="source-ref">[1]</span></li>
+        
+        <li>Continued M&amp;A execution in 2026 with management targeting 400-500 bps of inorganic revenue growth, backed by $3.9B total liquidity and a proven integration playbook from 16 deals in 2025 <span class="source-ref">[1]</span></li>
+        
+        <li>Margin expansion as recent acquisitions integrate and synergies realize, potentially lifting profit margin from the current 9.19% toward the industrial peer average of 12-15% <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Acquisition-dependent growth — organic revenue guidance of flat to 2% means the growth narrative collapses if the M&amp;A pipeline dries up or target multiples become uneconomic in a potentially rising rate environment <span class="source-ref">[1]</span></li>
+        
+        <li>Valuation risk — forward P/E of 25.7x and PEG of 2.0 leave minimal margin of safety; any disappointment in acquisition integration, organic growth, or margin expansion could trigger meaningful multiple compression <span class="source-ref">[4]</span></li>
+        
+        <li>Margin compression and capital efficiency — ROE of 8.11% and profit margin of 9.19% are below industrial peers, and the 16-acquisition pace creates goodwill accumulation and integration execution risk that may continue to dilute returns on capital <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Ingersoll Rand&#39;s core business — manufacturing physical compressors, pumps, blowers, vacuum systems, and industrial equipment — is structurally immune to AI disruption <span class="source-ref">[1]</span>. These are mission-critical, engineered products requiring metallurgy, precision manufacturing, installation, and field service that AI cannot substitute. A compressor in a factory or a pump in a water treatment plant cannot be replaced by software. Critically, AI infrastructure buildout (data centers) requires cooling, compressed air, and fluid handling systems, making Ingersoll Rand an indirect beneficiary of AI-driven capex <span class="source-ref">[1]</span>. Regulatory requirements (pressure vessel codes, safety certifications) and installed-base service relationships create additional moats. Aftermarket revenue at 37% of total provides recurring, relationship-driven revenue that AI tools cannot disintermediate. AI Opportunity (0/1): No quantifiable AI revenue. While Ingersoll Rand could deploy AI in predictive maintenance and IoT-connected equipment monitoring, the company has not disclosed any AI-driven revenue, products, or specific operational savings.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            68
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Ingersoll Rand Q1 2026 Earnings Release — $1,847M revenue (+8% YoY), Adj EBITDA $469M (25.4% margin), Adj EPS $0.77 (+7%), FY2026 guidance $3.45-$3.57 EPS, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Ingersoll Rand Ownership Works Program and Leadership Culture — CEO Vicente Reynal, 3,600 employees granted equity, entrepreneurial mindset emphasis</li>
+        
+        <li><span class="src-num">3.</span> Ingersoll Rand Sustainability Achievements — DJSI World Index 4 consecutive years, CDP A-List 3 years, Sustainalytics ESG Leader 2026, 67% GHG progress, 364 sustainable product launches</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — IR Key Statistics: price $81.70, trailing P/E 43.69, forward P/E 25.69, D/E 46%, ROE 8.11%, PEG 2.0, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

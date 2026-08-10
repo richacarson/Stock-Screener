@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen INCY — Incyte Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/INCY_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('INCY')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            INCY
+            <span class="stock-name-full">Incyte Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 45</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">69</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Biotechnology</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Incyte Corporation is a global biopharmaceutical company focused on the discovery, development, and commercialization of medicines for serious medical needs in oncology, dermatology, and inflammation. The company's portfolio includes Jakafi (ruxolitinib) for myelofibrosis and polycythemia vera, Opzelura (ruxolitinib cream) for atopic dermatitis and vitiligo, Niktimvo for chronic GVHD, and Zynyz for Merkel cell carcinoma. Founded in 1991, headquartered in Wilmington, Delaware.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>2,844 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.incyte.com" target="_blank" rel="noopener">www.incyte.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Incyte has successfully commercialized multiple new products beyond its foundational Jakafi franchise over the past five years, with Opzelura (topical ruxolitinib) growing to $143M in Q1 2026 sales (up 20% YoY) and the hematology/oncology portfolio (Niktimvo, Zynyz, Monjuvi) more than doubling to $204M <span class="source-ref">[1]</span>. Revenue from ex-Jakafi products surged 63% in Q1 2026, demonstrating successful portfolio diversification ahead of Jakafi&#39;s 2028 patent cliff <span class="source-ref">[1]</span>. However, all products are JAK-pathway extensions rather than a fundamentally new therapeutic modality. AI Deployment (1/2): Incyte&#39;s R&amp;D leadership describes AI and analytics as &#39;force multipliers for human judgment&#39; in drug discovery, with AI-driven approaches advancing the mutCALR antibody, CDK2, KRASG12D, and TGFβR2xPD1 pipeline programs <span class="source-ref">[3]</span>. No specific AI-generated cost savings or revenue have been quantified. Market Share (2/2): Jakafi is the dominant JAK inhibitor for myelofibrosis and polycythemia vera with $758M in Q1 2026 sales (up 7%), and Opzelura is a category-defining topical JAK inhibitor for atopic dermatitis with growing share <span class="source-ref">[1]</span>. Incyte effectively created and owns the JAK inhibitor category in its core indications. Product Pipeline (2/2): Specific late-stage pipeline includes Jakafi XR (extended release, FDA decision pending for FY2026), povorcitinib (positive Phase 3 vitiligo data reported Q1 2026), CDK2 inhibitor, KRASG12D inhibitor, and TGFbetaR2xPD1 bispecific — all with named targets and clinical development timelines <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): FY2026 R&amp;D and SG&amp;A expense guidance of $3.5-3.7B on approximately $5B total revenue represents exceptional R&amp;D intensity for a mid-cap biopharma company, well above industry averages <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Incyte&#39;s purpose centers on discovering and developing novel medicines for patients with serious unmet medical needs. This is clear and identifies the company&#39;s aspiration, but is largely interchangeable with any innovative biopharma company&#39;s mission statement. It does not articulate a distinctive or transformative vision beyond standard pharmaceutical industry language. Community Impact (1/2): Incyte publishes an annual Global Responsibility Report with ESG initiatives and has improved ESG ratings from S&amp;P Global, MSCI, and Sustainalytics <span class="source-ref">[5]</span>. However, the $12.6M False Claims Act settlement for using a foundation as a conduit to pay Medicare patients&#39; Jakafi copays undermines the credibility of the company&#39;s community engagement <span class="source-ref">[5]</span>. Specific charitable giving amounts beyond the corporate responsibility report were not identified. Employee Retention (1/2): Incyte&#39;s organizational philosophy emphasizes psychological safety and views the company as &#39;a living ecosystem where culture and business strategy must be aligned, with leadership setting the tone while employees are empowered to adopt it authentically&#39; <span class="source-ref">[3]</span>. With only 2,844 employees, the company maintains a focused, entrepreneurial culture. The CEO transition from longtime leader Herve Hoppenot to Bill Meury was managed smoothly, with Hoppenot staying as advisor <span class="source-ref">[3]</span>. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the past 12 months was identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics — all core and growth metrics at or near target. Q1 2026 delivered $1.27B in total revenue (up 21% YoY), GAAP net income of $303.3M, and diluted EPS of $1.47 <span class="source-ref">[1]</span>. The balance sheet is pristine: D/E of 0.01 (essentially zero debt) with $4.0B in cash, cash equivalents, and marketable securities <span class="source-ref">[1]</span>. ROE of 30.82% is double the 15% target, reflecting efficient capital deployment without leverage. Profit margin of 26.71% exceeds the 20% target as Incyte&#39;s scaled product portfolio drives operating leverage. Forward P/E of approximately 14x (using consensus NTM estimates) is well below the 20x target, reflecting both reasonable valuation and market concern about the 2028 Jakafi patent cliff <span class="source-ref">[6]</span>. Revenue growth of 21% YoY and 5-year CAGR of approximately 9-11% meet or approach the 10% target. Forward PEG of approximately 1.0 indicates the market is pricing growth fairly. FY2026 product revenue guidance of $4.77-4.94B with raised GAAP EPS outlook supports continued earnings momentum <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Incyte demonstrates meaningful infinite game characteristics: a 30+ year focus on JAK inhibitor biology, heavy R&amp;D investment ($3.5-3.7B guidance) despite the approaching 2028 Jakafi patent cliff, and a smooth CEO transition that suggests institutional purpose beyond any one leader. The company is playing to keep playing by diversifying its portfolio ahead of the patent cliff rather than milking Jakafi through expiration. However, the relatively short public company history and the lack of a distinctive Just Cause beyond standard pharma language limit the infinite game score.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Incyte&#39;s focus on discovering medicines for serious unmet medical needs is a genuine purpose that has guided the company for 30+ years, from its founding through the long development journey of ruxolitinib (Jakafi) to the current multi-product portfolio <span class="source-ref">[3]</span>. The smooth CEO transition from Hoppenot to Meury suggests the cause transcends individual leadership. Strategic decisions — investing $3.5-3.7B in R&amp;D despite the Jakafi patent cliff, expanding into oncology and dermatology — trace back to this purpose. However, the cause is expressed in generic pharma language rather than as a distinctive Sinek-level Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Incyte&#39;s organizational philosophy explicitly emphasizes psychological safety, viewing the company as &#39;a living ecosystem where culture and business strategy must be aligned, with leadership setting the tone while employees are empowered to adopt it authentically&#39; <span class="source-ref">[3]</span>. The small team size (2,844 employees) enables tighter cultural cohesion than large pharma peers. The CEO transition was managed smoothly with Hoppenot staying as advisor. However, no specific retention, turnover, or tenure data was identified to validate these cultural claims.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Incyte competes with significantly larger pharma companies (AbbVie, Novartis, BMS) and frames this competition as motivation to innovate in drug discovery rather than as a zero-sum market share battle <span class="source-ref">[3]</span>. The company&#39;s pipeline strategy — advancing novel mechanisms (CDK2, KRASG12D, TGFbetaR2xPD1) alongside JAK inhibitors — reflects learning from competitors&#39; therapeutic advances and applying that learning to its own programs.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Incyte is actively diversifying from Jakafi dependency (Jakafi was approximately 69% of Q1 2026 product revenue, down from 80%+ historically) by building a multi-product portfolio across dermatology (Opzelura), hematology (Niktimvo), and oncology (Zynyz) <span class="source-ref">[1]</span>. The ex-Jakafi portfolio growing 63% YoY while Jakafi grew 7% demonstrates meaningful strategic evolution. This is a significant adaptation but not yet a transformative reinvention — the company remains fundamentally a JAK-pathway specialist.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Incyte&#39;s decision to invest $3.5-3.7B in R&amp;D and SG&amp;A in FY2026 — more than 70% of total product revenue — while the Jakafi patent cliff approaches in 2028 demonstrates willingness to sacrifice near-term earnings for long-term portfolio resilience <span class="source-ref">[1]</span>. The company is building multiple product launches (povorcitinib, CDK2, KRASG12D) simultaneously, accepting operating expense pressure to create future revenue streams. New CEO Bill Meury&#39;s appointment (with M&amp;A expertise from Karuna Therapeutics/$14B BMS deal) signals strategic ambition beyond organic pipeline <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Incyte delivered exceptional Q1 2026 results with $1.27B total revenue (up 21% YoY), GAAP EPS of $1.47, and raised guidance across all product lines <span class="source-ref">[1]</span>. The diversification strategy is working: ex-Jakafi product revenue surged 63% to $347M, with Opzelura at $143M (up 20%), hematology/oncology at $204M (more than doubled), and Jakafi steady at $758M (up 7%) <span class="source-ref">[1]</span>. The balance sheet is fortress-grade: $4.0B cash, virtually zero debt (D/E 0.01), and $1.45B TTM free cash flow. At approximately 14x forward earnings and PEG near 1.0, the stock is reasonably valued relative to 21% revenue growth. FY2026 product revenue guidance of $4.77-4.94B provides visibility, and the pipeline (Jakafi XR, povorcitinib with positive Phase 3 vitiligo data, CDK2, KRASG12D) offers multiple catalysts <span class="source-ref">[1]</span>.</div>
+    <div class="thesis-text">The dominant risk is the 2028 Jakafi patent cliff. Jakafi generated $758M in Q1 2026 (69% of product revenue), and generic ruxolitinib will erode this revenue stream starting in 2028, potentially creating a $3B+ annual revenue headwind <span class="source-ref">[1]</span>. While Incyte is diversifying aggressively (ex-Jakafi growing 63%), the replacement products may not scale fast enough to fully offset Jakafi erosion — Opzelura&#39;s $750-790M FY2026 guidance and hematology/oncology&#39;s $800-880M combined still fall well short of Jakafi&#39;s $3.2B+ run rate. The $12.6M False Claims Act settlement for using a foundation as a conduit to pay Medicare copays for Jakafi patients raises questions about the company&#39;s commercial practices <span class="source-ref">[5]</span>. New CEO Bill Meury&#39;s M&amp;A background raises the possibility of a transformative acquisition that could introduce integration risk. R&amp;D spending of $3.5-3.7B is an enormous bet on pipeline programs whose clinical and commercial success is far from guaranteed.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Jakafi XR FDA approval decision in FY2026 could extend the Jakafi franchise&#39;s lifecycle and partially mitigate the 2028 patent cliff by converting patients to an extended-release formulation</li>
+        
+        <li>Povorcitinib Phase 3 positive vitiligo data positions a potential blockbuster launch in a large underserved indication, diversifying revenue beyond the JAK inhibitor ruxolitinib molecule</li>
+        
+        <li>Ex-Jakafi product portfolio growing 63% YoY ($347M Q1 2026) with Opzelura, Niktimvo, and Zynyz collectively approaching $2B+ annual run-rate by FY2027</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Jakafi 2028 patent cliff threatens 69% of current product revenue ($758M Q1 2026) — generic ruxolitinib will create a $3B+ annual revenue headwind that diversification products may not fully offset</li>
+        
+        <li>R&amp;D and SG&amp;A guidance of $3.5-3.7B represents over 70% of product revenue, creating significant operating expense pressure that depends on pipeline success rates with inherent clinical risk</li>
+        
+        <li>New CEO Bill Meury&#39;s M&amp;A background (Karuna Therapeutics/$14B BMS deal) raises the possibility of a large acquisition that could introduce integration risk and dilute the company&#39;s focused biopharma model</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Drug development requires physical clinical trials, FDA regulatory approval, GMP manufacturing, and physician-patient prescribing relationships — none of which AI can substitute <span class="source-ref">[3]</span>. Incyte&#39;s moats include proprietary JAK inhibitor expertise, established clinical data packages (Jakafi has 15+ years of safety/efficacy data), and FDA-approved indications that require years of development to replicate. However, AI-powered drug discovery could enable smaller competitors to more efficiently discover novel molecules targeting the same pathways, potentially accelerating competitive threats to Incyte&#39;s pipeline. AI also creates opportunity risk: if competitors deploy AI-driven precision medicine platforms that better match patients to therapies, Incyte&#39;s broad-indication approach could lose share to more targeted alternatives. The pharma industry as a whole is not structurally at risk from AI, but AI reshapes the competitive landscape within pharma. AI Opportunity (0/1): While Incyte describes AI as a &#39;force multiplier for human judgment&#39; in drug discovery and uses AI-driven approaches in its pipeline programs, no specific AI-generated revenue or quantified R&amp;D cost savings have been reported <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            45
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Incyte Q1 2026 Earnings Release and Business Update, Incyte Investor Relations, April 2026</li>
+        
+        <li><span class="src-num">2.</span> Incyte Q1 2026 10-Q Filing, SEC, May 2026</li>
+        
+        <li><span class="src-num">3.</span> Fierce Pharma / AInvest — Incyte CEO Transition: Bill Meury Appointed, Leadership Shift, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Incyte Q1 2026 Earnings Call Highlights — BigGo Finance, April 2026</li>
+        
+        <li><span class="src-num">5.</span> DOJ — Incyte $12.6M False Claims Act Settlement; Incyte 2024 Global Responsibility Report</li>
+        
+        <li><span class="src-num">6.</span> StockAnalysis.com / Yahoo Finance — INCY Key Statistics and Financial Data, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
