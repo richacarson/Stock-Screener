@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DTE — DTE Energy Company</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DTE_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DTE')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DTE
+            <span class="stock-name-full">DTE Energy Company</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-27</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 45</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">69</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Utilities</span>
+        <span class="sep">&middot;</span><span>Utilities - Regulated Electric</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">DTE Energy is a Detroit-based diversified energy company operating through Electric, Gas, DTE Vantage, and Energy Trading segments. It generates, purchases, distributes, and sells electricity to 2.3 million customers and natural gas to 1.4 million customers in Michigan. The company posted Q1 2026 operating EPS of $1.95 on revenue of $5.30B (+23.5% YoY) and guides for full-year operating EPS of $7.59-$7.73 with a $36.5B five-year capital plan through 2030.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>9,650 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.dteenergy.com" target="_blank" rel="noopener">www.dteenergy.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): DTE secured a 1.4 GW Oracle data center contract in 2025 and made record capital investments of $4.3B in 2025, with DTE Electric investing $3.6B toward grid reliability and cleaner generation <span class="source-ref">[1]</span>. These are significant extensions of the core regulated utility model but remain incremental rather than transformative. AI Deployment (1/2): DTE is exploring AI-powered grid optimization and predictive maintenance, with board-level AI expertise and executives positioning Michigan as a model for AI-powered energy systems <span class="source-ref">[2]</span>. No specific quantified AI-driven cost savings have been publicly reported, though operational AI exploration is underway. Market Share (1/2): DTE holds a regulated monopoly in southeastern Michigan for electric and statewide for gas distribution, serving 3.7 million customers — stable by regulatory design with no competitive share dynamics <span class="source-ref">[1]</span>. Product Pipeline (1/2): The $36.5B five-year capital plan through 2030 targets grid modernization, 2,300 MW renewable portfolio, 220 MW battery storage, and data center load growth with specific deployment timelines <span class="source-ref">[1]</span>. Q1 2026 operating EPS of $1.95 positions the company for the high end of full-year guidance <span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): $4.3B annual capital investment represents significant reinvestment intensity above utility-sector averages, with the Integrated Resource Plan reducing the cost of clean energy transition by $1.4B from the prior plan <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): DTE&#39;s stated purpose centers on &#39;serving with our energy, the lifeblood of communities and the engine of progress&#39; — clear and specific to their role as Michigan&#39;s essential energy provider, connecting the company&#39;s work to community empowerment <span class="source-ref">[2]</span>. More distinctive than generic utility framing but not yet transformative or validated by decades of strategic consistency. Community Impact (2/2): DTE&#39;s Empowering Michigan initiative includes substantial community investment, with the DTE Energy Foundation providing millions in grants, employee volunteer programs, and workforce development targeting Detroit and underserved Michigan communities <span class="source-ref">[4]</span>. The company&#39;s net-zero-by-2050 commitment and $36.5B capital plan represent long-term community investment beyond shareholder returns. Employee Retention (1/2): Under former CEO Gerry Anderson and successor Jerry Norcia, DTE developed a distinctive &#39;operating system&#39; culture built on aspirations, purpose, values, and priorities — recognized by Gallup as a culture transformation case study <span class="source-ref">[2]</span>. New CEO Joi Harris brings 34 years of internal tenure, and continuous improvement culture is actively promoted, though Glassdoor reviews note the company moves slowly as &#39;an older and very traditional company&#39; <span class="source-ref">[2]</span>. Insider Buying (1/2): CEO Joi Harris (18,508 shares) and former CEO Norcia (51,028 shares) received stock awards in February 2026, indicating equity alignment, though no significant open-market purchases were observed <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on dividend stock metrics. Forward P/E of 19.21x scores 1.0 — reasonable for a utility with 6-8% EPS growth guidance through 2030 <span class="source-ref">[5]</span>. ROE of 12.18% scores 0.81 — modest but near the allowed regulatory return for utilities. D/E of 214% scores 0.37 — elevated but typical for capital-intensive utilities with regulated cost recovery mechanisms <span class="source-ref">[5]</span>. Profit margin of 9.24% scores 0.46, reflecting the regulated cost structure. Revenue growth of 7% (normalized for energy trading volatility) scores 0.90, and 5yr CAGR of 5.3% scores 0.69 <span class="source-ref">[1]</span>. The dividend profile is strong: 60+ consecutive years of payments (1.0 at 2x weight), 16 consecutive years of growth (1.0), 62.9% payout ratio (0.62), and 5-year dividend growth CAGR of 5.0% (0.83 at 2x weight) <span class="source-ref">[5]</span>. Weighted sum 9.52/12 = 8. Liquidity: ~$200M daily dollar volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">DTE Energy demonstrates meaningful infinite game characteristics through its long-term clean energy transition commitment, multi-decade dividend track record, smooth CEO succession from Anderson to Norcia to Harris, and Gallup-recognized culture transformation <span class="source-ref">[2]</span>. The $36.5B five-year capital plan and net-zero-by-2050 goal show multi-generational thinking, and Q1 2026 results ($1.95 operating EPS) validate the execution <span class="source-ref">[3]</span>. The regulated utility model inherently rewards long-horizon capital allocation, though it also limits existential flexibility.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): DTE&#39;s purpose of powering communities and enabling progress through clean, reliable energy is genuine and connected to a larger vision — the net-zero-by-2050 commitment and $36.5B capital plan demonstrate decades-long orientation <span class="source-ref">[1]</span>. The Empowering Michigan initiative shows the cause extends beyond shareholders to community development and workforce investment <span class="source-ref">[4]</span>. However, as a regulated utility, the cause is more incremental evolution than transformative vision — the purpose is lived out through capital deployment rather than bold reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): DTE&#39;s deliberate culture transformation — recognized by Gallup as a case study in organizational culture — and the promotion of 34-year internal veteran Joi Harris as CEO signal deep organizational trust and employee development <span class="source-ref">[2]</span>. The smooth succession from Anderson to Norcia to Harris shows leadership continuity without disruption. However, Glassdoor reviews note DTE is &#39;an older and very traditional company&#39; with slow adaptation to technology and changing markets, and no specific turnover or retention metrics are publicly available to confirm exceptional trust <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): DTE&#39;s competitive framing focuses on self-improvement and industry leadership in clean energy transition rather than defeating rivals. As a regulated utility, DTE benchmarks against peer utilities (NextEra, Southern Company) to improve grid reliability and renewable deployment, reflecting an improvement-oriented mindset <span class="source-ref">[1]</span>. The $1.4B cost reduction in the Integrated Resource Plan demonstrates learning from industry best practices rather than a conquest mentality.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): DTE has evolved from a pure fossil-fuel utility to embrace renewables (2,300 MW target), battery storage (220 MW), and data center load growth, representing meaningful but incremental strategic adaptation <span class="source-ref">[1]</span>. The 60% renewable energy target by 2035 and coal plant retirements show willingness to transform the generation mix. However, the regulated utility structure limits truly existential pivots — the core business of distributing energy through physical infrastructure remains fundamentally unchanged.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): DTE committed to net-zero carbon emissions by 2050 and invested a record $4.3B in 2025 in clean energy and grid modernization despite near-term cost pressures, demonstrating willingness to prioritize long-term capability <span class="source-ref">[1]</span>. The company pursued renewable development even when facing local opposition. However, the regulated cost recovery model reduces the financial courage required — ratepayers ultimately bear investment costs through approved rate increases, limiting the true risk management assumes.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">DTE Energy is a well-managed regulated utility delivering consistent earnings growth with an attractive income profile. Q1 2026 operating EPS of $1.95 positions the company for the high end of $7.59-$7.73 full-year guidance, up from $7.36 in FY2025 <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The $36.5B five-year capital plan through 2030 targets grid modernization, 2,300 MW of renewables, and data center load growth anchored by the 1.4 GW Oracle contract, supporting the 6-8% long-term EPS growth outlook with bias to the upper end <span class="source-ref">[1]</span>. The 3.01% dividend yield with 60+ years of consecutive payments and 16 consecutive years of growth provides reliable income, supported by a manageable 62.9% payout ratio <span class="source-ref">[5]</span>. At 19.2x forward earnings, DTE offers fair value for a utility with above-average growth visibility, strong regulatory relationships in Michigan, and direct AI infrastructure demand tailwinds. The Inspire score of 45 (ALIGNED) and comprehensive ESG positive attributions support faith-based investment criteria <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">The bear case centers on DTE&#39;s elevated leverage and the limits of its regulated model. Debt-to-equity of 214% and negative free cash flow reflect the capital-intensive nature of the $36.5B buildout plan, creating refinancing risk if interest rates remain elevated <span class="source-ref">[5]</span>. Profit margin of 9.24% is thin even for a utility, and ROE of 12.18% lags the 15% target for strong infrastructure scores — constrained by regulatory return caps. The Forward P/E of 19.21x, up from 17.6x at last screen, leaves limited upside if the EPS growth trajectory merely meets rather than exceeds guidance. Revenue volatility from the Energy Trading segment (2022 revenue was $19.2B vs. $12.5B in 2024) makes underlying utility growth hard to assess <span class="source-ref">[5]</span>. Environmental controversies including Zug Island permit disputes and renewable siting opposition risk project delays and reputational damage <span class="source-ref">[4]</span>. The 5.0% five-year dividend growth CAGR trails the 6% inflation-adjusted target, and regulatory lag on rate recovery could compress returns if capital costs rise faster than approved increases.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Q1 2026 operating EPS of $1.95 positions DTE for the high end of $7.59-$7.73 guidance, with the 1.4 GW Oracle data center contract driving incremental load growth as AI infrastructure demand accelerates <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>$36.5B five-year capital plan through 2030 targeting grid modernization, 2,300 MW renewables, and 220 MW battery storage with 6-8% EPS growth outlook biased to the upper end <span class="source-ref">[1]</span></li>
+        
+        <li>Smooth CEO succession to 34-year veteran Joi Harris maintaining strategic continuity and Gallup-recognized culture, with Integrated Resource Plan reducing clean energy transition costs by $1.4B <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Elevated leverage at 214% D/E with negative free cash flow creates refinancing risk in a sustained higher interest rate environment, while the $36.5B capital plan requires continuous access to debt markets <span class="source-ref">[5]</span></li>
+        
+        <li>Energy Trading segment revenue volatility ($19.2B in 2022 vs. $12.5B in 2024) masks underlying utility growth and introduces earnings unpredictability that the 6-8% operating EPS growth guidance strips out <span class="source-ref">[5]</span></li>
+        
+        <li>Regulatory lag on rate recovery could compress allowed returns below the cost of capital if infrastructure investment costs escalate, while environmental permit disputes and renewable siting opposition risk project delays <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): DTE&#39;s core business — generating and distributing electricity and natural gas to 3.7 million Michigan customers — is physically rooted, heavily regulated, and structurally immune to AI substitution <span class="source-ref">[1]</span>. AI data center buildout is a direct demand catalyst: the 1.4 GW Oracle data center contract demonstrates that AI expansion increases electricity demand rather than threatening it, and DTE&#39;s five-year plan explicitly targets data center load growth <span class="source-ref">[1]</span>. Regulated utility operations require physical infrastructure — substations, pipelines, transmission lines, power plants — that AI cannot displace. The slight deduction from maximum protection reflects potential long-term risks from AI-optimized distributed energy and demand reduction through smart grid technology. AI Opportunity (1/1): DTE is leveraging AI for grid optimization and predictive maintenance, with board-level AI/cybersecurity expertise directing digital transformation strategy <span class="source-ref">[2]</span>. The Oracle data center contract represents quantifiable AI-related revenue growth, and Q1 2026 positioning for the high end of guidance partly reflects data center demand <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            45
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> DTE Energy 2025 Full-Year Earnings Release — $15.81B Revenue, $7.36 Operating EPS, $4.3B Record Capital Investment, $36.5B Five-Year Plan, February 2026</li>
+        
+        <li><span class="src-num">2.</span> DTE Energy Corporate Website and Glassdoor/Gallup — CEO Joi Harris Succession, Culture Transformation, AI/Digital Board Expertise, 2026</li>
+        
+        <li><span class="src-num">3.</span> DTE Energy Q1 2026 Earnings Release — $5.30B Revenue (+23.5% YoY), $1.95 Operating EPS, Positioned for High End of Guidance, May 2026</li>
+        
+        <li><span class="src-num">4.</span> DTE Energy ESG and Community Programs — Empowering Michigan Initiative, Net-Zero-by-2050 Commitment, Zug Island Environmental Disputes</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis.com and Yahoo Finance — DTE Key Statistics: Forward P/E 19.21x, ROE 12.18%, D/E 214%, Dividend Yield 3.01%, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

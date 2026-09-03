@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RNG — RingCentral, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RNG_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RNG')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RNG
+            <span class="stock-name-full">RingCentral, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">60</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">RingCentral, Inc. provides cloud-based unified communications as a service (UCaaS) and contact center as a service (CCaaS) solutions for businesses worldwide. The company's flagship RingEX platform integrates phone, messaging, video, and fax across devices, infused with RingSense AI for personalized automation and intelligence. Products include RingCentral MVP, RingCentral Contact Center, and RingCentral Video. The company serves enterprises from small businesses to Fortune 500 companies. Founded in 1999 by Vlad Shmunis, headquartered in Belmont, California.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>7,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.ringcentral.com" target="_blank" rel="noopener">www.ringcentral.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): RingCentral has evolved from a cloud PBX provider to a comprehensive UCaaS/CCaaS platform with genuine AI monetization. Q1 2026 revenue of $644M (up 5% YoY) with subscription revenue of $623M (up 6% YoY) demonstrates continued growth in a maturing market <span class="source-ref">[1]</span>. The company successfully pivoted to profitability with GAAP operating margin improving from 1.7% to 7.8% and GAAP EPS swinging from a $(0.11) loss to $0.35 profit <span class="source-ref">[1]</span>. AI Deployment (2/2): RingSense AI is generating meaningful revenue — ARR from customers using at least one paid AI product now exceeds 10% of total ARR and has doubled year-over-year <span class="source-ref">[1]</span>. This represents genuine AI monetization, not just feature differentiation. The AI-first, voice-centric roadmap extends into agentic AI and CCaaS, positioning RingCentral at the intersection of communications and AI automation <span class="source-ref">[2]</span>. Market Share (1/2): RingCentral is a leading independent UCaaS provider, but faces intense competition from Microsoft Teams (bundled with M365), Zoom, and Cisco Webex. Market share pressure from Teams bundling is a persistent headwind <span class="source-ref">[2]</span>. Product Pipeline (1/2): Expansion into CCaaS, agentic AI, and deeper enterprise integrations provide growth vectors. The AI-first product roadmap under founder Vlad Shmunis&#39;s direct leadership shows strategic focus <span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): Significant R&amp;D investment in AI capabilities and platform development, with 71.61% gross margins funding substantial engineering effort <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): RingCentral&#39;s mission to transform business communications through cloud and AI technology has been validated by 25+ years of execution, surviving the on-premises to cloud transition and now leading AI integration in UCaaS <span class="source-ref">[2]</span>. Founder Vlad Shmunis&#39;s return to the CEO role in late 2023 after briefly serving as Executive Chairman demonstrates deep personal commitment to the company&#39;s purpose. He was named Best CEO of a Large Company, Best CEO for Diversity, and Best CEO for Women by Comparably Awards <span class="source-ref">[2]</span>. Community Impact (1/2): RingCentral has published Impact Reports and achieved MSCI AA ESG rating with Ecovadis Silver medal recognition <span class="source-ref">[3]</span>. The company emphasizes diversity, inclusion, and greenhouse gas emission reduction. However, direct community impact is limited given the enterprise B2B model. Employee Retention (1/2): Glassdoor rating of 3.5/5 based on 2,020 reviews is below average for a tech company. Reviews describe a bifurcated culture — supportive middle management but challenging C-suite interaction, aggressive or shifting quotas and compensation plans, and reorganization waves that create instability <span class="source-ref">[2]</span>. Insider Buying (0/2): No notable insider buying identified. The company recently initiated a dividend (0.71% yield) and expanded its buyback program, suggesting confidence but through corporate actions rather than personal insider purchasing <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. RingCentral&#39;s valuation is strikingly attractive on a forward basis — forward P/E of 8.42 and PEG ratio of 0.53 suggest the market is significantly undervaluing the company&#39;s AI-driven growth potential <span class="source-ref">[4]</span>. Free cash flow of $600.75M and FCF yield of 17.04% are exceptional for a software company, indicating the transition to profitability is generating real cash <span class="source-ref">[4]</span>. Gross margin of 71.61% is strong SaaS-level profitability. However, GAAP profit margin of just 3.31% and negative stockholders&#39; equity (ROE and D/E not calculable) reflect the legacy of years of GAAP losses and aggressive share buybacks <span class="source-ref">[4]</span>. Total debt of $1.25B and net debt position of $1.14B create leverage risk. Revenue growth of 5% is modest for a company trading at these multiples and suggests the core UCaaS market is maturing. The recent dividend initiation (0.71% yield, 16.06% payout ratio) and buyback expansion signal management confidence in sustainable cash generation <span class="source-ref">[1]</span>. 2026 guidance of $2.62-$2.64B total revenue and non-GAAP EPS of $4.85-$5.01 implies continued margin expansion <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">RingCentral shows a mix of infinite and finite game characteristics. The founder CEO&#39;s return to lead an AI-first transformation demonstrates long-term vision and courage, and the 25-year track record of continuous platform evolution is inherently infinite. However, the aggressive organizational culture — frequent reorgs, shifting quotas, and communication gaps — creates finite-game dynamics internally even as the strategic direction is forward-looking.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): RingCentral&#39;s purpose of transforming how businesses communicate has been validated across 25+ years and multiple technology transitions — from on-premises PBX to cloud, from voice to unified communications, and now from UCaaS to AI-powered business automation <span class="source-ref">[2]</span>. The cause is forward-looking and resilient, gaining new relevance as AI reshapes workplace communications. Founder Vlad Shmunis&#39;s personal return to the CEO role to lead the AI pivot demonstrates authentic commitment beyond financial necessity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor rating of 3.5/5 based on 2,020 reviews is below the tech industry average. Employee feedback describes a bifurcated culture — some teams have supportive management while others experience the &#34;worst&#34; leadership <span class="source-ref">[2]</span>. Multiple reviews cite reorganization waves, aggressive or shifting sales quotas and compensation plans, and communication gaps. The rapid AI-first push under founder leadership is driving innovation but creating organizational instability. These dynamics suggest a culture where execution is valued over psychological safety, which can produce results in the short term but erode trust long-term.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Microsoft Teams is the definitive worthy rival — its bundling with M365 has fundamentally reshaped the UCaaS competitive landscape. Rather than competing head-to-head on Teams&#39; terms (free bundled communications), RingCentral has differentiated through enterprise telephony depth, regulatory compliance, and AI-powered features like RingSense <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company&#39;s AI-first pivot is partly a response to Teams&#39; strength, demonstrating the use of a worthy rival to clarify its own competitive direction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): RingCentral has demonstrated significant strategic flexibility twice — first in the transition from on-premises to cloud communications (pioneering cloud PBX when incumbents like Avaya and Cisco dominated), and now in the AI-first pivot that aims to transform the company from a UCaaS provider into an AI-powered business automation platform <span class="source-ref">[2]</span>. The founder CEO&#39;s return specifically to lead the AI transformation shows willingness to fundamentally reimagine the business. The expansion into CCaaS further demonstrates flexibility in redefining the company&#39;s scope.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Vlad Shmunis&#39;s decision to return as CEO specifically to lead an AI-first transformation — after having already stepped back to Executive Chairman — required genuine conviction that the company needed founder-level intensity for this transition <span class="source-ref">[2]</span>. The AI pivot involves cannibalizing existing product revenue and reorganizing the company around new priorities, creating short-term pain (reflected in Glassdoor reviews about reorgs and shifting priorities) for long-term strategic positioning. The simultaneous dividend initiation and buyback expansion while investing in AI demonstrates confidence in sustainable cash generation <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">RingCentral presents a compelling value case driven by its AI monetization momentum and dramatically attractive forward valuation. At a forward P/E of 8.42 and PEG of 0.53, the market appears to price RNG as a declining legacy communications company while ignoring that AI ARR now exceeds 10% of total ARR and is doubling annually <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Free cash flow of $600.75M (17.04% yield) provides both capital return capacity (new dividend plus expanded buyback) and AI investment funding. Q1 2026 results showed GAAP profitability inflecting sharply — operating margin improved from 1.7% to 7.8%, and EPS swung from a loss to $0.35 profit <span class="source-ref">[1]</span>. Founder Vlad Shmunis&#39;s direct leadership of the AI-first pivot adds execution credibility. The 2026 guidance raise to $2.62-$2.64B revenue and $4.85-$5.01 non-GAAP EPS signals management confidence <span class="source-ref">[1]</span>.</div>
+    <div class="thesis-text">The bear case is structural: the core UCaaS market is maturing with only 5% revenue growth as Microsoft Teams bundling continues to commoditize business communications <span class="source-ref">[1]</span>. RingCentral&#39;s $1.25B debt load and negative stockholders&#39; equity reflect a leveraged balance sheet from years of GAAP losses and aggressive buybacks <span class="source-ref">[4]</span>. GAAP profit margin of just 3.31% means the company is only beginning its profitability journey despite being 25+ years old. The AI-first pivot, while strategically sound, is creating organizational instability — Glassdoor reviews cite frequent reorgs, shifting quotas, and communication gaps that could impair execution at a critical transformation moment <span class="source-ref">[2]</span>. The wide gap between trailing P/E (45x) and forward P/E (8.4x) relies on aggressive non-GAAP earnings expectations being met; any guidance miss could be punished severely. Competition from Microsoft Teams/Copilot, Zoom AI, and emerging AI-native communications platforms remains intense.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI ARR exceeding 10% of total and doubling annually could accelerate revenue growth beyond the current 5% trajectory if AI product adoption drives upsell and new customer acquisition <span class="source-ref">[1]</span></li>
+        
+        <li>Continued GAAP margin expansion from 7.8% operating margin toward 15%+ could close the gap between non-GAAP and GAAP profitability, removing the valuation overhang from stock-based compensation concerns</li>
+        
+        <li>The new dividend (0.71% yield, 16.06% payout ratio) and expanded buyback program could attract income-oriented investors and provide a floor for the stock, supported by $600.75M in annual free cash flow <span class="source-ref">[1]</span><span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Microsoft Teams bundling with M365 continues to commoditize the UCaaS market, constraining RingCentral&#39;s revenue growth to 5% despite AI product momentum — AI alone may not offset the structural competitive headwind <span class="source-ref">[1]</span></li>
+        
+        <li>Negative stockholders&#39; equity and $1.25B debt load create balance sheet fragility that limits strategic flexibility and increases vulnerability to any revenue shortfall or macro downturn <span class="source-ref">[4]</span></li>
+        
+        <li>Organizational instability from the rapid AI-first pivot — frequent reorgs, shifting quotas, and communication gaps cited in Glassdoor reviews — could impair talent retention and execution quality at a critical transformation moment <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): RingCentral faces a dual-edged AI exposure. On the defense side, the UCaaS market is under structural pressure from Microsoft Teams bundled with M365 and increasingly enhanced with Copilot AI capabilities. AI-native communication platforms could eventually bypass traditional UCaaS entirely, handling scheduling, transcription, summarization, and even voice calls through AI agents without requiring a dedicated communications platform. RingCentral&#39;s deep telephony expertise, enterprise-grade reliability, and regulatory compliance capabilities (HIPAA, FINRA) provide meaningful protection — these cannot be easily replicated by AI-native entrants <span class="source-ref">[2]</span>. The installed base of enterprise customers with complex multi-line, multi-location deployments creates switching costs. However, the 5% revenue growth rate suggests the competitive pressure from Teams bundling is already constraining growth. AI Opportunity (1/1): RingSense AI is generating genuine revenue — AI ARR exceeds 10% of total ARR and has doubled year-over-year <span class="source-ref">[1]</span>. The voice-first agentic AI roadmap could transform RingCentral from a communications platform into an AI-powered business automation platform, potentially expanding the addressable market significantly. The founder CEO&#39;s direct leadership of the AI pivot increases execution credibility <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> RingCentral Q1 2026 Financial Results and 2026 Guidance — businesswire.com and investor relations, May 2026</li>
+        
+        <li><span class="src-num">2.</span> RingCentral Leadership, CEO Profile, and AI Strategy — ringcentral.com, Glassdoor, Comparably, accessed July 2026</li>
+        
+        <li><span class="src-num">3.</span> RingCentral ESG and Impact Reports — MSCI AA Rating, Ecovadis Silver Medal, businesswire.com, 2022-2026</li>
+        
+        <li><span class="src-num">4.</span> Stock Analysis — RNG Key Statistics, Valuation Metrics, and Financial Data, accessed July 2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance — RNG Key Statistics, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

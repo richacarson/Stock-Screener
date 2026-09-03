@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen NVT — nVent Electric plc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/NVT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('NVT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            NVT
+            <span class="stock-name-full">nVent Electric plc</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-15</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 62</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">71</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Electrical Equipment</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">nVent Electric plc designs, manufactures, markets, installs, and services high-performance electrical connection and protection solutions that connect and protect mission-critical infrastructure. The company operates through three segments: Enclosures, Electrical & Fastening Solutions, and Infrastructure Solutions (formerly Thermal Management). Key end markets include data centers (including AI infrastructure), industrial, infrastructure, and energy. Products include liquid cooling systems for AI data centers, electrical enclosures, connectors, fastening solutions, and power management systems. Spun off from Pentair in 2018, headquartered in London with primary operations in Minnesota.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>12,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.nvent.com" target="_blank" rel="noopener">www.nvent.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): nVent has transformed from a general electrical products company to a leading AI data center infrastructure provider since the 2018 Pentair spin-off, executing four strategic acquisitions (ECM Industries, Trachte, EPG, Avail) that broadened exposure to data centers, connectors, control buildings, and power utilities <span class="source-ref">[1]</span>. Q1 2026 delivered record sales of $1.24B (+53%) with organic growth of 50%, and the Systems Protection segment surged 76% on AI data center demand. This represents a significant business model evolution. AI Deployment (1/2): nVent&#39;s liquid cooling technology for AI data centers is actively shipping to hyperscale customers, and new products contributed more than 20 percentage points to Q1 2026 sales growth <span class="source-ref">[1]</span>. The Siemens-NVIDIA-nVent reference architecture for 100MW AI data centers positions the company at the center of AI infrastructure deployment <span class="source-ref">[2]</span>. Market Share (1/2): nVent is gaining share rapidly in data center electrical infrastructure but operates in a competitive landscape alongside Vertiv, Eaton, and Schneider Electric; the company is a meaningful and fast-growing player but not yet a dominant category leader <span class="source-ref">[1]</span>. Product Pipeline (2/2): 11 new products launched in Q1 2026 alone; the Blaine, MN facility started production and is ramping through 2026; the Siemens-NVIDIA joint reference architecture provides specific pipeline visibility for next-generation 100MW AI data center builds <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): Consistent investment in new product development evidenced by 20+ points of new product contribution to growth, above industry norms for electrical equipment companies <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): nVent&#39;s mission — &#39;We connect and protect with inventive electrical solutions to build a more sustainable and electrified world&#39; — is specific, thoughtful, and connects the company&#39;s daily work to the larger purpose of electrification and sustainability <span class="source-ref">[3]</span>. The mission differentiates from generic industrial language and has been validated by 8 years of consistent strategic decisions since the 2018 spin-off, including the pivot toward AI data center infrastructure. However, it has not been tested through multi-decade consistency or survived a leadership transition. Community Impact (0/2): No evidence of significant charitable programs, community investment, or foundation activity beyond standard corporate responsibility reporting. Employee Retention (1/2): nVent is a certified Great Place to Work and was named to Fortune&#39;s Best Workplaces in Manufacturing &amp; Production list, with 71% of employees saying it is a great place to work <span class="source-ref">[3]</span>. Beth Wozniak has led the company since the 2018 spin-off, providing 8 years of consistent leadership. The company&#39;s Win Right Values framework (Customer First, Positive Energy, Innovation and Adaptability, Respect and Teamwork, Accountability for Performance, Absolute Integrity) defines cultural expectations <span class="source-ref">[3]</span>. Insider Buying (0/2): Net insider selling — 23 insider sells versus only 1 buy over the past year, including EVP Aravind Padmanabhan selling 31,522 shares <span class="source-ref">[5]</span>. While insiders hold equity-based compensation, the selling pattern does not demonstrate conviction through personal capital allocation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics with excellent results across most dimensions. Revenue growth is explosive at 40.3% TTM driven by organic growth of 50% in Q1 2026, with 5-year revenue CAGR of 14.3% ($2.00B in 2020 to $3.89B in 2025) <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Debt-to-equity of 41% is well below the 70% target, providing financial flexibility for continued acquisitions. Profit margin of 11.14% is below the 20% target, constrained by the acquisition-heavy growth strategy and integration costs, but improving as scale benefits compound. ROE of 12.81% is slightly below the 15% target. Forward P/E of 33.16 is elevated above the 20 target, reflecting the market&#39;s premium for AI infrastructure exposure <span class="source-ref">[4]</span>. EPS of $2.60 in 2025 was up 82% from $1.43 in 2024, with TTM EPS reaching $3.01 as growth accelerates <span class="source-ref">[1]</span>. The company pays a $0.82 annual dividend (0.52% yield) with a conservative 27.6% payout ratio <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">nVent under Beth Wozniak&#39;s 8-year leadership has built a genuine purpose around connecting and protecting electrical infrastructure for a more sustainable and electrified world, validated by consistent strategic execution through the AI infrastructure boom. The company demonstrates several hallmarks of infinite game thinking — a specific and thoughtful mission, strategic flexibility in pivoting toward data centers, and investment in culture and values. However, the company has not yet survived a leadership transition, and the heavy insider selling pattern raises questions about long-term conviction at the executive level.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): nVent&#39;s cause — building a more sustainable and electrified world through inventive electrical solutions — is specific, forward-looking, and validated by 8 years of consistent execution since the 2018 spin-off <span class="source-ref">[3]</span>. Strategic decisions (AI data center pivot, acquisitions, new product development, Siemens-NVIDIA partnership) trace back to this purpose. The cause is bigger than any single product or market. However, 8 years of execution is not yet the decades-long validation that Sinek would require for a full 3-point score, and the company has not survived a leadership transition.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): nVent is a certified Great Place to Work with 71% of employees affirming it as a positive workplace, and the Win Right Values framework provides cultural structure <span class="source-ref">[3]</span>. Beth Wozniak has led since the 2018 spin-off, earning Entrepreneur of the Year recognition and Minnesota Business Hall of Fame induction. The company has grown from approximately 10,000 to 12,000 employees without major cultural disruptions. However, 71% is adequate but not exceptional, and no specific data on voluntary turnover or average tenure was identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): nVent competes against Vertiv, Eaton, Schneider Electric, and Hubbell in the electrical equipment space, but the company&#39;s competitive language focuses on differentiation, market positioning, and winning customers rather than learning from rivals. The Siemens partnership is collaborative but positioned as nVent providing essential components rather than acknowledging Siemens as a worthy rival. No evidence of the infinite competitive mindset Sinek describes.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): nVent has meaningfully evolved its business model since the 2018 Pentair spin-off, pivoting from a general-purpose electrical products company to an AI data center infrastructure leader through four strategic acquisitions and organic product development <span class="source-ref">[1]</span>. The pivot to data center infrastructure was proactive rather than desperate — the company recognized the AI infrastructure opportunity early and positioned accordingly. However, this evolution was additive rather than transformative — nVent did not abandon its core electrical products business; it expanded into adjacent high-growth markets.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Beth Wozniak made bold capital allocation decisions — four acquisitions (ECM Industries, Trachte, EPG, Avail) and a new Blaine manufacturing facility — to position nVent for the AI data center wave before the full demand materialized <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The company raised its 2026 sales growth outlook to 26-28%, committing to aggressive growth targets. However, these decisions were made in the context of massive demand visibility and record backlogs, reducing the genuine risk involved. Net insider selling of 23 sells vs 1 buy over the past year somewhat contradicts courageous conviction.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">nVent Electric delivered record Q1 2026 results — $1.24B in sales (+53% reported, +50% organic), $0.86 GAAP EPS (+65%), and $1.09 adjusted EPS (+63%) — demonstrating that AI data center infrastructure demand is translating into tangible financial outperformance <span class="source-ref">[1]</span>. The company raised its full-year 2026 guidance to 26-28% reported and 21-23% organic sales growth, with backlog reaching a record $2.6B. The strategic pivot to AI infrastructure is validated by the Siemens-NVIDIA reference architecture partnership and 11 new products launched in Q1 alone <span class="source-ref">[2]</span>. With 5-year revenue CAGR of 14.3%, debt-to-equity of 41%, and EPS growth of 82% in 2025, nVent combines growth with financial discipline. The Inspire Insight score of 62 (ALIGNED) confirms strong ESG positioning for faith-based investors <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">Valuation is the primary constraint. At 53.85x trailing earnings and 33.16x forward earnings, nVent trades at a significant premium to both historical industrials multiples and the S&amp;P 500 <span class="source-ref">[4]</span>. The premium reflects AI infrastructure optimism, but any deceleration in data center construction — whether from hyperscaler capex pullbacks, power grid constraints, or geopolitical disruption — would compress the multiple rapidly. Profit margin of 11.14% is below the 20% target, compressed by acquisition integration costs and the lower-margin nature of new product ramps. ROE of 12.81% lags the 15% target despite exceptional revenue growth, suggesting the acquisition-heavy strategy dilutes returns on equity. Net insider selling (23 sells vs 1 buy) is a cautionary signal that executives may view the current valuation as fully reflecting the growth story <span class="source-ref">[5]</span>. The 0.52% dividend yield provides minimal income support for a stock trading at all-time highs.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI data center construction cycle accelerating through 2027+, with the Siemens-NVIDIA-nVent 100MW reference architecture creating a standardized pipeline of large-scale projects requiring nVent&#39;s liquid cooling, enclosures, and electrical infrastructure</li>
+        
+        <li>Blaine, MN manufacturing facility ramping through 2026, adding capacity specifically designed for AI data center products and supporting the 21-23% organic growth target</li>
+        
+        <li>Acquisition integration of Trachte, EPG, and Avail performing ahead of plan, with cross-selling opportunities across nVent&#39;s expanded data center and power utility customer base driving above-target revenue synergies</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Valuation premium of 53.85x trailing and 33.16x forward P/E reflects peak AI infrastructure optimism — any deceleration in hyperscaler data center capex spending or power grid bottlenecks could trigger significant multiple compression</li>
+        
+        <li>Acquisition-heavy growth strategy has compressed profit margins to 11.14% and ROE to 12.81%, both below IOWN targets — integration execution risk remains elevated with four major acquisitions in recent years</li>
+        
+        <li>Net insider selling of 23 transactions versus 1 buy over the past year signals that executives may view current valuation as fully reflecting the AI infrastructure growth story</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): nVent manufactures physical electrical infrastructure — liquid cooling systems, connectors, enclosures, cable management, fastening solutions — that AI data centers require in massive quantities <span class="source-ref">[1]</span>. AI cannot replace physical electrical infrastructure; you cannot use software to cool a GPU cluster, route high-voltage power, or protect electrical connections from environmental hazards. nVent IS AI infrastructure — the company&#39;s products are essential components of every AI data center being built worldwide. The Siemens-NVIDIA-nVent reference architecture for 100MW AI data centers demonstrates that nVent&#39;s products are designed into the foundational layer of AI infrastructure deployment <span class="source-ref">[2]</span>. AI is not a threat to nVent; AI is the single largest demand driver for nVent&#39;s products, with Systems Protection revenue surging 76% in Q1 2026 directly attributable to AI data center demand <span class="source-ref">[1]</span>. AI Opportunity (1/1): Meaningful and rapidly growing AI-related revenue — Q1 2026 record sales of $1.24B were primarily driven by AI data center infrastructure demand, with organic growth of 50% and new AI-related products contributing 20+ percentage points to growth <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            62
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> nVent Electric Q1 2026 Earnings Release — 8-K Filing, SEC, April 2026</li>
+        
+        <li><span class="src-num">2.</span> nVent-Siemens-NVIDIA AI Data Center Reference Architecture Partnership — nvent.com and Yahoo Finance, 2026</li>
+        
+        <li><span class="src-num">3.</span> nVent Electric Corporate Website — Culture, Values, Leadership, ESG — nvent.com, accessed July 2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis.com — NVT Financial Ratios, Revenue History, and Statistics, accessed July 2026</li>
+        
+        <li><span class="src-num">5.</span> nVent CEO Beth Wozniak Interview — MPR News, June 2, 2026; Insider Trading Activity — MarketBeat, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

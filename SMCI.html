@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SMCI — Super Micro Computer, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SMCI_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SMCI')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SMCI
+            <span class="stock-name-full">Super Micro Computer, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-11</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 44</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">61</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Computer Hardware</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Super Micro Computer (Supermicro) designs, develops, and manufactures high-performance server and storage solutions, specializing in AI-optimized data center infrastructure including liquid-cooled GPU server racks, Data Center Building Block Solutions (DCBBS), and complete rack-scale AI systems. Founded in 1993 by CEO Charles Liang, Supermicro has transformed from a niche server assembler into a major AI infrastructure provider, reporting Q3 FY2026 revenue of $10.24B (+123% YoY) and TTM revenue of $33.7B (+56% YoY). The company recorded $60B in new orders during Q4, driven by hyperscaler and enterprise AI demand. Supermicro faces ongoing governance scrutiny including a DOJ probe, prior SEC settlement ($17.5M in 2020), a Hindenburg Research short report, and federal indictments related to illegal server exports to China, though the independent special committee found no evidence of management misconduct.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>7,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.supermicro.com" target="_blank" rel="noopener">www.supermicro.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): Supermicro has executed one of the most dramatic business transformations in recent tech history — revenue exploded from ~$5B in FY2023 to ~$40B projected for FY2026, driven by the company&#39;s early bet on liquid-cooled AI server infrastructure <span class="source-ref">[1]</span>. The Data Center Building Block Solutions (DCBBS) portfolio created a new category of modular, customizable AI data center infrastructure that enabled rapid deployment of NVIDIA GPU clusters at scale. Record $60B in new orders during Q4 FY2026 validates the transformation&#39;s commercial success. AI Deployment (2/2): Supermicro&#39;s entire business IS AI deployment — the company builds the physical server infrastructure that powers AI workloads for hyperscalers, enterprises, and sovereign AI programs globally. Liquid-cooled rack-scale systems directly address the thermal challenges of next-generation AI accelerators, and DCBBS solutions have been adopted by the largest AI infrastructure buyers <span class="source-ref">[1]</span>. Market Share (1/2): Supermicro gained significant market share in AI servers by moving faster than Dell and HPE on liquid cooling and rack-scale integration. However, Dell and HPE are rapidly closing the gap with their own liquid cooling solutions, investing billions in manufacturing capacity with supply chain scale advantages that pressure SMCI&#39;s thin-margin model <span class="source-ref">[2]</span>. Supermicro is a meaningful but not dominant player. Product Pipeline (1/2): Next-generation systems aligned with NVIDIA&#39;s Blackwell and Rubin platforms are in development, and the DCBBS portfolio continues expanding. However, Supermicro&#39;s product roadmap is inherently dependent on NVIDIA&#39;s cadence — the company does not define its own platform cycles <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Supermicro&#39;s R&amp;D spending is below industry average relative to revenue — the company&#39;s value proposition is rapid integration and assembly rather than proprietary silicon or deep software development, which limits R&amp;D intensity relative to peers like Dell or HPE.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): Supermicro&#39;s stated purpose centers on delivering &#39;Total IT Solutions&#39; with an early commitment to &#39;green computing&#39; focused on power efficiency <span class="source-ref">[3]</span>. While the green computing angle from the mid-2000s showed some foresight, the overall mission is generic and interchangeable with any server manufacturer. &#39;Total IT Solutions&#39; does not articulate a deeper purpose or vision of a better future. Community Impact (0/2): No evidence of specific charitable programs, foundation activities, or community investment initiatives was identified in research. Employee Retention (0/2): No employee retention or tenure data was identified. The governance crisis in late 2024 — including potential Nasdaq delisting, auditor resignation (Ernst &amp; Young), and appointment of new auditor (BDO) — likely created significant organizational instability and employee uncertainty <span class="source-ref">[2]</span>. Insider Buying (0/2): No evidence of meaningful net insider buying. The Hindenburg Research report flagged &#39;sibling self-dealing&#39; through related-party transactions with CEO Charles Liang&#39;s brothers&#39; companies in Taiwan <span class="source-ref">[2]</span>. The family-centric governance structure with Liang&#39;s wife Sara Liu in senior roles raises alignment concerns rather than demonstrating insider conviction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Supermicro&#39;s infrastructure score is driven by exceptional growth metrics and deep-value valuation despite thin margins. Forward P/E of 9.0 is well below the 20x target (scoring 1.0), and PEG of 0.31 is far below the 1.0 target (scoring 1.0 with 2x weight), reflecting the market&#39;s governance discount pricing in substantial risk <span class="source-ref">[4]</span>. Revenue growth YoY of 56% (TTM) and estimated 5yr revenue CAGR of ~59% both score 1.0, with the 5yr CAGR carrying 2x weight <span class="source-ref">[1]</span>. ROE of 17.88% exceeds the 15% target (scoring 1.0 with 2x weight). D/E of 121% is above the 70% target but well below the 300% floor (scoring 0.778). The major drag is profit margin of 3.7% against the 20% target, scoring only 0.185 — this reflects the fundamental weakness of Supermicro&#39;s assembly-focused business model, where margins have compressed from ~5% to 3.7% even as revenue tripled <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Liquidity floor easily cleared with estimated daily trading value exceeding $500M.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Supermicro presents a paradox under Sinek&#39;s framework: a 32-year-old founder-led company that has demonstrated remarkable longevity and adaptability, but whose governance practices, accounting history, and family-centric management structure conflict with the trust and transparency that infinite game players require. Charles Liang&#39;s continuous leadership since 1993 provides consistency that Sinek values, and the pivot to AI infrastructure shows strategic adaptability. However, the SEC settlement ($17.5M in 2020), DOJ probe, Hindenburg short report alleging accounting manipulation and sibling self-dealing, federal indictments for illegal server exports to China, and near-Nasdaq delisting in 2024 reveal governance practices fundamentally at odds with the ethical foundation Sinek requires for infinite game players. The company plays to win this cycle — maximizing AI server volume at thin margins — rather than building the enduring organizational trust that sustains companies across eras.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Supermicro&#39;s &#39;green computing&#39; focus from the mid-2000s showed early vision — investing in power-efficient server design before energy efficiency was a market priority <span class="source-ref">[3]</span>. Charles Liang&#39;s 32-year tenure suggests personal commitment to the company beyond quarterly optimization. However, the company has never articulated a purpose beyond building better servers. The current AI infrastructure focus is an opportunistic response to market demand (NVIDIA&#39;s GPU platform) rather than a cause that existed before the AI boom. The governance crises — SEC settlements, DOJ probes, export violations — suggest the cause, to the extent one exists, has not been strong enough to constrain behavior <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Supermicro&#39;s governance structure is antithetical to Sinek&#39;s Circle of Safety. CEO Charles Liang&#39;s wife Sara Liu holds senior roles, and related-party transactions with Liang&#39;s brothers&#39; companies in Taiwan create a family-centric governance structure that undermines organizational trust for non-family employees <span class="source-ref">[2]</span>. The Hindenburg Research report specifically flagged &#39;sibling self-dealing.&#39; The 2024 governance crisis — Ernst &amp; Young auditor resignation, potential Nasdaq delisting, DOJ probe — created severe organizational instability. Federal indictments of company-connected individuals for illegal server exports to China further erode trust. The special committee found no management misconduct, but the pattern of governance issues over decades (2020 SEC settlement, 2024 auditor resignation, 2026 DOJ probe) suggests structural trust deficits <span class="source-ref">[2]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Supermicro&#39;s competitive response to Dell and HPE closing the liquid cooling gap has been to accelerate innovation and expand the DCBBS portfolio rather than attack competitors <span class="source-ref">[2]</span>. The company&#39;s appointment of a Chief Revenue Officer to strengthen go-to-market execution reflects acknowledgment of competitors&#39; sales and distribution advantages. Management commentary has focused on improving Supermicro&#39;s own time-to-market and customer service rather than denigrating rivals, consistent with the improvement-oriented mindset Sinek describes.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Supermicro successfully pivoted from a generic server and storage vendor into the leading AI infrastructure assembler, riding NVIDIA&#39;s GPU platform to transform from ~$5B in FY2023 revenue to ~$40B projected for FY2026 <span class="source-ref">[1]</span>. The pivot to liquid-cooled AI racks and DCBBS solutions required substantial engineering investment and manufacturing retooling. However, the transformation followed market demand rather than anticipating it — Supermicro rode the NVIDIA wave rather than creating a new category. The pivot was opportunistic and well-executed, but it was market-driven rather than cause-driven.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Charles Liang has navigated the company through severe governance crises that would have destroyed most companies — the 2024 auditor resignation, Hindenburg short attack, potential Nasdaq delisting, and DOJ probe — emerging with the business intact and growing <span class="source-ref">[2]</span>. His early investment in liquid cooling technology before the AI boom demonstrated willingness to invest ahead of market demand. However, the governance crises themselves suggest that short-term decisions (accounting practices, export controls, related-party transactions) repeatedly compromised long-term institutional integrity. Surviving a crisis you helped create is resilience, not the proactive courage Sinek describes.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Supermicro at $27 (9x forward earnings, 0.31 PEG) is arguably the cheapest pure-play on AI infrastructure buildout — Q3 FY2026 revenue of $10.24B (+123% YoY) and record $60B in new Q4 orders demonstrate the company is capturing disproportionate share of the AI data center investment cycle <span class="source-ref">[1]</span>. TTM revenue of $33.7B (+56% YoY) with ROE of 17.88% shows capital-efficient scaling. The Forward P/E of 9.0 and PEG of 0.31 embed a massive governance discount — the independent special committee found no evidence of management misconduct, and the company maintained its Nasdaq listing through the 2024 crisis <span class="source-ref">[2]</span>. Liquid-cooled rack-scale solutions and the DCBBS portfolio position Supermicro at the thermal engineering frontier as AI accelerator power density continues rising. The Inspire Impact Score of 44 (ALIGNED) supports faith-based investor allocation.</div>
+    <div class="thesis-text">The bear case centers on margin erosion, governance risk, and competitive convergence. Profit margin of 3.7% on $33.7B revenue generates only $1.25B in net income — Seeking Alpha characterizes this as &#39;explosive revenue growth, broken business model,&#39; where volume growth is destroying margins rather than creating operating leverage <span class="source-ref">[2]</span>. Gross margins declined to 8.39% in Q3 2026, approaching commodity hardware territory. Dell and HPE are investing billions in liquid cooling capability and leverage supply chain scale advantages that Supermicro cannot match on component pricing. The DOJ probe into accounting irregularities, federal indictments for illegal server exports to China (involving &#39;dummy servers&#39; to mask GPU shipments), and the Hindenburg report&#39;s allegations of &#39;accounting manipulation&#39; and &#39;sibling self-dealing&#39; create unresolved legal overhang that could resurface <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The stock&#39;s 46.87% decline over the past 52 weeks reflects the market pricing in these risks. Supermicro&#39;s overwhelming dependency on NVIDIA&#39;s product roadmap means any disruption to that relationship — or NVIDIA&#39;s own direct-to-customer infrastructure moves — could severely impact revenue. China competition and export control restrictions add geopolitical uncertainty. The assembly-focused model lacks proprietary technology moats, making Supermicro&#39;s market position potentially impermanent.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Record $60B in new Q4 FY2026 orders provides 1.5+ quarters of revenue visibility and validates sustained hyperscaler AI infrastructure demand, with potential to lift the stock if Q4 earnings (reporting August 11) confirm accelerating order-to-revenue conversion <span class="source-ref">[1]</span></li>
+        
+        <li>Forward P/E of 9.0x and PEG of 0.31 represent extreme value for a company growing revenue 56% YoY — resolution of the governance discount through DOJ investigation closure and continued clean audit opinions could trigger significant multiple expansion <span class="source-ref">[4]</span></li>
+        
+        <li>Next-generation NVIDIA Blackwell and Rubin platforms require increasingly sophisticated liquid cooling and power delivery solutions, deepening hyperscaler dependency on Supermicro&#39;s thermal engineering expertise and DCBBS modular deployment capabilities <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Profit margin compression from 5%+ to 3.7% despite tripling revenue suggests the assembly-focused model destroys margin at scale — Dell and HPE are closing the liquid cooling gap with superior supply chain scale, potentially commoditizing Supermicro&#39;s competitive advantage <span class="source-ref">[2]</span></li>
+        
+        <li>Active DOJ probe into accounting irregularities, federal indictments for illegal server exports to China via &#39;dummy servers,&#39; and prior SEC settlement ($17.5M in 2020) create existential legal and regulatory risk that could result in fines, sanctions, or management changes <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Overwhelming dependency on NVIDIA&#39;s product roadmap and chip allocation decisions means any disruption to the NVIDIA relationship — including NVIDIA&#39;s own infrastructure expansion or alternative chip architectures gaining traction — could severely impact revenue and order pipeline <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Supermicro IS AI infrastructure — the company builds the physical servers, liquid-cooled racks, and data center building blocks that AI workloads run on. By the framework&#39;s definition, a company that builds AI infrastructure cannot be disrupted by the technology it enables <span class="source-ref">[1]</span>. AI data centers require more of what Supermicro sells, not less — NVIDIA&#39;s next-generation accelerators demand increasingly sophisticated cooling and power delivery solutions that are Supermicro&#39;s core competency. The physical nature of server manufacturing, thermal engineering, and supply chain logistics creates structural barriers that software AI cannot displace. The risk vector is competitive rather than AI-disruption: Dell and HPE are investing billions to close the liquid cooling gap, and Supermicro&#39;s assembly-focused model lacks the proprietary silicon or deep software moats that would make its position unassailable <span class="source-ref">[2]</span>. AI Opportunity (1/1): Supermicro&#39;s entire $33.7B TTM revenue is AI-related or AI-adjacent. Record $60B in new orders during Q4 FY2026 are predominantly AI infrastructure orders <span class="source-ref">[1]</span>. The company is one of the primary enablers of the global AI buildout.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            44
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Super Micro Computer Q3 FY2026 Earnings — Revenue $10.24B (+123% YoY), TTM Revenue $33.7B, Net Income $483.4M, Record $60B New Orders Q4, FY2026 Target $33B+ — CNBC, StockTitan, Supermicro IR, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Super Micro Computer Governance and Competitive Analysis — DOJ Probe, Hindenburg Report, SEC Settlement, Illegal Export Indictments, Dell/HPE Competition, Near-Nasdaq Delisting — Motley Fool, Seeking Alpha, Investing.com, FX Leaders, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Super Micro Computer ESG Profile — Green Computing History, Active Investigations, Governance Crisis, Export Control Scrutiny — Yahoo Finance, Sustainalytics, MarketScreener, FinancialContent, 2020-2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis, GuruFocus, Yahoo Finance — SMCI Key Statistics: Forward P/E 9.0, PEG 0.31, D/E 121%, ROE 17.88%, Profit Margin 3.7%, Stock Price ~$27, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

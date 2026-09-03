@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CTAS — Cintas Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CTAS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CTAS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CTAS
+            <span class="stock-name-full">Cintas Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-18</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 63</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">65</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Specialty Business Services</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Cintas Corporation provides corporate identity uniforms, facility services, first aid and safety products, fire protection services, and document management to businesses across North America. Through a route-based direct-sale model, Cintas designs, manufactures, and services uniform and facility programs (mats, mops, restroom supplies, workplace safety products) for over one million businesses. Founded in 1968 and headquartered in Cincinnati, Ohio, Cintas is a 42-year Dividend King and is in the process of acquiring rival UniFirst Corporation for $5.5 billion, a deal that would create the dominant player in North American uniform rental and facility services.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>48,300 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.cintas.com" target="_blank" rel="noopener">www.cintas.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Cintas&#39;s largest strategic move in decades is the pending $5.5B acquisition of UniFirst Corporation, its largest direct competitor, announced in 2026 with expected annual operating cost synergies of $375 million within four years through route optimization and shared infrastructure <span class="source-ref">[3]</span>. This is a genuine business-model-scale transformation (industry consolidation) rather than a new product category, so it earns partial credit. AI Deployment (1/2): Cintas expanded its Google Cloud partnership in April 2024 to build a generative AI-powered internal knowledge center on the Vertex AI platform, giving the company a low-risk environment to build institutional AI expertise before deploying it into route optimization, sales, and service operations <span class="source-ref">[2]</span>. No quantified productivity or revenue results have been disclosed yet. Market Share Leadership (2/2): Cintas already holds an estimated 27%-43% share of the North American uniform rental and facility services market depending on segment definition, and the pending UniFirst combination (UniFirst holds 12%-14%) would push combined share to nearly half the market, cementing category dominance <span class="source-ref">[3]</span>. Product Pipeline (1/2): Beyond UniFirst integration, Cintas continues expanding First Aid &amp; Safety, Fire Protection, and Document Management cross-sell into its existing customer base, but no named next-generation product launches with specific timelines were identified. R&amp;D Intensity (0/1): As a route-based service business, Cintas does not report material traditional R&amp;D spend and lags manufacturing/tech peers on this metric.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Cintas&#39;s founding principal objective, established in 1979 — &#39;We will exceed our customers&#39; expectations to maximize the long-term value of Cintas for its shareholders and working partners&#39; — has been in continuous use for over 45 years and is explicitly referenced across investor and culture materials <span class="source-ref">[5]</span>. It is specific and durable but partially finite-framed (centered on maximizing shareholder value) rather than a transformative societal cause, so it falls short of the top tier. Community/Charitable Impact (1/2): Cintas&#39;s ESG program has cut GHG emissions intensity 35% and energy usage intensity 33% since a fiscal 2019 baseline, and the company publishes annual ESG updates on safety and sustainability, but no headline philanthropic program of outsized scale was identified <span class="source-ref">[3]</span>. Employee Retention (1/2): Cintas was named to The Wall Street Journal&#39;s Management Top 250 for a second consecutive year and appears on Newsweek&#39;s 2026 greatest workplaces list, but Glassdoor reviews are mixed, with recurring criticism that &#39;Executive Leadership is completely detached from the field&#39; and hampered by bureaucratic &#39;red tape,&#39; and no hard tenure/turnover figures are publicly disclosed <span class="source-ref">[2]</span>. Insider Buying (0/2): Company insiders collectively sold about $4.7 million more stock than they bought over the trailing 12 months, with zero open-market insider purchases in the most recent quarter; CEO Todd Schneider&#39;s only recent share addition was a routine equity-compensation grant, not a market purchase <span class="source-ref">[6]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics using the Growth-sleeve weighting (ROE 2x, Revenue Growth 5yr CAGR 2x, Forward PEG 2x). Cintas closed fiscal 2026 with $11.26B revenue (up 8.9% YoY) and adjusted diluted EPS of $4.94 (up 12.3%), record 50.7% full-year gross margin, and an all-time-high 23.3% adjusted operating margin <span class="source-ref">[1]</span>. ROE of roughly 41% and D/E near 60% (total debt ~$2.9B against ~$4.8B equity) reflect a capital-efficient, moderately levered balance sheet well inside target ranges <span class="source-ref">[4]</span>. Revenue has compounded at approximately 9.6% annually over the past five fiscal years (from $7.12B in FY2021 to $11.26B in FY2026), just shy of the 10% target, and FY2027 guidance of 8-9% growth signals durability <span class="source-ref">[4]</span><span class="source-ref">[7]</span>. The main offsets are valuation: a forward P/E near 38x and a forward PEG near 3.3 are well above the 20x/1.0x targets, reflecting a fully-priced, low-volatility compounder rather than a bargain <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Cintas plays a hybrid game. Its 45-year-old mission and 42-year unbroken dividend-increase streak show long-horizon discipline that Sinek would recognize as infinite thinking, and the company has repeatedly reinvented its service mix (uniforms into First Aid &amp; Safety, Fire Protection, Document Management, and now the UniFirst combination). But the mission&#39;s explicit &#39;maximize shareholder value&#39; framing, mixed Glassdoor sentiment on field autonomy, and the choice to eliminate its largest rival through acquisition rather than out-compete it push the composite toward the finite end of MIXED.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Cintas&#39;s 1979 principal objective — to exceed customer expectations &#39;to maximize the long-term value of Cintas for its shareholders and working partners&#39; — has guided the company for 45+ years and explicitly includes employee-partners alongside shareholders, giving it more service orientation than a pure profit mandate <span class="source-ref">[5]</span>. However, the explicit &#39;maximize shareholder value&#39; language is itself a finite-game framing that Sinek would flag as fundamentally about winning rather than a resilient, service-to-others cause, keeping this below the top score.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Cintas earned The Wall Street Journal&#39;s Management Top 250 recognition for a second consecutive year and Newsweek&#39;s 2026 greatest-workplaces list, signaling structured, well-regarded management practices <span class="source-ref">[2]</span>. Countering this, recurring Glassdoor themes describe leadership as &#39;completely detached from the field&#39; and centered on compliance optics, with reviewers specifically requesting faster decision-making and less &#39;red tape&#39; constraining field-level empowerment — evidence of uneven psychological safety across the 48,300-person workforce <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Rather than competing against UniFirst to sharpen its own strategy, Cintas is acquiring its largest rival outright for $5.5B, a move that would push combined market share to nearly half the industry and has already drawn attention for potential FTC/DOJ antitrust scrutiny over &#39;undue market concentration&#39; <span class="source-ref">[3]</span>. This consolidate-and-absorb posture is closer to playing to eliminate competition than to Sinek&#39;s ideal of a worthy rival that clarifies and improves your own game.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Over multiple decades Cintas has repeatedly reshaped its business beyond core uniform rental into First Aid &amp; Safety, Fire Protection, and Document Management, and it is now making its boldest move yet — the pending $5.5B UniFirst acquisition that would fundamentally restructure the competitive landscape of the entire industry rather than defend the status quo <span class="source-ref">[3]</span>. Willingness to absorb integration risk, antitrust exposure, and near-term dilution for a multi-year structural repositioning reflects genuine existential flexibility.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Committing $5.5B and taking on real antitrust risk to pursue UniFirst — rather than continuing steady organic growth — required real conviction from CEO Todd Schneider and the board, and the deal sacrifices near-term simplicity for a multi-year integration payoff targeting $375M of run-rate synergies <span class="source-ref">[3]</span>. It falls short of the top score because the move is also a defensive consolidation play in a maturing, low-growth category rather than a principle-driven sacrifice of near-term profit for a larger cause.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Cintas closed fiscal 2026 with $11.26B in revenue (up 8.9%), record 50.7% gross margin, and an all-time-high 23.3% adjusted operating margin, capping a run in which the company has compounded revenue at roughly 9.6% annually and diluted EPS in the double digits for years running <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. As a 42-year Dividend King with a route-based, physical-labor-driven business model, Cintas sits among the most AI-resistant large caps in the screen — laundering and delivering uniforms to a million-plus customer locations cannot be automated away by generative AI <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The pending $5.5B acquisition of UniFirst, its largest direct rival, would push combined North American market share toward half the industry and unlock an estimated $375M in annual synergies within four years, materially extending Cintas&#39;s moat if it clears regulatory review <span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The principal risks are valuation and integration/antitrust execution. At roughly 38x forward earnings and a PEG near 3.3, Cintas trades at a substantial premium reflecting its quality and consistency, leaving little room for a growth disappointment relative to FY2027 guidance of $12.10-$12.25B revenue and $5.36-$5.50 adjusted EPS <span class="source-ref">[4]</span>. The UniFirst deal is Cintas&#39;s largest and most complex transaction ever, carries real FTC/DOJ antitrust risk given the resulting market concentration, and integrating a company roughly one-fifth Cintas&#39;s size introduces multi-year execution risk that has not historically been part of the Cintas story <span class="source-ref">[3]</span>. Internally, mixed Glassdoor sentiment around field-level autonomy and &#39;red tape&#39; suggests the company&#39;s celebrated operational discipline can tip into bureaucratic rigidity, a dynamic worth monitoring as UniFirst&#39;s workforce and routes are absorbed <span class="source-ref">[2]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>UniFirst acquisition closing and early integration progress toward the targeted $375M in annual run-rate synergies, which would materially expand margins and consolidate Cintas&#39;s already-dominant market position</li>
+        
+        <li>Continued double-digit adjusted EPS growth and margin expansion toward FY2027 guidance of $12.10-$12.25B revenue and $5.36-$5.50 adjusted EPS, extending a multi-decade record of compounding</li>
+        
+        <li>Cross-sell expansion of First Aid &amp; Safety, Fire Protection, and Document Management into the existing uniform customer base, diversifying revenue beyond core garment rental</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>FTC/DOJ antitrust scrutiny of the UniFirst deal given a combined North American market share approaching half the industry could force route/branch divestitures or block the transaction outright</li>
+        
+        <li>A forward P/E near 38x and PEG near 3.3 price Cintas for near-flawless execution, leaving the stock vulnerable to meaningful multiple compression on any growth or margin disappointment</li>
+        
+        <li>Integrating UniFirst&#39;s routes, facilities, and workforce is Cintas&#39;s largest and most complex acquisition in company history, and execution missteps could offset the projected synergy gains</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Cintas&#39;s core revenue engine — route-based delivery, pickup, and laundering of uniforms and facility products across roughly one million physical customer locations — requires physical labor, vehicle logistics, and industrial laundry infrastructure that generative or agentic AI cannot substitute <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. This physical-service moat places Cintas among the most AI-resistant large caps in the screen; the only real exposure is back-office functions (sales lead scoring, billing, HR, scheduling) where AI could modestly improve productivity without threatening the revenue base. The Google Cloud/Vertex AI knowledge-center rollout is explicitly framed as a low-risk internal tool, and management itself has flagged that &#39;the greatest hurdle may be cultural,&#39; since transformation depends on adoption from route drivers to sales reps rather than a wholesale AI substitution of labor <span class="source-ref">[2]</span>. AI Opportunity (0/1): No quantifiable AI-driven revenue stream has been disclosed — the AI investment to date is an internal efficiency initiative, not a monetized product or service line.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            63
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Cintas Corporation Announces Fiscal 2026 Fourth Quarter and Full Year Results — Yahoo Finance/Cintas Newsroom, July 15, 2026</li>
+        
+        <li><span class="src-num">2.</span> Cintas Google Cloud Generative AI Partnership and Glassdoor Culture Reviews — Klover.ai, Glassdoor, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> The Uniform Giant Consolidates: Cintas (CTAS) and the $5.5B UniFirst Acquisition — FinancialContent/Finterra, March 2026; UniFirst DEFM14A, SEC, 2026</li>
+        
+        <li><span class="src-num">4.</span> Cintas (CTAS) Key Statistics, PE/Forward PE/PEG Ratios — StockAnalysis.com, GuruFocus, Yahoo Finance, Nasdaq, July 2026</li>
+        
+        <li><span class="src-num">5.</span> Cintas Corporation Mission Statement and ESG Journey — Comparably, Cintas ESG Journey Booklet, cintas.com</li>
+        
+        <li><span class="src-num">6.</span> Todd M. Schneider Insider Trading Activity — GuruFocus, StockTitan Form 4 Filings, TipRanks, June-August 2025</li>
+        
+        <li><span class="src-num">7.</span> Cintas Corporation Form 10-K FY2025 (Employee Count, Business Description) — SEC EDGAR, July 2025</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

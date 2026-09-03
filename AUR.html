@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen AUR — Aurora Innovation, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/AUR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('AUR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            AUR
+            <span class="stock-name-full">Aurora Innovation, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-12</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 28</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">72</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Infrastructure</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Aurora Innovation is developing the Aurora Driver, a self-driving technology platform for autonomous freight trucking. Co-founded in 2017 by three of the industry's most credentialed leaders: Chris Urmson (former head of Google's self-driving car project/Waymo), Sterling Anderson (former head of Tesla Autopilot), and Drew Bagnell (former head of Uber's autonomy team). Launched commercial Aurora Driver for Freight in April 2025, with Q2 2026 revenue of $2M and net loss of $270M. Targeting 200+ driverless trucks by year-end 2026 and an $80M revenue run-rate. Partnerships with PACCAR, Volvo, and FedEx. Holds $1.22B in cash and short-term investments with D/E of only 4.2%. Market cap ~$13B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,700 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://aurora.tech" target="_blank" rel="noopener">aurora.tech</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Aurora progressed from a startup to commercial deployment of autonomous trucks on public highways — launching Aurora Driver for Freight in April 2025, marking one of the first commercial autonomous trucking operations in the United States <span class="source-ref">[1]</span>. Revenue doubled sequentially to $2M in Q2 2026 and is on track for $14-$16M full-year revenue, a 400% YoY increase <span class="source-ref">[2]</span>. The Aurora Driver 2 platform launch introduces next-generation technology with 50%+ hardware cost reductions. While revenue remains small, the successful commercialization of autonomous trucking at this stage represents a significant engineering and operational achievement. AI Deployment (2/2): Aurora Driver IS an AI product — the core technology uses deep learning for perception, prediction, and motion planning to operate trucks autonomously on public highways <span class="source-ref">[1]</span>. Commercial revenue is being generated directly from AI-powered Transportation-as-a-Service (TaaS), with third-party validation of the Safety Case confirming the system meets safety standards for driverless operation. Market Share (1/2): Aurora is a meaningful player in autonomous trucking alongside Waymo Via and emerging competitors, but the market is nascent with only ~200 planned trucks by year-end 2026 <span class="source-ref">[2]</span>. The company is not yet a category leader by revenue or fleet size, but its pedigree (co-founders from Google, Tesla, and Uber autonomy programs) and OEM partnerships (PACCAR, Volvo) position it among the top contenders. Product Pipeline (2/2): Specific next-generation products with clear timelines — Aurora Driver 2 delivering 50%+ hardware cost reduction, fleet scaling to 200+ driverless trucks by year-end 2026, targeted $80M revenue run-rate exiting 2026, and geographic expansion underway <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): Massive R&amp;D investment of $211M in Q2 2026 alone relative to $2M in revenue — R&amp;D represents 100x revenue, the highest intensity ratio in the IOWN coverage universe, reflecting deep technical investment in the Aurora Driver platform <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Aurora&#39;s mission — &#39;Deliver the benefits of self-driving technology safely, quickly, and broadly&#39; — is specific, thoughtful, and connects the company&#39;s work to a larger purpose: improving road safety (truck accidents kill ~5,000 Americans annually), increasing freight efficiency, and reducing driver shortages <span class="source-ref">[3]</span>. Chris Urmson has dedicated over two decades to this vision, from Carnegie Mellon DARPA Challenge teams to Google&#39;s self-driving project to founding Aurora. The three co-founders&#39; collective expertise (Urmson from Google, Anderson from Tesla, Bagnell from Uber) signals genuine mission alignment rather than opportunism. However, the mission has not yet been validated through decades of consistent execution as a public company. Community Impact (0/2): No specific charitable programs, foundation activity, or community investment beyond the core business mission have been cited. The safety mission itself has community value, but no evidence of dedicated philanthropy or community development initiatives. Employee Retention (1/2): Urmson has built a distinctive safety-first culture where &#39;every team member has the authority to pause operations if something doesn&#39;t seem right,&#39; with transparency in timelines and a decentralized hiring process designed to protect company culture <span class="source-ref">[3]</span>. The three co-founders have remained together since 2017, demonstrating leadership stability. However, no specific turnover rates or tenure data are publicly available. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months was identified in research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Aurora&#39;s infrastructure reflects a pre-profit company in the earliest stage of commercialization. D/E of 4.2% is exceptionally low (score 1.0), reflecting a nearly debt-free balance sheet with $1.22B in cash and short-term investments against only $79M in debt — providing substantial runway at the current $190-$220M quarterly cash burn rate <span class="source-ref">[4]</span>. ROE is deeply negative due to cumulative net losses ($270M in Q2 2026 on just $2M revenue), scoring 0 <span class="source-ref">[1]</span>. Revenue growth YoY exceeds 200% (from near-zero base), scoring a perfect 1.0, though the absolute revenue of $3M YTD is minimal <span class="source-ref">[2]</span>. Profit margin is deeply negative (costs of $487M against $3M in H1 2026 revenue), scoring 0. Forward P/E and PEG are not available for a pre-profit company and are excluded. The stock clears the liquidity floor with ~$199M in daily trading volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>8</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Aurora Innovation under Chris Urmson is one of the strongest infinite game players in the IOWN coverage universe. Urmson has spent over two decades pursuing the same vision — safe self-driving technology — through multiple organizational contexts (Carnegie Mellon, Google/Waymo, Aurora), demonstrating the kind of cause-driven consistency that Sinek identifies as the hallmark of infinite game leadership <span class="source-ref">[3]</span>. The safety-first culture, where every employee can halt operations, embodies Sinek&#39;s Circle of Safety. The decision to pursue autonomous trucking before the flashier robotaxi market reflects long-term strategic thinking over short-term narrative optimization. However, Aurora has not yet faced the existential test of needing to fundamentally reinvent itself.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Aurora&#39;s cause — delivering the benefits of self-driving technology safely, quickly, and broadly — is genuine, specific, and has been validated by decades of Urmson&#39;s personal commitment across Carnegie Mellon, Google/Waymo, and now Aurora <span class="source-ref">[3]</span>. The cause meets Sinek&#39;s criteria: it&#39;s resilient (it transcends any single vehicle or customer), inclusive (partnerships with PACCAR, Volvo, FedEx invite others to participate), service-oriented (road safety is a public good), and idealistic (zero accident autonomous transportation is aspirational). The three co-founders&#39; collective 40+ years pursuing this vision creates a depth of commitment rare among public companies. However, Aurora as a public company is only 5 years old and hasn&#39;t survived a crisis that tested the organization&#39;s commitment to the cause over short-term survival.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (2/2): Aurora exhibits exceptional trust-building practices that align directly with Sinek&#39;s Circle of Safety. Every team member has the explicit authority to pause operations if safety is at risk — a structural empowerment mechanism that creates psychological safety in an industry where the stakes are literal life-and-death <span class="source-ref">[3]</span>. The company maintains transparency in timelines (publicly disclosing specific fleet targets and revenue run-rates) and uses a decentralized hiring process designed to &#39;protect company culture&#39; from dilution during growth. The three co-founders have worked together since 2017 with no departures, and Urmson&#39;s reputation for &#39;calm, clearheaded leadership&#39; in an &#39;industry known for hype and volatility&#39; suggests a culture that values honesty over self-promotion <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Aurora&#39;s competitive posture reflects infinite game thinking. Urmson, who led Google&#39;s self-driving project before founding Aurora, explicitly acknowledges the strengths of competitors and emphasizes &#39;humility&#39; as a core value in hiring and development <span class="source-ref">[3]</span>. Aurora competes on safety record and technology integrity rather than hype or market share warfare. The company&#39;s willingness to partner with OEMs (PACCAR, Volvo) rather than attempt to build vehicles in-house demonstrates recognition of others&#39; strengths. The emphasis on third-party Safety Case validation — inviting external scrutiny — reflects competitive confidence rooted in self-improvement rather than rival destruction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Aurora made a meaningful strategic choice to pursue autonomous freight trucking as its first commercial application rather than the more glamorous robotaxi market — recognizing that highway trucking was a more tractable problem with clearer near-term economics <span class="source-ref">[2]</span>. This required resisting the narrative pressure to compete with Waymo and Cruise in ride-hailing and instead choosing the harder, less visible path. However, the core technology (Aurora Driver) has remained consistent throughout; the pivot was in application, not in fundamental capability. The company is too young to have faced a true existential test requiring it to abandon what was working.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Aurora has invested over $5B+ cumulatively in developing autonomous driving technology over 8+ years, with revenue of only $3M YTD in 2026 — the definition of sacrificing near-term results for long-term capability <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The decision to not rush to market without third-party Safety Case validation, accepting years of additional development time, demonstrates willingness to choose safety (the cause) over speed (the finite game). Operating cash burn of $190-$220M per quarter is sustained because leadership believes the long-term opportunity justifies the investment <span class="source-ref">[4]</span>. Choosing freight over robotaxis sacrificed near-term hype value for strategic soundness — a classically courageous infinite game decision.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Aurora Innovation represents a rare opportunity to invest in a category-defining AI company at the inflection point of commercial scaling — led by arguably the most credentialed team in autonomous driving (Urmson from Google/Waymo, Anderson from Tesla, Bagnell from Uber) <span class="source-ref">[3]</span>. Revenue guidance of $14-$16M for 2026 with a targeted $80M run-rate exiting the year reflects 400% YoY growth as the fleet scales to 200+ driverless trucks <span class="source-ref">[2]</span>. The Aurora Driver 2 platform delivers 50%+ hardware cost reductions, targeting breakeven gross margin on a run-rate basis by year-end. The $4.7T U.S. trucking industry faces a chronic 80,000+ driver shortage, creating a structural demand pull for autonomous solutions. With D/E of only 4.2% and $1.22B in cash, the balance sheet is conservatively positioned for a company at this stage <span class="source-ref">[4]</span>. Strategic partnerships with PACCAR, Volvo, and FedEx provide vehicle supply, fleet integration, and customer relationships that create meaningful barriers to entry.</div>
+    <div class="thesis-text">The bear case centers on execution timeline, cash burn, and the gap between $13B market cap and $3M in H1 revenue. Quarterly cash consumption of $190-$220M gives Aurora approximately 5-6 quarters of runway at current burn rates before requiring additional capital — and the targeted breakeven gross margin by year-end 2026 is on a run-rate basis, not actual profitability <span class="source-ref">[4]</span>. The $13B market cap on $2M quarterly revenue prices in success that is far from guaranteed — autonomous trucking has been &#39;2-3 years away&#39; for over a decade, and Aurora&#39;s commercial fleet remains at prototype scale with only 200 trucks planned by year-end <span class="source-ref">[1]</span>. R&amp;D spending of $211M per quarter dwarfs revenue by 100x, creating massive operating leverage that works in both directions. The company generates no free cash flow and could require dilutive capital raises in 2027. Regulatory risk is significant — any safety incident involving a driverless truck could trigger regulatory scrutiny, operational pauses, or public backlash that delays the entire industry. Competition from Waymo Via, Kodiak, and emerging Chinese autonomous trucking companies could erode Aurora&#39;s technology lead.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Fleet scaling to 200+ driverless trucks by year-end 2026 with $80M revenue run-rate would validate the commercial model and demonstrate that autonomous trucking can generate meaningful revenue beyond pilot programs <span class="source-ref">[2]</span></li>
+        
+        <li>Aurora Driver 2 platform with 50%+ hardware cost reduction targeting breakeven gross margin on a run-rate basis by year-end — achieving this milestone would prove that autonomous trucking can be economically viable at scale <span class="source-ref">[1]</span></li>
+        
+        <li>Third-party Safety Case validation provides regulatory credibility that could accelerate state-by-state commercial expansion and unlock additional OEM and fleet customer partnerships beyond PACCAR, Volvo, and FedEx <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Cash runway of 5-6 quarters at $190-$220M quarterly burn rate creates dilution risk — if the path to breakeven gross margin extends beyond year-end 2026, the company will likely need additional capital raises that dilute existing shareholders <span class="source-ref">[4]</span></li>
+        
+        <li>Safety incident risk inherent in operating autonomous trucks on public highways — any collision, injury, or fatality involving a driverless Aurora truck could trigger regulatory action, operational suspension, customer contract cancellation, and significant reputational damage <span class="source-ref">[1]</span></li>
+        
+        <li>Valuation disconnect between $13B market cap and $3M in H1 2026 revenue creates extreme sensitivity to execution delays — the stock is priced for the $80M run-rate target, and any miss on fleet scaling, revenue ramp, or cost reduction timelines could trigger significant multiple compression <span class="source-ref">[2]</span><span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): IMMUNE. Aurora Innovation IS an AI company — the Aurora Driver is an artificial intelligence system that perceives its environment, predicts the behavior of other road users, and plans safe driving maneuvers autonomously <span class="source-ref">[1]</span>. AI disruption cannot threaten a company whose core product is AI; instead, advances in AI directly improve Aurora&#39;s capabilities and value proposition. The physical-world nature of autonomous trucking (operating on highways, interfacing with physical vehicles, subject to DOT/NHTSA regulation) creates structural barriers that pure software competitors cannot overcome. Third-party Safety Case validation confirms the system meets rigorous safety standards for driverless operation <span class="source-ref">[1]</span>. As AI capabilities improve, Aurora&#39;s trucks become safer and more efficient, creating a positive feedback loop. AI Opportunity (1/1): 100% of Aurora&#39;s commercial revenue is AI-generated — Transportation-as-a-Service (TaaS) powered entirely by the Aurora Driver. Q2 2026 revenue of $2M is directly attributable to AI, with a targeted $80M run-rate by year-end <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            28
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Aurora Innovation Q2 2026 Earnings Release — Revenue $2M, Net Loss $270M, Aurora Driver 2 Launch, 50%+ Hardware Cost Reduction, Safety Case Validation, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Aurora Innovation Q1 2026 Results & 2026 Guidance — Revenue $1M, Full-Year $14-$16M, 200+ Trucks by Year-End, $80M Revenue Run-Rate Target, May 2026</li>
+        
+        <li><span class="src-num">3.</span> Chris Urmson CEO Profile — 20+ Year Self-Driving Pioneer, Carnegie Mellon to Google/Waymo to Aurora, Safety-First Culture, Decentralized Hiring, Humility Values, Forbes/Index Ventures, 2019-2026</li>
+        
+        <li><span class="src-num">4.</span> Aurora Innovation Financial Position — $1.22B Cash + Short-Term Investments, $79M Debt, D/E 4.2%, $190-$220M Quarterly Cash Burn, SEC Filing, 2026</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis, Yahoo Finance — AUR Key Statistics: D/E 4.2%, Market Cap $12.98B, Avg Volume 28.6M, Stock Price $6.95, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

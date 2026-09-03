@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DAL — Delta Air Lines, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DAL_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DAL')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DAL
+            <span class="stock-name-full">Delta Air Lines, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-17</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 32</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">73</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Airlines</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Delta Air Lines is a major U.S. airline operating the world's largest airline hub in Atlanta, serving over 200 million passengers annually across 275+ destinations in 50+ countries. The company operates through Airline and Refinery segments, with a premium-focused strategy centered on SkyMiles loyalty, Delta One business class, and the American Express co-brand credit card partnership generating $9.6B+ annually in loyalty revenue. Founded in 1924 and headquartered in Atlanta, Georgia.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>103,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.delta.com" target="_blank" rel="noopener">www.delta.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Innovation Track Record (2/3): Delta has executed a meaningful transformation from post-bankruptcy commodity carrier to the U.S. premium airline franchise, with Q2 2026 marking the first quarter where premium seat ticket revenue ($6.92B) exceeded main cabin sales ($6.85B), a 17% increase YoY <span class="source-ref">[1]</span>. The Delta Concierge AI-powered travel assistant, free Wi-Fi rollout, and Delta One suite expansion represent successful new revenue-adjacent products. AI Deployment (1/2): Delta deploys AI-driven dynamic pricing across 20% of domestic fares with a goal to eliminate static pricing entirely, predictive maintenance AI that reduces unscheduled maintenance events costing $150,000+ each, and an AI baggage routing system that uses computer vision to reduce misconnects <span class="source-ref">[2]</span>. IROPS costs have declined 15% vs. 2023 from AI-driven scheduling tools. No specific AI revenue figures disclosed separately. Market Share Leadership (2/2): Delta is the premium U.S. airline by Net Promoter Score, delivering record Q2 2026 revenue of $17.67B (up 14% YoY) with premium revenue up 17% and loyalty revenue up 19% <span class="source-ref">[1]</span>. Fortune&#39;s 11th Most Admired Company for the third consecutive year and the only airline on Glassdoor&#39;s 2026 Best Places to Work list. Product Pipeline (1/2): Management guides to FY2026 EPS of $6.50-$7.50 (20% growth) with $3-4B free cash flow, cumulative FCF exceeding $11B over three years <span class="source-ref">[1]</span>. Delta One suite expansion, international route growth through LATAM/Korean Air/Virgin Atlantic JVs, and multimodal transportation options provide visibility. R&amp;D Intensity (0/1): Airlines do not have meaningful R&amp;D spending as a percentage of revenue relative to technology-native industries.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Delta&#39;s purpose of &#39;connecting the people and cultures of the globe&#39; anchored in servant leadership values is genuine and validated by a decade of execution under CEO Ed Bastian <span class="source-ref">[2]</span>. Bastian was named to the 2025 TIME100, received the 2025 Tony Jannus Award, and celebrates his 10th year as CEO in 2026. His &#39;virtuous circle&#39; philosophy — take care of people, they take care of customers — drives real strategic decisions including the $1.4B profit-sharing program. Falls short of 4 because the cause hasn&#39;t endured through multi-decade, multi-leadership-transition consistency. Community Impact (1/2): The $1.4B profit-sharing program in 2024 distributes value to 100,000+ employees, and Delta&#39;s centennial celebration included community reinvestment programs <span class="source-ref">[2]</span>. However, profit-sharing is primarily employee compensation rather than external charitable impact with specific dollar amounts. Employee Retention (2/2): Delta is the only airline on Glassdoor&#39;s 2026 Best Places to Work list (ninth consecutive year) with employees citing &#39;leadership that champions individual success, unparalleled career growth, and a culture of support and camaraderie&#39; <span class="source-ref">[2]</span>. Bastian is a Glassdoor Top 10 CEO, Chief Executive of the Year 2023, and UCLA Wooden Leadership Award recipient. 103,000 employees with industry-leading satisfaction metrics. Insider Buying (0/2): Net insider selling continues as the dominant pattern — 72 insiders show negative sentiment over the past quarter with increased selling relative to earlier in 2026 <span class="source-ref">[3]</span>. CEO Bastian sold $7.03M in stock in February 2026, and multiple officers sold in May 2026 (Ausband $1.9M, Bellemare $3.5M, Laughter $6.8M).</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Liquidity check: avg daily volume 7,055,706 x $89.59 = $632.0M — passes $1M floor. Mechanically scored as a Growth stock (dividend yield 0.87% &lt; 2%, dividend suspended 2020-2022 so &lt;5 consecutive years). D/E of 96.65% scores (300-96.65)/(300-70) = 0.884 (1x). ROE of 20.13% scores 1.0 (2x) — strong operating leverage on $68.3B TTM revenue <span class="source-ref">[1]</span>. Revenue growth YoY of 14.0% scores 1.0 (1x) — record Q2 2026 of $17.67B, up 14% with premium revenue up 17% <span class="source-ref">[1]</span>. Revenue growth 5yr CAGR estimated at 6.0% scores (6-(-5))/(10-(-5)) = 0.733 (2x). Forward P/E of 13.97 scores 1.0 (1x) — deeply undervalued relative to market. Profit margin of 5.78% scores 0.289 (1x). Forward PEG unavailable, excluded. Weighted sum: 0.884 + 2.0 + 1.0 + 1.466 + 1.0 + 0.289 = 6.639. Max weight: 1+2+1+2+1+1 = 8. Score: 6.639/8 x 10 = 8.3, rounded to 8.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>8</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Delta under Ed Bastian is an infinite game standout in an industry notorious for finite thinking. The $1.4B profit-sharing program, employee-first COVID response, and consistent investment in premium brand positioning over short-term cost-cutting demonstrate a leader who plays to keep playing. Bastian&#39;s servant leadership philosophy — validated by being the only airline on Glassdoor&#39;s Best Places to Work for nine consecutive years, TIME100 selection, and Tony Jannus Award — creates a culture where 103,000 employees act as brand ambassadors. The transformation from post-bankruptcy commodity carrier to the highest-NPS premium airline represents a decade of cause-driven execution.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Delta&#39;s purpose of &#39;connecting the people and cultures of the globe&#39; anchored in servant leadership is genuine and validated by a decade of execution under Bastian <span class="source-ref">[2]</span>. The $1.4B profit-sharing, Fortune 100 Best Companies ranking, Glassdoor Best Places to Work for nine years, and Q2 2026 premium revenue exceeding main cabin for the first time demonstrate the cause shapes real decisions <span class="source-ref">[1]</span>. However, the purpose hasn&#39;t endured through multi-decade, multi-leadership-transition consistency — Delta&#39;s identity was fundamentally different pre-bankruptcy. Display score: 7/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (2/2): Delta&#39;s culture is the gold standard in U.S. aviation. The only airline on Glassdoor&#39;s 2026 Best Places to Work list — for the ninth consecutive year — with employees citing &#39;leadership that champions individual success&#39; and &#39;a culture of support and camaraderie&#39; <span class="source-ref">[2]</span>. Bastian&#39;s Glassdoor Top 10 CEO recognition, the $1.4B profit-sharing model, and the employee-first COVID response built deep organizational loyalty. Delta&#39;s industry-leading NPS scores are a direct output of employee engagement. Display score: 10/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Delta uses competition with United Airlines and American Airlines to sharpen its premium differentiation rather than engaging in destructive fare wars <span class="source-ref">[1]</span>. Management&#39;s competitive language focuses on service quality, loyalty program value, and premium product superiority. The response to United&#39;s premium investments has been to improve its own offering, and Bastian frames competition as motivation to elevate Delta&#39;s service rather than a war to win. Display score: 10/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Delta&#39;s evolution from post-bankruptcy commodity carrier to premium airline franchise represents meaningful strategic reinvention — entering adjacent revenue streams (refinery, MRO, $9.6B AmEx partnership) and repositioning the brand from low-cost to premium <span class="source-ref">[1]</span>. Q2 2026&#39;s milestone of premium revenue exceeding main cabin validates the pivot. The pivot from carbon offset reliance to SAF investment shows willingness to change approach. However, the core business of flying passengers on aircraft remains unchanged — transformations were incremental rather than fundamental. Display score: 6/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Bastian demonstrated extraordinary courage during COVID-19 by prioritizing employee retention over cost-cutting when the airline was burning $100M+ daily <span class="source-ref">[2]</span>. He subsequently invested heavily in premium products while rivals retrenched. The $1.4B profit-sharing payout in 2024 — choosing to share profits with 100,000+ employees rather than maximize shareholder returns — exemplifies a pattern of courage. Delta walked back its net-zero 2050 goal to an &#39;aspiration&#39; and removed its 2030 SAF target in April 2026, showing willingness to be honest about achievability rather than maintaining greenwashing claims <span class="source-ref">[3]</span>. Display score: 10/10.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Delta Air Lines is the premier U.S. airline franchise trading at just 13.97x forward earnings, delivering record Q2 2026 revenue of $17.67B (up 14% YoY) with premium seat revenue exceeding main cabin for the first time at $6.92B (+17%) <span class="source-ref">[1]</span>. Full-year guidance of $6.50-$7.50 EPS (20% growth) with $3-4B free cash flow brings cumulative three-year FCF above $11B. Loyalty revenue surged 19% with AmEx-related earnings reaching $2.4B in Q2 alone, establishing a financial services-like earnings stream within an airline. CEO Bastian&#39;s 10-year track record has produced Glassdoor&#39;s Best Places to Work for nine consecutive years and the highest NPS in the industry <span class="source-ref">[2]</span>. ROE of 20.1% and active deleveraging from a $96.7% D/E ratio support the growth trajectory. At $58.8B market cap with Strong Buy consensus from 24 of 25 analysts, Delta offers rare value among high-quality large caps.</div>
+    <div class="thesis-text">The bear case centers on structural cyclicality — airlines are inherently exposed to recessions, fuel price shocks, and demand softness <span class="source-ref">[1]</span>. Profit margins of 5.78% are thin by market standards — a fuel spike above $100/barrel from geopolitical disruption would add $2-3B in annual costs that cannot be fully passed to consumers. The D/E ratio of 96.7% creates significant financial leverage risk in a downturn. AI travel agents represent an emerging risk by reducing brand loyalty friction that supports premium pricing — Forbes has flagged AI pricing transparency as a potential customer trust crisis <span class="source-ref">[3]</span>. Notable insider selling across the C-suite in 2026 — Bastian ($7M), Ausband ($1.9M), Bellemare ($3.5M), Laughter ($6.8M) — with corporate insider sentiment rated negative over the past quarter suggests insiders may view the stock as fully valued near $90 <span class="source-ref">[3]</span>. Delta walked back its net-zero 2050 goal to an &#39;aspiration&#39; and faces greenwashing class action litigation, creating reputational risk with ESG-focused investors <span class="source-ref">[3]</span>. Labor costs continue rising with industry-wide contract negotiations.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Full-year 2026 EPS guidance of $6.50-$7.50 representing 20% growth, with $3-4B free cash flow bringing cumulative three-year total above $11B, driven by premium revenue acceleration and loyalty revenue growing 19% YoY <span class="source-ref">[1]</span></li>
+        
+        <li>Premium seat revenue exceeding main cabin for the first time in Q2 2026, validating Delta&#39;s multi-year premiumization strategy and creating a structurally higher-margin revenue mix with 17% premium growth <span class="source-ref">[1]</span></li>
+        
+        <li>AI-driven dynamic pricing expansion from 20% to full domestic coverage, combined with predictive maintenance reducing IROPS costs by 15%, creating operational efficiency gains across the network <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Recessionary demand shock could reduce passenger yields 10-15% while fixed costs remain elevated, compressing the already thin 5.78% profit margin toward breakeven on the $68B revenue base <span class="source-ref">[1]</span></li>
+        
+        <li>Jet fuel price spike above $100/barrel from geopolitical disruption would add $2-3B in annual costs that cannot be fully passed through to consumers, directly pressuring margins in a capital-intensive business with 96.7% D/E <span class="source-ref">[1]</span></li>
+        
+        <li>AI travel agents trained to minimize total trip cost could erode Delta&#39;s premium pricing power, with Forbes already flagging AI dynamic pricing as a potential &#39;customer trust crisis&#39; that undermines the brand loyalty moat <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Delta&#39;s core business of physically transporting 200M+ passengers annually across a 1,314-plane fleet is deeply protected from AI disruption — flying aircraft, maintaining airport operations, and providing in-person hospitality require physical-world capabilities AI structurally cannot displace <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The airline industry is heavily regulated by the FAA, TSA, and international aviation authorities, creating regulatory moats. CEO Bastian has stated AI&#39;s biggest opportunity is air traffic control modernization, which benefits Delta rather than threatens it <span class="source-ref">[2]</span>. However, AI travel agents trained to minimize total trip cost could reduce brand loyalty friction and premium pricing power over the medium term, and AI-driven dynamic pricing transparency concerns have drawn media attention from Forbes and ABC News <span class="source-ref">[3]</span>. AI Opportunity (1/1): Delta actively deploys AI across operations — dynamic pricing on 20% of domestic fares expanding toward full coverage, predictive maintenance reducing IROPS costs by 15% vs. 2023, AI baggage routing via computer vision, and the Delta Concierge generative AI assistant now available to all SkyMiles members <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            32
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Delta Air Lines Q2 2026 Financial Results — Record $17.67B Revenue, 14% YoY Growth, Premium Revenue Exceeds Main Cabin, FY2026 EPS Guidance $6.50-$7.50, ir.delta.com and gurufocus.com, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Ed Bastian CEO Profile and Delta Culture — Glassdoor 2026 Best Places to Work (9th year, only airline), TIME100 2025, Tony Jannus Award 2025, AI Strategy (dynamic pricing, predictive maintenance, Delta Concierge), news.delta.com, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Delta Air Lines ESG and Market Data — Bloomberg SAF/Net-Zero Walkback (April 2026), Greenwashing Litigation, Insider Selling (investing.com, gurufocus.com), AI Pricing Concerns (Forbes, ABC News), Yahoo Finance DAL statistics, August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

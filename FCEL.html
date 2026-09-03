@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FCEL — FuelCell Energy, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FCEL_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FCEL')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FCEL
+            <span class="stock-name-full">FuelCell Energy, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 81</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">47</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Electrical Equipment & Parts</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">FuelCell Energy designs, manufactures, sells, installs, operates, and services stationary fuel cell power plants for distributed baseload power generation using its proprietary molten carbonate fuel cell (MCFC) technology. The company serves commercial, industrial, government, and utility customers and has pivoted aggressively toward AI data center power with its 12.5MW Power Block platform, citing 80%+ of its commercial pipeline tied to data centers. Founded in 1969, headquartered in Danbury, Connecticut.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>424 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.fuelcellenergy.com" target="_blank" rel="noopener">www.fuelcellenergy.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): FuelCell Energy has operated for 55+ years without achieving sustained profitability — a fundamental commercial execution failure despite legitimate technology <span class="source-ref">[1]</span>. The pivot toward AI data center power represents a promising new market application but has not yet generated meaningful binding contracts. Q1 FY2026 revenue grew 61% YoY to $30.5M and Q2 delivered $35.6M, showing improving execution <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. AI Deployment (1/2): FuelCell partnered with IBM to use generative AI Foundation Models for optimizing fuel cell performance and longevity — a direct application of AI to improve core product operations <span class="source-ref">[3]</span>. Predictive maintenance and remote monitoring use AI/ML for installed fleet management. Market Share (1/2): FuelCell holds a differentiated position in molten carbonate fuel cell technology with 100+ MW of installed capacity, but Bloom Energy dominates the data center fuel cell market with virtually every primary-load SOFC contract in the visible order book <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Product Pipeline (1/2): Sales pipeline expanded to 4 GW (up 267% from Q1), with non-binding agreements with SDCL for 450 MW of global data center deployments and Inuverse for 100 MW in South Korea <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Torrington manufacturing expansion from 100MW to 350MW annual capacity provides production scale. R&amp;D Intensity (0/1): R&amp;D spending is modest relative to competitive needs and the company&#39;s 55-year history.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): FuelCell Energy&#39;s mission to utilize clean fuel cell technology to reduce the global environmental footprint of baseload power generation is clear and purpose-driven, addressing climate change through distributed clean power <span class="source-ref">[3]</span>. The company has avoided 155,000 metric tons of CO2 emissions for customers. However, the mission is not deeply distinctive from other clean energy companies. Community Impact (0/2): No evidence of distinctive charitable programs or community investment beyond core business environmental benefits. Employee Retention (0/2): CEO Jason Few receives a 13% approval rating on Glassdoor — among the lowest in the energy sector. Overall company rating is 3.0/5.0 with culture/values at 2.6/5.0, and only 22% of employees would recommend the company <span class="source-ref">[4]</span>. This indicates severe internal dissatisfaction and high turnover risk. Insider Buying (0/2): No meaningful net insider buying data identified in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Revenue of $169.7M TTM grew 48% YoY, demonstrating strong top-line momentum, and Q2 FY2026 delivered $35.6M <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. However, the company remains deeply unprofitable: profit margin of -107.5%, Q2 net loss of $77.6M, and ROE of -25.2% reflect a company spending far more than it earns <span class="source-ref">[5]</span>. D/E of 20% is a bright spot — the company maintains $311.8M cash against $149.7M debt, providing financial runway <span class="source-ref">[5]</span>. Forward P/E is unavailable due to negative earnings. Forward PEG of 3.19 is above the 3.0 floor, scoring zero. Revenue growth (48% YoY and estimated 5-year CAGR of ~18%) scores at ceiling. Negative profitability metrics score at floor. Liquidity floor: estimated 3,000,000 avg volume x $18.46 = $55.4M daily — passes easily <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">FuelCell Energy has demonstrated extraordinary persistence — operating for 55+ years without sustained profitability while maintaining commitment to clean energy fuel cell technology through multiple market cycles. This patience is infinite-game behavior. However, the company&#39;s inability to convert technology into profitable operations, 13% CEO approval rating, and serial dependence on the latest market narrative (previously natural gas, hydrogen, grid modernization — now AI data centers) reveal finite-game vulnerabilities. The pattern of promising each new catalyst will be &#39;the one&#39; that delivers profitability, only to miss repeatedly, undermines credibility.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Enabling clean, distributed baseload power generation is a genuine cause that transcends quarterly results. FuelCell has avoided 155,000 metric tons of CO2 emissions for customers, and the company&#39;s commitment to fuel cell technology through 55 years of losses demonstrates purpose beyond profit <span class="source-ref">[3]</span>. The cause shapes strategic decisions — the data center pivot is framed as extending clean energy to a new market, not abandoning the cause. However, 55 years of losses raise legitimate questions about whether the cause is being effectively advanced or merely invoked to justify continued existence.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Glassdoor data reveals a low-trust environment — 3.0/5.0 overall rating, 13% CEO approval (down from 22% in prior reviews), culture/values at 2.6/5.0, career opportunities at 2.4/5.0, and only 22% of employees would recommend the company <span class="source-ref">[4]</span>. These are among the lowest scores in the energy sector and indicate deep organizational dissatisfaction. For a company dependent on attracting engineering talent to execute a critical manufacturing scale-up, this cultural dysfunction is a material execution risk.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): FuelCell competes against Bloom Energy, which holds virtually every primary-load SOFC contract in the data center market, as well as traditional power generation and grid infrastructure <span class="source-ref">[2]</span>. No evidence of management acknowledging Bloom&#39;s strengths or using competitive pressure for self-improvement. The IBM AI partnership suggests openness to collaboration, but competitive language does not reflect an infinite competitive mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): FuelCell has repeatedly repositioned its technology for emerging applications — from distributed utility generation to micro-grids to hydrogen production to AI data centers. The current pivot to AI data center power with the 12.5MW Power Block platform, 4 GW pipeline (up 267%), and 800V DC output specifically designed for server racks represents meaningful strategic adaptation <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. However, each previous pivot failed to achieve profitability, and the company has not fundamentally changed its cost structure or business model despite multiple reinventions.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Maintaining commitment to fuel cell technology through 55 years of losses requires institutional persistence, and the Torrington manufacturing expansion from 100MW to 350MW capacity ($20-30M capex) shows conviction in the AI data center opportunity <span class="source-ref">[1]</span>. CEO Few&#39;s background in AI/ML (prior role at Sustayn Analytics) adds credibility to the pivot strategy. However, Few&#39;s 13% CEO approval rating on Glassdoor suggests leadership is not inspiring internal confidence, and each previous &#39;transformative&#39; pivot (shale gas, hydrogen economy, grid modernization) failed to deliver profitability <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">FuelCell Energy is positioned at the intersection of clean energy and AI infrastructure demand, with its molten carbonate fuel cell technology offering distributed baseload power for data centers. Revenue grew 48% YoY to $169.7M TTM, with Q1 FY2026 at $30.5M (up 61%) and Q2 at $35.6M <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The sales pipeline expanded to 4 GW (up 267%) with 80%+ tied to data centers, and non-binding agreements with SDCL (450 MW) and Inuverse (100 MW) represent potentially transformative scale <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The company&#39;s 800V DC power output, carbon capture capability, and behind-the-meter deployment model offer unique advantages for grid-constrained data center operators. Backlog of $1.14B provides multi-year revenue visibility, and D/E of 20% with $311.8M cash provides financial runway <span class="source-ref">[5]</span>. The Inspire Impact Score of 81 (ALIGNED) with 18 positive and zero negative attributions reflects outstanding ESG alignment.</div>
+    <div class="thesis-text">The bear case is deeply established: FuelCell Energy has operated for 55+ years without achieving sustained profitability. Profit margin of -107.5%, Q2 net loss of $77.6M on $35.6M revenue, and ROE of -25.2% mean the company burns cash at an alarming rate <span class="source-ref">[2]</span><span class="source-ref">[5]</span>. Backlog of $1.14B declined 9.9% YoY, and key data center partnerships remain non-binding — the 4 GW pipeline may never convert to firm orders <span class="source-ref">[2]</span>. Bloom Energy dominates the data center fuel cell market with virtually every primary-load SOFC contract, presenting a formidable competitive barrier. Share count has increased 83% in one year through persistent dilution, destroying per-share economics <span class="source-ref">[2]</span>. CEO Jason Few holds a 13% Glassdoor approval rating with company culture rated 2.6/5.0, creating material talent retention and execution risk during a critical manufacturing scale-up <span class="source-ref">[4]</span>. Prior market narratives (natural gas, hydrogen economy, grid modernization) all failed to produce profitability, and skeptics argue the AI data center story is the latest chapter in the same pattern.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Conversion of non-binding AI data center agreements (SDCL 450 MW, Inuverse 100 MW) to firm, funded contracts would validate the $4 GW pipeline and fundamentally change the revenue trajectory <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Torrington manufacturing expansion from 100MW to 350MW annual capacity ($20-30M capex) enables volume production if data center orders materialize, potentially driving unit economics improvement <span class="source-ref">[1]</span></li>
+        
+        <li>IBM AI Foundation Model partnership optimizing fuel cell performance and longevity could reduce maintenance costs and improve gross margins toward breakeven, the critical financial milestone <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>55 years of operating losses with -107.5% net margin and -$185.6M TTM net loss — the company has never achieved sustained profitability, and each previous market narrative failed to deliver commercial viability <span class="source-ref">[1]</span><span class="source-ref">[2]</span><span class="source-ref">[5]</span></li>
+        
+        <li>13% CEO approval and 2.6/5.0 culture rating on Glassdoor indicate severe organizational dysfunction that could impair execution of critical manufacturing scale-up and talent recruitment <span class="source-ref">[4]</span></li>
+        
+        <li>Backlog declined 9.9% YoY to $1.14B while 4 GW pipeline remains non-binding, and Bloom Energy dominates the data center fuel cell market — pipeline conversion risk is the fundamental uncertainty <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): FuelCell Energy&#39;s core business — manufacturing and operating stationary fuel cell power plants — is physical infrastructure that AI structurally cannot displace. AI adoption actually increases demand for FuelCell&#39;s products: data center operators need reliable, clean, distributed baseload power to meet surging energy requirements from AI training and inference workloads <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The company&#39;s 800-volt DC power output connects directly to server racks, and carbon capture capability adds a sustainability differentiator. Physical power generation, manufacturing, and installation represent capabilities far beyond AI&#39;s reach. Analysts view the AI data center power shortage as a secular tailwind for fuel cell companies, not a disruption risk <span class="source-ref">[3]</span>. AI Opportunity (0/1): While 80%+ of FCEL&#39;s pipeline targets AI data centers, the company&#39;s revenue comes from selling physical fuel cells and power — not AI products or services. Key data center partnerships (SDCL 450 MW, Inuverse 100 MW) remain non-binding with no confirmed AI-specific revenue yet <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            81
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Air Quality</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> FuelCell Energy Q1 FY2026 Earnings Release — $30.5M revenue (61% YoY growth), data center power strategy advancement; investor.fce.com, March 2026</li>
+        
+        <li><span class="src-num">2.</span> FuelCell Energy Q2 FY2026 Results — $35.6M revenue, backlog $1.14B (down 9.9%), pipeline 4 GW (up 267%), net loss $77.6M; StockTitan, June 2026</li>
+        
+        <li><span class="src-num">3.</span> FuelCell Energy AI Data Center Power Strategy — 800V DC output, IBM AI partnership, SDCL 450 MW and Inuverse 100 MW agreements; investor.fce.com, 2026</li>
+        
+        <li><span class="src-num">4.</span> Glassdoor Employee Reviews — FuelCell Energy, CEO Few 13% approval, 3.0/5.0 rating, 22% recommendation; accessed July 2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance / StockAnalysis — FCEL Key Statistics, Financial Data, D/E 20%, ROE -25.2%; accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

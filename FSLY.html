@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FSLY — Fastly, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FSLY_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FSLY')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FSLY
+            <span class="stock-name-full">Fastly, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-17</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 50</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">62</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Fastly operates a global edge cloud platform providing content delivery (CDN), security, and compute services. The company has pivoted from a niche CDN into AI-enabling infrastructure, with AI-driven traffic growing 6.5x faster than human traffic on its network. Q2 2026 delivered record revenue of $183.3M (+23% YoY) with raised full-year guidance to $732-746M and record GAAP gross margins of 63.3%. NRR reached 117%, the highest in over three years.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,140 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.fastly.com" target="_blank" rel="noopener">www.fastly.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Fastly has transformed from a niche CDN into an AI-enabling edge cloud platform, with Q2 2026 revenue accelerating to 23% YoY growth (from 20% in Q1), security revenue growing 43% YoY to $41.7M (23% of total revenue), and NRR improving to 117% <span class="source-ref">[1]</span>. The platform now handles AI traffic growing 6.5x faster than human traffic, validating the strategic pivot. However, GAAP profitability remains elusive and the transformation is ongoing. AI Deployment (1/2): Fastly&#39;s AI Accelerator uses semantic caching to reduce expensive round-trips to centralized GPU clusters, the traffic classification engine distinguishes human users from AI bots, and a new C++ SDK for Fastly Compute enables enterprises to run AI inference workloads at the edge <span class="source-ref">[1]</span>. The Experian AI Agent Trust partnership validates the agentic AI infrastructure strategy. However, AI-specific revenue is not separately disclosed. Market Share (1/2): Fastly is a meaningful player but not the market leader — Cloudflare, Akamai, and AWS CloudFront hold larger share. Forrester named Fastly a Leader in Edge Development Platforms 2026 <span class="source-ref">[2]</span>. The company&#39;s 353 Tbps global network capacity provides defensible infrastructure. Product Pipeline (2/2): Specific next-gen products include agentic AI infrastructure for identity-backed AI agents (Experian partnership), C++ SDK for low-latency AI workloads, enhanced security products against AI-driven threats, and expanded edge compute capabilities <span class="source-ref">[1]</span>. Raised 2026 guidance to $732-746M (18% growth at midpoint) with non-GAAP operating income of $88-96M. R&amp;D Intensity (1/1): R&amp;D spending above industry average as a percentage of revenue, consistent with platform transformation from CDN to edge compute.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Fastly&#39;s mission of empowering developers and businesses to &#39;build, secure, and deliver digital experiences at unprecedented speed and scale&#39; is clear and functional but does not articulate a deeper transformative purpose <span class="source-ref">[2]</span>. CEO Compton&#39;s emphasis on helping content owners be &#39;compensated for their content&#39; in the AI era shows values-driven positioning, but it hasn&#39;t been tested through decades of consistency. Community Impact (1/2): The Fast Forward program provides free services to 100+ open-source projects and nonprofits, and Fastly joined DIMPACT to improve digital emissions measurement <span class="source-ref">[3]</span>. However, no specific dollar amounts for charitable giving were identified. Employee Retention (1/2): The 2023 layoff of 11% was disruptive, but subsequent execution — 20+ major releases in 2025, Q2 2026 revenue acceleration to 23% growth, and record gross margins — suggests the remaining 1,140-person team is performing well <span class="source-ref">[1]</span>. The CEO transition from Nightingale to Compton was smooth. No specific tenure or turnover data available. Insider Buying (1/2): Consistent insider selling throughout 2026 — CEO Compton sold 14,868 shares at $25 ($371K) in August 2026, President Lovett sold 41,716 shares ($741K) in June, and Director Loop sold 7,332 shares at $30 ($220K) in August, all under 10b5-1 plans <span class="source-ref">[3]</span>. Zero insider buys against 80 insider sells in the past 12 months. Sales appear routine but the pattern is notable.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Liquidity check: avg daily volume 6,244,460 x $29.93 = $186.9M — passes $1M floor. Mechanically scored as Growth stock (no dividend). D/E of 40.0% scores (300-40)/(300-70) = 1.0 (1x) — healthy balance sheet <span class="source-ref">[1]</span>. ROE of -8.39% scores 0.0 (2x) — still negative due to GAAP losses and SBC dilution. Revenue growth YoY of 23.0% scores 1.0 (1x) — Q2 2026 accelerated from Q1&#39;s 20%. Revenue growth 5yr CAGR of approximately 16.5% scores 1.0 (2x). Forward P/E of 58.96 scores (60-58.96)/(60-20) = 0.026 (1x) — extremely elevated valuation near the floor. Profit margin of -11.80% scores 0.0 (1x) — still GAAP unprofitable despite non-GAAP profit <span class="source-ref">[1]</span>. PEG unavailable, excluded. Weighted sum: 1.0 + 0.0 + 1.0 + 2.0 + 0.026 + 0.0 = 4.026. Max weight: 1+2+1+2+1+1 = 8. Score: 4.026/8 x 10 = 5.0, rounded to 5. However, the stock surged 313% over 52 weeks and now trades at 58.96x forward earnings with negative GAAP margins, warranting a downward adjustment to 4 reflecting valuation risk.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Fastly demonstrates meaningful infinite game characteristics through its willingness to fundamentally reinvent its business model from CDN to AI edge infrastructure, with Q2 2026 results validating the pivot (23% revenue growth, 43% security growth, AI traffic 6.5x faster than human). CEO Compton brings long-term vision with the Experian AI Agent Trust partnership and C++ SDK for AI workloads. However, persistent GAAP losses, 80 insider sells vs. zero buys in 12 months, and competitive pressure from better-capitalized hyperscalers create finite-game pressures.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Fastly&#39;s purpose of empowering developers to build faster, safer internet experiences connects its work to the broader mission of making the internet work better for everyone. CEO Compton&#39;s emphasis on content owners being &#39;compensated for their content&#39; in the AI era and the Experian AI Agent Trust partnership show values-driven positioning <span class="source-ref">[2]</span>. The Fast Forward program and developer-first culture reflect genuine purpose. But the cause hasn&#39;t been tested through decades of consistency — Compton became CEO in 2025. Display score: 7/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The 2023 layoff was painful but the remaining 1,140-person team delivered accelerating growth — Q2 2026 revenue grew 23% (up from 20% in Q1) with record gross margins and NRR of 117% <span class="source-ref">[1]</span>. The CEO transition was smooth with no reported senior departures. However, 80 insider sells vs. zero buys in 12 months and heavy SBC reliance create uncertainty about long-term alignment. Average for the tech industry. Display score: 6/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Fastly explicitly differentiates against Cloudflare, Akamai, and AWS CloudFront through its WebAssembly-based architecture rather than denigrating competitors <span class="source-ref">[2]</span>. Management&#39;s competitive language focuses on building the best developer-first platform. The company acknowledges competitors&#39; strengths — Cloudflare&#39;s scale, AWS&#39;s ecosystem — and uses those as motivation to differentiate through technical excellence and the C++ SDK approach. Display score: 10/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Fastly&#39;s transformation from niche CDN to AI edge infrastructure represents genuine strategic flexibility — AI Accelerator, agentic AI partnerships, C++ SDK for AI workloads, and security as 23% of revenue are new business lines built while CDN commoditized <span class="source-ref">[1]</span>. The Experian AI Agent Trust deal signals willingness to pivot toward emerging AI agent infrastructure. However, the company extended into adjacent markets rather than fundamentally abandoning its core technology. Display score: 6/10.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Fastly invested aggressively in AI infrastructure products (AI Accelerator, C++ SDK, agentic AI partnerships) while still GAAP unprofitable, maintaining R&amp;D intensity through losses and setting aggressive growth targets <span class="source-ref">[1]</span>. The company chose platform transformation over cost-cutting retreat when CDN was commoditizing. However, these decisions were arguably forced by competitive necessity rather than proactive courage — differentiate or die. Display score: 6/10.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Fastly is executing an accelerating pivot from commodity CDN to AI-enabling edge infrastructure, with Q2 2026 delivering record revenue of $183.3M (+23% YoY, accelerating from Q1&#39;s 20%), record GAAP gross margin of 63.3%, and NRR of 117% — the highest in three years <span class="source-ref">[1]</span>. AI-driven traffic is growing 6.5x faster than human traffic on Fastly&#39;s network, providing a structural demand tailwind. Security revenue surged 43% YoY to $41.7M (23% of total), diversifying beyond CDN. Raised 2026 guidance to $732-746M revenue with $88-96M non-GAAP operating income reflects management confidence. The Experian AI Agent Trust partnership and C++ SDK for AI workloads position Fastly as critical agentic AI infrastructure. At $4.77B market cap with $50.7M positive free cash flow, the business model is inflecting toward sustainability.</div>
+    <div class="thesis-text">The bear case centers on valuation risk and persistent GAAP unprofitability. At 58.96x forward earnings and -11.80% GAAP profit margin, the stock prices in a profitability trajectory not yet achieved on a GAAP basis — the 313% 52-week surge has pushed the stock above the $27 analyst consensus target <span class="source-ref">[3]</span>. Heavy stock-based compensation dilutes per-share economics and contributes to the negative 8.39% ROE. Insider selling is notable — 80 sells vs. zero buys over 12 months, including CEO Compton ($371K in August), President Lovett ($741K in June), and Director Loop ($220K in August) <span class="source-ref">[3]</span>. The Altman Z-Score of 1.91 indicates increased bankruptcy risk despite positive operating cash flow. Competition from better-capitalized hyperscalers (AWS, Google Cloud) and faster-growing Cloudflare creates ongoing pricing pressure. Customer concentration risk persists — any deceleration in enterprise AI spending could slow RPO-to-revenue conversion. The March 2026 convertible note maturity created a governance-related overhang <span class="source-ref">[3]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI traffic growing 6.5x faster than human traffic on Fastly&#39;s network creates a structural demand tailwind, with Q2 2026 demonstrating accelerating growth (23% vs. Q1&#39;s 20%) and record NRR of 117% <span class="source-ref">[1]</span></li>
+        
+        <li>Security revenue of $41.7M growing 43% YoY (23% of total) diversifies the business beyond commodity CDN and benefits from AI-driven bot proliferation requiring advanced threat protection <span class="source-ref">[1]</span></li>
+        
+        <li>Experian AI Agent Trust partnership and C++ SDK for AI workloads position Fastly as critical infrastructure for the emerging agentic AI ecosystem, with raised guidance to $732-746M reflecting execution momentum <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Extreme valuation at 58.96x forward earnings with -11.80% GAAP profit margin and 313% 52-week stock surge — trading above analyst consensus target of $27 creates significant downside risk if growth decelerates <span class="source-ref">[3]</span></li>
+        
+        <li>Heavy insider selling with 80 sells vs. zero buys in 12 months, including CEO ($371K), President ($741K), and Director ($220K) in 2026 alone — routine 10b5-1 plans but the pattern signals limited insider conviction at current prices <span class="source-ref">[3]</span></li>
+        
+        <li>Hyperscaler competition from AWS CloudFront, Google Cloud CDN, and Cloudflare&#39;s faster-growing platform creates pricing pressure in a market where scale economies favor larger players with deeper enterprise relationships</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Fastly is a direct AI beneficiary whose edge cloud platform becomes more valuable as AI workloads proliferate. AI-driven traffic is growing 6.5x faster than human traffic on Fastly&#39;s network, directly increasing platform utilization and revenue <span class="source-ref">[1]</span>. The physical infrastructure — 353 Tbps global network across dozens of PoPs — cannot be replicated by AI software. AI agents require low-latency edge infrastructure for inference, AI-generated content requires CDN delivery capacity, and AI-driven bot traffic increases demand for Fastly&#39;s security products ($41.7M Q2 revenue, +43% YoY) <span class="source-ref">[1]</span>. The Experian AI Agent Trust partnership validates Fastly&#39;s positioning as critical agentic AI infrastructure. However, hyperscaler competition from AWS, Google Cloud, and Azure edge services means the moat is narrower than pure infrastructure companies. AI Opportunity (1/1): Fastly generates quantifiable AI-related revenue through AI Accelerator, Compute@Edge for AI inference, C++ SDK for AI workloads, and security products protecting against AI-driven threats. Security revenue of $41.7M grew 43% YoY, driven partly by AI traffic management <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            50
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Fastly Q2 2026 Earnings Release — Record Revenue $183.3M (+23% YoY), GAAP Gross Margin 63.3%, Security Revenue $41.7M (+43%), NRR 117%, Raised Guidance $732-746M, AI Traffic 6.5x Growth, theglobeandmail.com and stockstory.org, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Fastly AI Strategy — CEO Compton Content Compensation Vision, Experian AI Agent Trust Partnership, C++ SDK for AI Workloads, Forrester Edge Leader 2026, Fast Forward Program, computerweekly.com, 2026</li>
+        
+        <li><span class="src-num">3.</span> Fastly Market Data and Insider Selling — Forward P/E 58.96, 313% 52-Week Surge, CEO Compton $371K Sale (August 2026), President Lovett $741K (June), Director Loop $220K (August), 80 Sells vs. 0 Buys in 12 Months, stockanalysis.com and gurufocus.com, August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
