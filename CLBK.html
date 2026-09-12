@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CLBK — Columbia Financial, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CLBK_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CLBK')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CLBK
+            <span class="stock-name-full">Columbia Financial, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-26</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 28</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">57</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Banks—Regional</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Columbia Financial, Inc. is the holding company for Columbia Bank, a full-service community bank founded in 1927 and headquartered in Fair Lawn, New Jersey. Following the July 2026 completion of its $597M merger with Northfield Bancorp and second-step conversion to full public ownership, Columbia operates as the third-largest NJ-headquartered regional bank with approximately $18 billion in combined assets and more than 100 branches across 14 New Jersey counties plus Brooklyn and Staten Island. The bank provides commercial and consumer banking, commercial real estate lending, and residential mortgages, supported by the Columbia Bank Foundation — one of the largest private philanthropic foundations in New Jersey with $53.9 million in assets.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>796 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.columbiabankonline.com" target="_blank" rel="noopener">www.columbiabankonline.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Columbia Financial has grown through strategic M&amp;A — the Oritani Financial acquisition in 2020 doubled the bank&#39;s asset base from ~$5B to ~$10B, and the $597M Northfield Bancorp merger completed July 20, 2026 creates an $18B combined entity and the third-largest NJ-headquartered regional bank <span class="source-ref">[1]</span>. These are meaningful scale consolidation moves, but not product innovations or business model transformations — the core community banking model is unchanged. AI Deployment (0/2): Columbia&#39;s FY2025 10-K acknowledges the bank &#39;may develop or incorporate AI technology&#39; but frames AI primarily as a compliance risk and cybersecurity threat, not a strategic deployment <span class="source-ref">[6]</span>. No AI products are shipping and no quantified AI-driven savings have been reported. Market Share (1/2): The Northfield merger elevates Columbia to the third-largest NJ-headquartered regional bank with 100+ branches across 14 counties plus Brooklyn and Staten Island, establishing meaningful scale in the NJ/NY metro market <span class="source-ref">[1]</span>. However, community banking remains a fragmented, commodity market where megabanks dominate digital capabilities. Product Pipeline (0/2): No next-generation products announced with specific timelines or revenue visibility — digital banking improvements are table stakes for the industry, not differentiated pipeline items. R&amp;D Intensity (0/1): Community banks do not report R&amp;D spending, and Columbia shows no evidence of technology investment beyond standard industry compliance and digital banking upgrades.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Columbia Bank&#39;s purpose centers on community banking — serving New Jersey communities through relationship-driven banking, affordable housing advocacy, and financial inclusion since its founding at a one-room schoolhouse in 1927 <span class="source-ref">[3]</span>. CEO Kemly was named NJBIZ &#39;Executive of the Year&#39; for his dedication to affordable housing, local business development, and community service. The mission is clear and identifies what the company does and for whom, but does not articulate a transformative vision beyond traditional community banking. Community Impact (2/2): The Columbia Bank Foundation holds $53.9M in assets and supports economically disadvantaged and low-income individuals through education, health, community development, housing, and financial literacy programs <span class="source-ref">[3]</span>. Columbia donates $1M+ annually to NJ charities and nonprofits. &#39;Team Columbia&#39; volunteers participated in 100+ community endeavors. CEO Kemly grew the Foundation to one of the largest private giving foundations in New Jersey following the 2018 IPO — a significant, distinctive commitment to community investment. Employee Retention (1/2): Columbia Bank NJ receives 84% CEO approval on Glassdoor, and CEO Kemly&#39;s 14-year tenure since 2012 demonstrates leadership stability through the IPO, Oritani acquisition, and Northfield merger <span class="source-ref">[4]</span>. However, no specific voluntary turnover rates or average employee tenure data are publicly available to distinguish retention from industry averages. Insider Buying (2/2): CEO Thomas Kemly purchased 53,057 shares totaling $530,570 on July 20, 2026 at the $10.00 conversion price — including 40,000 shares in open-market purchases and 13,057 through his 401(k) <span class="source-ref">[4]</span>. COO Steven Klein simultaneously acquired 50,000 shares for $500,000. Combined $1M+ in executive open-market buying on conversion day signals strong insider conviction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. The July 20, 2026 second-step conversion and $1.7B stock offering roughly tripled the share count, distorting trailing P/E to 43.52x and depressing per-share metrics until the new capital is deployed <span class="source-ref">[2]</span><span class="source-ref">[5]</span>. D/E of 105.94% is above the 70% target but well below the 300% floor — elevated but manageable for a bank where deposits are classified as debt <span class="source-ref">[5]</span>. ROE of 4.92% is well below the 15% target, reflecting the over-capitalized post-conversion balance sheet rather than operational weakness — this should improve as the $1.7B is deployed through loan growth and acquisitions. Revenue growth of 18.4% YoY (Q1 2026 vs Q1 2025) exceeded the 10% target, driven by net interest margin expansion to 2.42% and net interest income growth to $60.4M <span class="source-ref">[3]</span>. Forward P/E of 32.34x scores between the 20 target and 60 floor, reflecting premium community bank valuation post-conversion. Net margin of 21.6% meets the 20% target. Infrastructure benefits from strong revenue momentum, adequate margins, and manageable leverage, but is constrained by below-target ROE on the over-capitalized balance sheet.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Columbia Bank&#39;s 99-year operating history since 1927 and CEO Kemly&#39;s consistent community-first leadership since 2012 demonstrate genuine long-term orientation. The $53.9M Columbia Bank Foundation and $1M+ annual charitable giving reflect purpose beyond quarterly earnings. However, the aggressive M&amp;A strategy (Oritani 2020, Northfield 2026) and the transformative second-step conversion to full public ownership introduce finite-game pressures — public market scrutiny, quarterly earnings expectations, and the imperative to deploy $1.7B in new capital accretively will test whether community purpose endures under shareholder capitalism&#39;s demands.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Columbia Bank&#39;s purpose of community banking — serving New Jersey communities through relationship-driven financial services since its founding at a one-room schoolhouse in 1927 — is genuine and partially lived. CEO Kemly has validated this purpose through specific actions: growing the Columbia Bank Foundation to $53.9M (one of NJ&#39;s largest private foundations), launching &#39;Team Columbia&#39; volunteer programs with 100+ community endeavors, and earning NJBIZ &#39;Executive of the Year&#39; for dedication to affordable housing and community development <span class="source-ref">[3]</span>. The Northfield merger preserves NJ community banking independence rather than selling to a megabank. However, the second-step conversion to full public ownership represents a structural shift from mutual (community-owned) to shareholder-owned governance that could introduce tension between community purpose and earnings growth expectations.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): CEO Kemly&#39;s 14-year tenure since 2012 provides leadership continuity through the IPO, Oritani acquisition, and Northfield merger <span class="source-ref">[4]</span>. Columbia Bank NJ maintains 84% CEO approval on Glassdoor, a positive signal for employee sentiment. The &#39;Team Columbia&#39; volunteer program suggests organizational commitment to employee engagement beyond purely financial incentives. However, the consecutive transformations — IPO (2018), Oritani integration (2020-2021), and now simultaneous Northfield merger plus second-step conversion (2026) — create sustained organizational uncertainty that tests even strong cultures. No specific employee tenure or voluntary turnover data available.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence found of Columbia Bank management explicitly acknowledging competitors&#39; strengths or framing competition as motivation for self-improvement. The bank&#39;s competitive positioning focuses on scale consolidation — becoming the third-largest NJ regional bank through acquisitions — which reflects a finite competitive mindset of winning through size rather than learning from rivals. No management commentary references specific lessons learned from megabank digital capabilities or fintech innovation that shaped Columbia&#39;s strategy.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The second-step conversion from mutual holding company to fully public stockholding company represents a fundamental, irreversible transformation of the organization&#39;s ownership model and relationship with capital markets <span class="source-ref">[2]</span>. The Oritani acquisition (2020) and Northfield merger (2026) demonstrate willingness to transform scale and geographic footprint through M&amp;A. However, the core business model — community banking in New Jersey through physical branches — remains unchanged through all these structural transformations. These are ownership and scale moves, not business model reinventions.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Kemly&#39;s decision to pursue the second-step conversion — transforming Columbia from a mutual holding company to a fully public entity while simultaneously executing the $597M Northfield merger — required genuine strategic conviction and operational courage <span class="source-ref">[2]</span>. The complexity of executing both transactions concurrently is unusual in community banking. Kemly&#39;s personal purchase of $530K in stock and COO Klein&#39;s $500K purchase at the $10.00 conversion price back this conviction with personal capital <span class="source-ref">[4]</span>. The decision to grow the Columbia Bank Foundation to $53.9M during the IPO process, rather than retaining capital for shareholders, reflects willingness to prioritize community mission over short-term returns <span class="source-ref">[3]</span>. However, the conversion also unlocks significant management compensation through stock-based awards.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Columbia Financial&#39;s simultaneous second-step conversion and $597M Northfield Bancorp merger create the third-largest NJ-headquartered regional bank with $18B in combined assets, 100+ branches, and a dominant footprint across 14 NJ counties plus Brooklyn and Staten Island <span class="source-ref">[1]</span>. The $1.7B in fresh capital from the stock offering provides a fortress balance sheet for organic loan growth and future accretive acquisitions. Q1 2026 momentum is strong: revenue grew 18.4% YoY to $66.2M, net income surged 47% to $13.1M, and net interest margin expanded to 2.42%, signaling the trough in rate-driven earnings compression has passed <span class="source-ref">[3]</span>. CEO Kemly (14-year tenure) and COO Klein demonstrated conviction by purchasing $1M+ in open-market stock at the $10.00 conversion price <span class="source-ref">[4]</span>. The Columbia Bank Foundation&#39;s $53.9M in assets and $1M+ annual charitable giving reflect a genuine community-first orientation validated by the Inspire Impact Score of 28 (ALIGNED).</div>
+    <div class="thesis-text">The bear case centers on massive dilution and execution risk. The $1.7B second-step offering roughly tripled the outstanding share count, compressing ROE to 4.92% — well below the bank&#39;s cost of equity — and the trailing P/E of 43.5x is a premium valuation for a community bank earning sub-5% returns on equity <span class="source-ref">[5]</span>. This capital must be deployed accretively or per-share value will erode through persistent capital drag. Integrating Northfield&#39;s operations, systems, and culture while simultaneously managing the conversion to public ownership adds execution complexity and customer attrition risk. Columbia operates in the hypercompetitive NJ/NY metro banking market where JPMorgan Chase, Bank of America, and TD Bank dominate with superior digital platforms, while fintech lenders encroach on traditional lending products. The FY2025 10-K explicitly flags AI as a risk factor with no clear AI strategy, acknowledging regulatory uncertainty and fraud exposure while competitors deploy AI-powered underwriting and customer service tools <span class="source-ref">[6]</span>. The transition from mutual to public governance introduces quarterly earnings pressure that could conflict with the community-first mission that distinguishes Columbia&#39;s franchise.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Successful Northfield integration achieving cost synergies and cross-selling revenue from the combined 100+ branch network, with the merger completed July 20, 2026 and full integration expected within 12 months <span class="source-ref">[1]</span></li>
+        
+        <li>Continued NIM expansion beyond the Q1 2026 level of 2.42% as the rate environment normalizes, driving accelerating earnings growth on the significantly larger $18B combined asset base <span class="source-ref">[3]</span></li>
+        
+        <li>Accretive deployment of $1.7B in conversion capital through organic loan growth and potential future acquisitions, progressively improving ROE from the current 4.92% toward the industry-standard 8-10% range — with analysts targeting $19.00/share (74.6% upside) <span class="source-ref">[2]</span><span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Persistent over-capitalization if the $1.7B in conversion capital cannot be deployed into accretive loans or acquisitions — ROE will remain compressed at sub-5% levels, well below the bank&#39;s cost of equity, destroying per-share value through capital drag while the P/E of 43.5x leaves no margin for execution missteps <span class="source-ref">[5]</span></li>
+        
+        <li>Merger integration risk from combining Columbia and Northfield operations, technology systems, and organizational cultures simultaneously with the second-step conversion, potentially resulting in customer attrition, duplicative branch costs, key employee departures, and delayed synergy realization <span class="source-ref">[1]</span></li>
+        
+        <li>Competitive pressure from megabanks with AI-powered digital platforms and fintech lenders in the NJ/NY metro market could erode Columbia&#39;s community banking franchise value, particularly as the 10-K acknowledges no clear AI strategy while competitors invest heavily in digital transformation and AI-driven underwriting <span class="source-ref">[6]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Columbia Bank&#39;s core community banking business — commercial real estate lending, relationship-driven deposit gathering, residential mortgages through a 100+ branch physical network — faces minimal direct AI substitution risk <span class="source-ref">[6]</span>. Banking is deeply regulated by the OCC, FDIC, and state authorities, and the trust-based relationship model, physical branch infrastructure, and regulatory moats create structural defenses against AI displacement. Switching costs for commercial banking relationships are high, and AI cannot replicate the local market knowledge and relationship capital that drive community bank lending decisions. However, AI-powered fintech lenders (Upstart, SoFi) and megabank digital platforms with AI-driven underwriting and personalization represent incremental competitive pressure on commoditized products like consumer loans and mortgages. Columbia&#39;s own 10-K explicitly flags AI as a risk vector for fraud, cyberattacks, and regulatory uncertainty <span class="source-ref">[6]</span>. Analysts are not raising AI disruption concerns for community banks specifically, but the sector faces gradual digital transformation pressure. AI Opportunity (0/1): Columbia Financial generates no revenue from AI products or services. The FY2025 10-K frames AI exclusively as a risk and compliance challenge — regulatory uncertainty, fraud exposure, and cybersecurity threats — with no mention of AI-driven revenue opportunities, quantified cost savings, or strategic AI deployment plans <span class="source-ref">[6]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            28
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Columbia Financial and Northfield Bancorp Merger Announcement — GlobeNewsWire, February 2, 2026; ROI-NJ and NJBiz Merger Completion Coverage, July 20-22, 2026</li>
+        
+        <li><span class="src-num">2.</span> Columbia Financial Second-Step Conversion and $1.7B Stock Offering Completion — StockTitan Press Release, July 20, 2026</li>
+        
+        <li><span class="src-num">3.</span> Columbia Financial Q1 2026 Earnings Release — Net Income $13.1M (+47% YoY), Revenue $66.2M, NIM 2.42%, StockTitan, April 2026; Columbia Bank Foundation and Community Programs, columbiabankonline.com</li>
+        
+        <li><span class="src-num">4.</span> SEC Form 4 Filings — CEO Thomas Kemly ($530K, 53,057 shares) and COO Steven Klein ($500K, 50,000 shares) Open-Market Purchases at $10.00/Share, July 20, 2026; Glassdoor Columbia Bank NJ Reviews, 84% CEO Approval</li>
+        
+        <li><span class="src-num">5.</span> Columbia Financial Key Financial Statistics — StockAnalysis.com (P/E 43.52, Forward P/E 32.34, Market Cap $2.93B, Analyst Target $19.00), WallStreetZen, CNBC, accessed July 2026</li>
+        
+        <li><span class="src-num">6.</span> Columbia Financial 10-K FY2025 — AI Risk Disclosures, Cybersecurity and Regulatory Risk Factors, SEC Filing via SEC.gov</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

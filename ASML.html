@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen ASML — ASML Holding N.V.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/ASML_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('ASML')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            ASML
+            <span class="stock-name-full">ASML Holding N.V.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-07-21</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge buy">BUY</span>
+            <div class="overall-score">
+                <span class="num">88</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Semiconductor Equipment</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>Netherlands</span>
+    </div>
+    
+    <div class="profile-desc">ASML Holding N.V. is the world's sole supplier of extreme ultraviolet (EUV) lithography systems, the critical technology enabling the most advanced semiconductor chips at 5nm and below. The company also produces deep ultraviolet (DUV) lithography systems and metrology and inspection tools. ASML serves every major chipmaker globally, including TSMC, Samsung, Intel, and SK Hynix. With a monopoly on EUV technology and the emerging High-NA EUV platform, ASML is the fundamental enabler of Moore's Law continuation and the AI computing revolution. 2026 revenue guidance raised twice to EUR43-45 billion. Founded in 1984, headquartered in Veldhoven, Netherlands.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>44,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.asml.com" target="_blank" rel="noopener">www.asml.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): ASML has delivered multiple generations of lithography technology that define the frontier of semiconductor manufacturing. The successful commercialization of EUV lithography -- a 20+ year development effort that many in the industry doubted would ever work -- is one of the most significant engineering achievements of the 21st century. High-NA EUV systems are now shipping, representing the next generation of chip manufacturing capability <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company has raised its 2026 revenue guidance twice -- from EUR36-40B to EUR43-45B -- reflecting extraordinary demand momentum driven by AI <span class="source-ref">[3]</span>. AI Deployment (2/2): ASML&#39;s products are the essential infrastructure for AI chip manufacturing. Every advanced AI chip produced by NVIDIA, AMD, Intel, and others requires ASML EUV lithography. Revenue is directly driven by AI demand -- memory revenue expected to grow 75% in 2026 <span class="source-ref">[1]</span>. The second guidance raise to EUR43-45B is explicitly attributed to surging AI chip demand <span class="source-ref">[3]</span>. Market Share (2/2): ASML holds a 100% monopoly on EUV lithography globally. There is no alternative supplier. CEO Christophe Fouquet stated that customers are sold out for 2026 on memory, and if they don&#39;t reserve capacity now, they are &#39;locked out of 2nm logic and advanced DRAM&#39; <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. This is the most absolute market dominance of any company in the semiconductor supply chain. Product Pipeline (2/2): High-NA EUV systems are shipping to customers. ASML is planning a 30% increase in Low-NA EUV capacity for 2027, is close to fully covered with orders for 2027, has already received a large number of orders for 2028, and is investigating another 30% capacity increase <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Specific products, specific timelines, and unprecedented revenue visibility. R&amp;D Intensity (1/1): ASML invests approximately 15-17% of revenue in R&amp;D, well above the semiconductor equipment industry average, with R&amp;D spending of approximately EUR6-7 billion annually to develop the most complex optical systems ever built <span class="source-ref">[7]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): ASML&#39;s mission centers on enabling semiconductor innovation and societal progress through advanced lithography, with core values of Challenge, Collaborate, Care, and Excellence in Execution <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. CEO Christophe Fouquet articulates the purpose as doing &#39;the right thing for our customers and the industry,&#39; which has been validated by 40 years of consistent investment in lithography technology even during periods when EUV&#39;s viability was widely questioned <span class="source-ref">[4]</span>. The purpose is specific, thoughtful, and demonstrably shapes strategic decisions. It falls just short of transformative (4/4) because it is fundamentally about enabling customers rather than articulating an independent vision of a better future. Community Impact (0/2): No specific charitable programs, foundation giving, or community investment data was identified in research. Employee Retention (2/2): CEO Fouquet describes ASML as &#39;a big company that still feels like a family&#39; with &#39;extremely accessible leadership, no hierarchy, and direct communication&#39; <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. This open, collaborative culture has been maintained while scaling from a small company to 44,000 employees. Fouquet&#39;s focus on reclaiming engineers&#39; time from non-essential tasks and redirecting it toward core engineering work demonstrates genuine care for employee experience. The culture is widely cited as a competitive advantage in recruiting and retaining top engineering talent. Insider Buying (1/2): Some insider buying was identified in February 2026, though insufficient data exists to determine if insiders have been net buyers over the trailing 12 months <span class="source-ref">[7]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored using distance-from-target methodology for a Growth stock. D/E of 13% is exceptionally low relative to the 70% target (score 1.0), with EUR20.8B in equity against only EUR2.7B in debt -- a fortress balance sheet <span class="source-ref">[6]</span><span class="source-ref">[7]</span>. ROE of 53.94% massively exceeds the 15% target (score 1.0 at 2x weight), reflecting extraordinary capital efficiency <span class="source-ref">[7]</span>. Revenue Growth YoY of 31.0% more than triples the 10% target (score 1.0) <span class="source-ref">[7]</span>. Revenue Growth 5yr CAGR of 21.74% exceeds the 10% target (score 1.0 at 2x weight) <span class="source-ref">[7]</span>. Profit margin of 30.11% exceeds the 20% target (score 1.0) <span class="source-ref">[7]</span>. Forward P/E of 31.47 is above the 20 target but within range (score 0.71) <span class="source-ref">[7]</span>. The main weakness is valuation: Forward PEG of 2.54 is elevated relative to the 1.0 target (score 0.23 at 2x weight), reflecting the premium the market places on ASML&#39;s monopoly position and AI-driven growth trajectory <span class="source-ref">[6]</span>. The premium is real -- at 31x forward earnings and 2.54x PEG, the stock prices in substantial future growth.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>9</span> /10</span>
+    </div>
+
+    <div class="ig-quote">ASML is a canonical infinite game company. The 40-year commitment to advancing lithography technology -- including the 20+ year, multi-billion-dollar development of EUV when the industry doubted it would ever work -- exemplifies playing to keep playing rather than playing to win this quarter. CEO Christophe Fouquet maintains the culture of collaboration, direct communication, and customer-first decision-making that has characterized ASML since its founding. The company&#39;s monopoly was built not through acquisition or market manipulation but through patient, persistent R&amp;D investment in the hardest engineering problems in the world. Strategic decisions consistently trace back to the purpose of enabling semiconductor innovation.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Just Cause (3/3): ASML&#39;s purpose -- enabling the advancement of semiconductor technology through lithography innovation -- has been validated by 40 years of consistent execution <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. The company spent over 20 years and billions of euros developing EUV lithography when many in the industry, including some customers, doubted it would ever work. The company persisted because it believed the semiconductor industry needed EUV to continue advancing. This purpose survived multiple leadership transitions (from Arthur del Prado through Peter Wennink to Christophe Fouquet) and the 2008 financial crisis. Strategic decisions -- investing in High-NA EUV, expanding capacity by 30% per year, maintaining the open innovation model with partners like Zeiss and TRUMPF -- all trace directly to this purpose <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The purpose IS the competitive advantage: ASML&#39;s monopoly exists because no other company was willing to invest for 20 years without returns.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (2/2): CEO Fouquet describes ASML as &#39;a big company that still feels like a family&#39; with &#39;extremely accessible leadership, no hierarchy, and direct communication&#39; <span class="source-ref">[4]</span><span class="source-ref">[5]</span>. This culture of openness and collaboration is foundational to ASML&#39;s innovation model -- engineers must feel safe to experiment with the most complex optical and mechanical systems ever built. Fouquet&#39;s focus on reclaiming engineers&#39; time from non-essential tasks demonstrates genuine investment in employee empowerment. The company has grown from a small Dutch startup to 44,000 employees while maintaining this culture <span class="source-ref">[5]</span>. ASML&#39;s core values of Challenge, Collaborate, Care, and Excellence in Execution explicitly prioritize psychological safety and teamwork <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Despite holding a monopoly on EUV lithography, ASML maintains an infinite competitive mindset. CEO Fouquet&#39;s emphasis on doing &#39;the right thing for customers and the industry&#39; <span class="source-ref">[4]</span> reflects a philosophy of improving the industry rather than dominating it. ASML&#39;s open innovation model -- collaborating deeply with Zeiss (optics), TRUMPF (lasers), and its customers (TSMC, Samsung, Intel) -- treats partners and even competitors as worthy collaborators whose strengths make ASML&#39;s technology better. The company does not frame its market position in terms of &#39;winning&#39; but in terms of enabling progress.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): ASML has evolved its technology platform significantly over 40 years -- from contact printers to steppers to scanners to DUV to EUV to High-NA EUV <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Each generation required substantial R&amp;D investment and represented a meaningful technical evolution. The transition from DUV to EUV was particularly dramatic, requiring entirely new light sources, optics, and manufacturing processes. However, ASML has always been a lithography company -- the evolution, while technically transformative, has been along a consistent strategic path rather than a complete business model reinvention in the Sinek sense.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): ASML&#39;s history is a masterclass in courageous leadership. The company invested billions of euros over 20+ years in EUV development when success was uncertain and the industry was skeptical <span class="source-ref">[4]</span>. Multiple times during EUV development, ASML could have abandoned the program and focused on incremental DUV improvements -- a safe, profitable choice. Instead, leadership persisted through technical setbacks, customer skepticism, and financial pressure because they believed EUV was essential for the industry&#39;s future. Now investing in High-NA EUV and planning 30% annual capacity increases <span class="source-ref">[1]</span><span class="source-ref">[2]</span>, ASML continues to make enormous long-term bets. The pattern is clear: invest ahead of demand in service of the purpose.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">ASML reported EUR9.3 billion in Q2 2026 revenue and EUR2.9 billion in net income, raising its 2026 guidance for the second time to EUR43-45 billion in revenue with 54-56% gross margin <span class="source-ref">[1]</span>. The company holds a 100% monopoly on EUV lithography, the essential technology for manufacturing every advanced AI chip. Order momentum is &#39;extremely strong,&#39; with ASML close to fully covered for 2027 Low-NA EUV and planning 30% capacity increases for both 2027 and potentially 2028 <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The backlog of approximately EUR38.8 billion provides extraordinary revenue visibility. Financial metrics are outstanding: 13% D/E, 53.94% ROE, 30.11% profit margin, 31% YoY revenue growth, and 21.74% 5-year revenue CAGR <span class="source-ref">[7]</span>. AI chip demand -- with memory revenue growing 75% in 2026 -- is driving a structural expansion in ASML&#39;s addressable market that shows no signs of slowing <span class="source-ref">[1]</span><span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case centers on valuation and cyclicality. At 31.47x forward earnings and a PEG of 2.54, ASML is priced for near-perfect execution with minimal margin of safety <span class="source-ref">[6]</span><span class="source-ref">[7]</span>. The semiconductor equipment industry is historically cyclical, and the current AI-driven supercycle could cool if hyperscaler capital spending moderates or chip overcapacity emerges. ASML&#39;s trailing P/E of 55.68 and forward P/E of 31.47 imply that the market is pricing in substantial 2027+ earnings growth that may not fully materialize if the AI buildout plateaus. Geopolitical risk is significant: US-China technology export controls affect ASML&#39;s ability to sell advanced systems to Chinese customers, and any escalation could reduce the total addressable market. ASML&#39;s capacity expansion plans (30%+ annually) require significant capital investment and could create oversupply risk if demand decelerates. The Inspire Impact Score of -49 (MISALIGNED) may concern faith-aligned investors <span class="source-ref">[3]</span><span class="source-ref">[6]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Continued AI chip demand surge driving additional orders for 2027 and 2028, with ASML potentially raising guidance again as backlog continues to expand beyond EUR38.8 billion</li>
+        
+        <li>High-NA EUV adoption accelerating as chipmakers move to 2nm and below process nodes, creating a higher-ASP product cycle that expands ASML&#39;s revenue per system</li>
+        
+        <li>Memory revenue growing 75% in 2026 as HBM (High Bandwidth Memory) for AI training requires EUV lithography, opening a large new market segment for ASML&#39;s systems</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Forward PEG of 2.54 and forward P/E of 31.47 price in substantial future growth with minimal margin of safety -- any deceleration in AI chip demand or guidance miss could trigger significant multiple compression</li>
+        
+        <li>Semiconductor equipment is historically cyclical, and the current AI-driven supercycle could moderate if hyperscaler capital spending peaks or chip overcapacity emerges in 2027-2028</li>
+        
+        <li>US-China technology export controls restrict ASML&#39;s ability to sell advanced EUV systems to Chinese customers, and any escalation of geopolitical tensions could materially reduce the addressable market</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): ASML IS the AI infrastructure. Every advanced AI chip manufactured in the world -- from NVIDIA&#39;s Blackwell to AMD&#39;s MI series to Intel&#39;s data center processors -- requires ASML&#39;s EUV lithography to be produced <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. AI cannot disrupt ASML because ASML is the foundation upon which AI is built. The company has a 100% monopoly on EUV lithography with no alternative supplier, protected by decades of accumulated R&amp;D, over 10,000 patents, and the most complex supply chain in the technology industry (including Zeiss optics and TRUMPF lasers). Far from being disrupted by AI, the AI boom has driven record demand for ASML&#39;s systems, prompting two guidance increases in 2026 alone <span class="source-ref">[3]</span>. CEO Fouquet has warned that supply constraints -- not demand -- are the limiting factor, with customers sold out for 2026 on memory <span class="source-ref">[1]</span>. AI Opportunity (1/1): ASML generates substantial and rapidly growing revenue directly from AI chip manufacturing demand. The second 2026 guidance raise from EUR36-40B to EUR43-45B is explicitly driven by AI chip demand <span class="source-ref">[3]</span>. Memory revenue, largely AI-driven, is expected to grow 75% in 2026 <span class="source-ref">[1]</span>. The entirety of ASML&#39;s EUV revenue is AI-adjacent, as the most advanced chips are predominantly used in AI training and inference.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> ASML Q2 2026 Earnings Release and Updated Guidance -- asml.com, July 15, 2026</li>
+        
+        <li><span class="src-num">2.</span> ASML Q1 2026 Earnings Release -- asml.com, April 2026</li>
+        
+        <li><span class="src-num">3.</span> CNBC -- ASML Shares Fall After Hiking Sales Forecast for Second Time This Year, July 15, 2026</li>
+        
+        <li><span class="src-num">4.</span> ASML CEO Christophe Fouquet Interview -- IMD I by IMD and CommonWealth Magazine, 2025-2026</li>
+        
+        <li><span class="src-num">5.</span> ASML Corporate Website -- Introducing Christophe Fouquet, CEO -- asml.com, 2024</li>
+        
+        <li><span class="src-num">6.</span> GuruFocus -- ASML Forward PE Ratio and PEG Ratio, July 2026</li>
+        
+        <li><span class="src-num">7.</span> StockAnalysis.com -- ASML Key Statistics and Financial Data, accessed July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
