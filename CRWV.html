@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CRWV — CoreWeave, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CRWV_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CRWV')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CRWV
+            <span class="stock-name-full">CoreWeave, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-12</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 36</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">63</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Cloud Computing / AI Infrastructure</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">CoreWeave is the fastest-growing AI-native cloud platform, providing GPU compute infrastructure to AI developers, hyperscalers, and enterprises. The company achieved $5.1B in 2025 revenue (+170% YoY) and reported Q2 2026 revenue of $2.58B (doubled YoY) with raised FY2026 guidance of $12.4-13.2B. CoreWeave operates 43+ data centers with 45,000+ GPUs, 850+ MW of active power, and 3.1 GW of contracted capacity. The company holds a $104B AI infrastructure backlog as of Q2 2026, serving hyperscalers including Microsoft (historically ~60%+ of revenue), Meta, and OpenAI. CEO Michael Intrator co-founded the company after pivoting from cryptocurrency mining. IPO in March 2025 at $40/share; current market cap ~$49B. Total debt of $51.6B against $5.5B cash reflects the capital-intensive AI infrastructure buildout, with $31-35B in 2026 capex guidance.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>2,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.coreweave.com" target="_blank" rel="noopener">www.coreweave.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): CoreWeave executed the most successful business pivot in recent tech history — from cryptocurrency mining to AI-native cloud infrastructure — achieving revenue growth from $229M (2023) to $1.9B (2024) to $5.1B (2025), the fastest cloud revenue ramp in history <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Q2 2026 revenue of $2.58B doubled YoY with raised guidance to $12.4-13.2B. This represents multiple transformative developments: the crypto-to-AI pivot, securing $14.2B Meta agreement, and the Weights &amp; Biases acquisition for end-to-end AI platform capabilities. AI Deployment (2/2): CoreWeave&#39;s entire business IS AI deployment — 43+ data centers with 45,000+ GPUs providing the physical compute infrastructure that trains and runs AI models for Microsoft, Meta, OpenAI, and hundreds of AI companies <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This is the most direct AI deployment in public markets. Market Share (2/2): CoreWeave is the largest AI-native cloud provider in North America with $104B in remaining performance obligations, dominant neocloud market share, and partnerships with Nvidia, Microsoft, Meta, and OpenAI — clear category leadership in the specialized AI cloud segment <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Product Pipeline (2/2): FY2026 revenue guidance raised to $12.4-13.2B with $104B backlog providing extraordinary visibility; $31-35B capex expanding capacity with 3.1 GW contracted power; Weights &amp; Biases acquisition creates end-to-end AI platform with specific integration timelines <span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Pioneering GPU cloud architecture with liquid cooling innovations reducing energy consumption by 60%, proprietary chip management software, and infrastructure optimization technology place CoreWeave well above industry average <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): CoreWeave&#39;s purpose as &#39;the essential cloud for AI&#39; is clear, market-driven, and connected to CEO Intrator&#39;s framing of AI infrastructure as essential to U.S. competitiveness, but remains commercially oriented rather than articulating a deeper social purpose beyond enabling AI compute. The national security angle adds intentionality but hasn&#39;t been tested through crisis. Community Impact (0/2): No evidence of significant charitable programs, community foundations, or distinctive social investment was identified. CoreWeave&#39;s renewable-powered European data centers are primarily business investments with environmental co-benefits, not community programs. The company is only 2 years public with focus entirely on growth execution. Employee Retention (0/2): Glassdoor rates CoreWeave 3.6/5 overall with 3.1/5 culture and 62% recommendation, but reviews reveal serious concerns — &#39;most toxic culture I&#39;ve ever seen,&#39; &#39;heavy favoritism&#39; with &#39;in crowd&#39; dynamics, 60-80 hour workweeks with &#39;zero loyalty from leadership,&#39; and a C-suite member using &#39;racially insensitive term during an all-hands meeting&#39; <span class="source-ref">[4]</span>. CEO approval at 65% is below tech averages. Insider Buying (0/2): CEO Intrator retains significant co-founder equity providing alignment, but no evidence of meaningful open-market insider purchases was identified in the research period.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics (Growth sleeve). CoreWeave&#39;s infrastructure profile reflects hyper-growth funded by extreme leverage, producing historically poor financial ratios <span class="source-ref">[5]</span>. D/E of 1027% reflects $51.6B in total debt against a relatively small equity base — one of the most leveraged technology companies in public markets, with NYU&#39;s Aswath Damodaran calling it &#39;danger territory&#39; for debt <span class="source-ref">[6]</span>. ROE of -43.6% and profit margin of -22.7% both floor at zero, reflecting the company&#39;s pre-profit growth phase with Q2 2026 GAAP net loss of ~$626M despite $1.51B adjusted EBITDA <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Forward P/E and PEG are meaningless (negative earnings) and excluded. The lone strong metric is revenue growth YoY of ~100% (Q2 2026 revenue doubled), scoring at maximum. Revenue growth 5yr CAGR excluded as the company effectively didn&#39;t exist in revenue terms 5 years ago. Liquidity floor cleared at ~$1.3B daily dollar volume (15M x $87) <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">CoreWeave earns a MIXED Infinite Game score through exceptional existential flexibility (crypto-to-AI pivot) and extraordinary courage in leadership (taking on $51.6B in debt to build AI infrastructure at scale). However, the company&#39;s purpose is commercially driven rather than cause-driven, and Glassdoor reviews reveal cultural concerns that undermine the Trusting Teams dimension. CEO Intrator&#39;s framing of AI infrastructure as essential to U.S. competitiveness provides a national strategic narrative, but this purpose has not been tested through adversity. Sinek would credit the transformative pivot and the conviction of the capital commitment, but question whether the company is built to endure beyond the current AI infrastructure cycle.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): CoreWeave&#39;s purpose as &#39;the essential cloud for AI&#39; is commercially compelling but shallow — it describes a market position rather than a vision of a better future. CEO Intrator&#39;s framing of &#39;building AI at home is key to U.S. competitiveness&#39; elevates the narrative toward national strategic infrastructure, but the company is too young to have validated this purpose through crisis or multi-decade consistency. The pivot from crypto mining to AI cloud was opportunity-driven, not cause-driven. The purpose exists but hasn&#39;t shaped behavior through adversity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Glassdoor reviews reveal concerning cultural dynamics despite the 3.6/5 overall rating — &#39;most toxic culture I&#39;ve ever seen,&#39; &#39;heavy favoritism&#39; with promotion decisions based on personal relationships, 60-80 hour workweeks with &#39;zero loyalty from leadership,&#39; and a C-suite member using racially insensitive language during an all-hands meeting <span class="source-ref">[4]</span>. CEO approval of 65% is below tech averages. While rapid scaling from 900 to 2,500+ employees demonstrates talent attraction, the cultural indicators suggest an environment where employees protect themselves rather than advance a shared cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): CoreWeave competes against AWS, Azure, and Google Cloud — the most powerful cloud providers in the world — and explicitly positions itself as a specialized alternative rather than a general-purpose competitor. The company acknowledges hyperscalers&#39; strengths (scale, ecosystem breadth) while differentiating through GPU-optimized performance and AI-native architecture <span class="source-ref">[1]</span>. The willingness to serve hyperscaler customers (even potential competitors like Microsoft) demonstrates strategic flexibility over competitive warfare.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): CoreWeave&#39;s transformation from cryptocurrency mining to AI-native cloud infrastructure is Sinek&#39;s textbook example — fundamentally reinventing the company by abandoning a core business (crypto) to pursue what the market demanded (AI compute) <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The subsequent acquisition of Weights &amp; Biases extends this reinvention from infrastructure-only to end-to-end AI platform. The pivot was not desperation — it was recognition that GPU compute demand was shifting from crypto to AI, and the founders had the flexibility to redirect their infrastructure accordingly.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): CoreWeave demonstrates extraordinary conviction — taking on $51.6B in debt to build AI infrastructure at an unprecedented pace, committing $31-35B in single-year capex, and expanding from 43 data centers with 3.1 GW contracted capacity <span class="source-ref">[2]</span><span class="source-ref">[3]</span><span class="source-ref">[6]</span>. CEO Intrator testified before the U.S. Senate on AI infrastructure needs. This is a pattern of massive long-term bets: building infrastructure years ahead of demand, accepting deep GAAP losses (net loss ~$626M in Q2 2026 alone) for long-term capability, and raising the FY2026 guidance to $12.4-13.2B while the company remains unprofitable on a GAAP basis. Whether or not the leverage proves sustainable, the courage of the capital commitment is undeniable.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">CoreWeave at $87/share ($49B market cap) is the purest AI infrastructure play in public markets — $104B in committed backlog, FY2026 guidance raised to $12.4-13.2B (up from $5.1B in 2025), and Q2 2026 adjusted EBITDA of $1.51B demonstrating the unit economics work at scale <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Revenue doubled YoY in Q2 2026 to $2.58B, and 98% take-or-pay contracts provide revenue certainty. The company&#39;s 45,000+ GPUs, 43+ data centers, and partnerships with NVIDIA, Microsoft, Meta, and OpenAI position it at the center of the AI infrastructure buildout — a structural demand cycle that hyperscaler capex plans indicate will accelerate. The Weights &amp; Biases acquisition creates an end-to-end AI platform differentiating CoreWeave from commodity compute. Adjusted EBITDA margins of 56%+ (Q1 2026) demonstrate that profitability is achievable once depreciation and interest costs are covered by revenue scale. The Inspire Impact Score of 36 (ALIGNED) is a positive for faith-based investors.</div>
+    <div class="thesis-text">The bear case is existential leverage risk. D/E of 1027% with $51.6B in total debt against $5.5B cash makes CoreWeave among the most leveraged technology companies ever created — NYU&#39;s Aswath Damodaran characterizes the debt situation as &#39;danger territory&#39; <span class="source-ref">[5]</span><span class="source-ref">[6]</span>. GAAP net loss of ~$626M in Q2 2026 persists despite record revenue, as depreciation on massive GPU infrastructure and interest on $51.6B debt consume operating income. Microsoft historically accounts for ~60%+ of revenue — loss or material reduction of this relationship would be catastrophic. The $31-35B capex plan for 2026 alone requires continued capital market access at favorable terms; any credit market disruption or AI spending slowdown could strand infrastructure investments. The stock has declined 30%+ from 52-week highs as the market reprices the leverage risk. GPU technology evolves rapidly — today&#39;s 45,000+ GPUs could depreciate faster than revenue ramps if next-generation architectures shift demand. Competition from hyperscalers (AWS, Azure, GCP) with vastly superior balance sheets creates long-term margin pressure as AI compute commoditizes. Glassdoor cultural concerns and rapid organizational scaling add execution risk.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>FY2026 revenue execution toward $12.4-13.2B guidance, demonstrating that the $104B backlog converts to recognized revenue at projected rates and that the AI infrastructure demand cycle is accelerating rather than moderating <span class="source-ref">[3]</span></li>
+        
+        <li>Path to GAAP profitability as data centers reach operational maturity and utilization rises — Q1 2026 adjusted EBITDA margin of 56% demonstrates the underlying economics; the gap to GAAP profitability is primarily depreciation and interest on the $51.6B debt load <span class="source-ref">[2]</span></li>
+        
+        <li>Customer diversification beyond Microsoft — if Q2/Q3 2026 earnings show Meta, OpenAI, and enterprise customers growing as a percentage of revenue, the single-customer risk narrative would de-risk significantly <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Extreme leverage — $51.6B total debt with 1027% D/E ratio means even moderate interest rate increases or credit market disruption could threaten solvency; NYU&#39;s Damodaran describes CoreWeave as in &#39;danger territory&#39; for debt <span class="source-ref">[5]</span><span class="source-ref">[6]</span></li>
+        
+        <li>Microsoft customer concentration historically at 60%+ of revenue — contract modification, volume reduction, or loss of this relationship would be existential for a company with $51.6B in debt and negative GAAP earnings <span class="source-ref">[1]</span></li>
+        
+        <li>AI infrastructure spending cycle risk — if hyperscaler capex moderates, CoreWeave&#39;s take-or-pay contracts protect committed revenue but the $31-35B annual capex plan requires continued demand growth to justify the capital intensity <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): CoreWeave IS AI infrastructure — the company provides the foundational GPU compute, networking, and data center capacity that AI models require to train and run <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This is the definition of &#39;immune&#39; in the IOWN framework: AI cannot disrupt a company that provides the physical hardware layer AI runs on. AI growth directly drives CoreWeave&#39;s revenue — the $104B backlog exists because AI demand for compute is surging. Physical data center assets with long-term take-or-pay contracts (98% of revenue) provide structural moats that AI cannot replicate. The company&#39;s 45,000+ GPUs, 43+ data centers, and 3.1 GW contracted capacity are physical-world assets. AI Opportunity (1/1): CoreWeave generates 100% of its revenue from AI infrastructure — $2.58B in Q2 2026 alone, with FY2026 guidance of $12.4-13.2B <span class="source-ref">[3]</span>. The $104B backlog represents the most concentrated AI revenue opportunity in public markets. The company is among the most direct AI revenue beneficiaries alongside NVIDIA.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            36
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Systemic Risk Mitigation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> CoreWeave Q1 2026 Earnings — Revenue $2.078B (+112% YoY), Adjusted EBITDA $1.157B (56% Margin), Data Center Expansion, May 2026</li>
+        
+        <li><span class="src-num">2.</span> CoreWeave Q2 2026 Earnings — Revenue $2.58B (Doubled YoY), Adjusted EBITDA $1.51B, GAAP Net Loss ~$626M, Backlog $104B, August 2026</li>
+        
+        <li><span class="src-num">3.</span> CoreWeave FY2026 Guidance Raised — Revenue $12.4-13.2B, Capex $31-35B, 45,000+ GPUs, 43+ Data Centers, 3.1 GW Contracted Capacity, August 2026</li>
+        
+        <li><span class="src-num">4.</span> Glassdoor — CoreWeave Culture Reviews: 3.6/5 Overall, 3.1/5 Culture, CEO Approval 65%, Reports of Favoritism, 60-80 Hour Weeks, C-Suite Racial Insensitivity, accessed August 2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance, StockAnalysis — CRWV Key Statistics: D/E 1027%, ROE -43.6%, Profit Margin -22.7%, Stock Price ~$87, Market Cap $49.3B, Total Debt $51.6B, accessed August 2026</li>
+        
+        <li><span class="src-num">6.</span> Bloomberg, Yahoo Finance — Aswath Damodaran on CoreWeave Debt: 'Danger Territory' for Leverage, AI Investment Cycle Risk Analysis, July 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SRE — Sempra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SRE_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SRE')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SRE
+            <span class="stock-name-full">Sempra</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-01</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">73</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Utilities</span>
+        <span class="sep">&middot;</span><span>Utilities - Diversified</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Sempra is a Fortune 500 energy infrastructure company with approximately $110 billion in assets and 16,800 employees. Operating through regulated utilities SDG&E and SoCalGas in California, Sempra Texas (majority owner of Oncor), and Sempra Infrastructure (LNG and clean energy), the company serves approximately 40 million consumers. FY2025 revenue was $13.7B. Sempra announced a record $65 billion capital plan through 2030 targeting 11% compound rate base growth and 7-9% long-term EPS growth.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>16,800 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.sempra.com" target="_blank" rel="noopener">www.sempra.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Sempra delivered $13.7B in FY2025 revenue with Q2 2026 net income rising to $796M, driven by Oncor rate base growth and Sempra Infrastructure&#39;s LNG development <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. However, revenue declined 3.9% in Q1 2026 YoY and grew only 1.6% on a trailing twelve-month basis, reflecting the slow-growth nature of regulated utilities. The company is an infrastructure builder, not a technology innovator. AI Deployment (1/2): Sempra leverages AI and next-generation technology to forecast weather, monitor power grid conditions, and predict potential infrastructure problems, enhancing reliability across its California utilities <span class="source-ref">[6]</span>. These are operational tools rather than revenue-generating innovations. Market Share (2/2): Sempra owns the dominant regulated utility franchise in Southern California through SDG&amp;E and SoCalGas, is the majority owner of Oncor (the largest transmission and distribution utility in Texas), and operates one of the largest LNG development platforms in North America <span class="source-ref">[3]</span>. Pipeline (1/2): The $65B capital plan through 2030 represents one of the most ambitious infrastructure buildouts in the utility sector, with Cameron LNG Phase 2, Port Arthur LNG, and significant transmission investments to support data center and electrification demand <span class="source-ref">[7]</span>. R&amp;D Intensity (1/1): Investing in grid modernization, renewable integration technology, and digital infrastructure monitoring, consistent with leading utility innovation spending <span class="source-ref">[6]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): &#39;Building modern energy networks&#39; with a vision of serving North America&#39;s growing energy needs is clear and purpose-driven, connecting the company&#39;s operations to the energy transition and economic development, though it is not uniquely inspirational beyond the utility sector <span class="source-ref">[3]</span><span class="source-ref">[6]</span>. Community Impact (2/2): Sempra serves approximately 40 million consumers across California and Texas, has committed to net-zero GHG emissions by 2050, published comprehensive sustainability reports, and launched a Sustainable Financing Framework aligned with Green and Social Bond Principles <span class="source-ref">[6]</span>. CEO Martin&#39;s emphasis on &#39;energy access, reliability, and affordability&#39; demonstrates genuine stakeholder orientation. Employee Retention (1/2): Glassdoor rating of 4.3/5 with strong marks for pay, benefits, and supportive leadership indicates above-average employee satisfaction <span class="source-ref">[5]</span>. Common positive themes include great compensation, collaborative culture, and job security. However, no specific tenure or turnover data distinguishes Sempra from peers. Insider Buying (1/2): CEO Martin&#39;s compensation is heavily equity-linked, aligning interests with long-term shareholders, though no significant open-market insider purchases have been prominently reported.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. D/E of 81% is well below the 300% floor and close to the 70% target (score 0.95), reflecting conservative leverage for a regulated utility <span class="source-ref">[4]</span>. Forward P/E of 17.44 scores a perfect 1.0 at below the 20 target. ROE of 6.77% is modest for a capital-intensive utility (score 0.45), suppressed by the massive $110B asset base and regulatory lag <span class="source-ref">[4]</span>. Revenue grew 1.6% YoY (score 0.72) with a 5yr CAGR of approximately 3.8% (score 0.59), reflecting the regulated utility growth profile. Profit margin of 15.75% scores 0.79 <span class="source-ref">[4]</span>. Dividend metrics anchor the score: 27+ consecutive years of payment (score 1.0, 2x weight) and 23 consecutive years of growth (score 1.0), with a 5yr dividend growth CAGR of 4.12% (score 0.69, 2x weight). Payout ratio of 85% is elevated (score 0.25), though typical for regulated utilities. Daily dollar volume of approximately $325M provides exceptional liquidity <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>8</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Sempra exemplifies infinite game thinking through its $65B capital investment plan through 2030, 23 consecutive years of dividend growth, and the strategic vision to build North America&#39;s premier energy infrastructure platform spanning regulated utilities, transmission, and LNG. CEO Jeffrey Martin has led a multi-year transformation from a regional California utility into a diversified energy infrastructure company with national and international reach. The company&#39;s net-zero 2050 commitment, massive capital redeployment toward electrification and LNG, and willingness to take decade-long development bets on infrastructure projects demonstrate genuine long-term orientation.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Sempra&#39;s cause — providing safe, reliable, and affordable energy to approximately 40 million consumers while enabling the energy transition — is deeply lived through its operations and capital allocation <span class="source-ref">[3]</span><span class="source-ref">[6]</span>. The $65B capital plan, net-zero 2050 commitment, and Sustainable Financing Framework demonstrate purpose shaping multi-billion-dollar investment decisions. CEO Martin&#39;s articulation of &#39;building modern energy networks&#39; connects daily operations to generational infrastructure needs. The cause is genuine and consequential but inherently tied to the utility model rather than a transcendent vision.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor rating of 4.3/5 across 213 reviews signals strong employee satisfaction, with common themes of supportive leadership, excellent pay and benefits, and a collaborative work environment <span class="source-ref">[5]</span>. CEO Martin has provided stable leadership, and the 16,800-person workforce operates across well-established utility cultures in California and Texas. However, no specific employee engagement scores, retention metrics, or cultural differentiation programs distinguish Sempra from top-tier utility peers.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Sempra benchmarks against NextEra Energy (renewable leadership), Duke Energy (regulated utility scale), and Southern Company (integrated utility model) with a constructive competitive orientation <span class="source-ref">[3]</span>. The company&#39;s pivot into LNG infrastructure and data center power reflects learning from NextEra&#39;s first-mover advantage in renewables, and the Oncor investment was partly inspired by Berkshire Hathaway Energy&#39;s transmission strategy.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Sempra has undergone a fundamental strategic transformation over the past decade — from a regional California gas and electric utility to a diversified North American energy infrastructure platform encompassing regulated utilities, transmission (Oncor), LNG development (Cameron, Port Arthur), and clean energy infrastructure <span class="source-ref">[3]</span><span class="source-ref">[7]</span>. The $65B capital plan targeting 95% regulated earnings mix by 2030 represents another strategic pivot toward higher-quality, more predictable earnings. These are not incremental adjustments but fundamental reshapings of the company&#39;s identity and competitive positioning.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): CEO Martin committed to a record $65B capital plan through 2030 — one of the largest in the utility industry — while maintaining 23 consecutive years of dividend growth and guiding to 7-9% long-term EPS growth <span class="source-ref">[7]</span>. The multi-billion-dollar bets on Port Arthur LNG and Cameron LNG Phase 2 required conviction in decade-long energy infrastructure demand at a time of significant policy uncertainty. The strategic pivot away from non-core businesses to focus on regulated infrastructure reflects disciplined boldness rather than reckless expansion.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Sempra offers a compelling blend of defensive utility characteristics and above-average growth potential, anchored by a record $65B capital investment plan through 2030 targeting 11% rate base CAGR and 7-9% EPS growth <span class="source-ref">[7]</span>. The company&#39;s regulated utility moat — serving 40 million consumers through SDG&amp;E, SoCalGas, and Oncor — provides highly visible, inflation-protected earnings, while Sempra Infrastructure&#39;s LNG development platform adds optionality to the energy export theme <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. Oncor&#39;s positioning in Texas to capture data center and electrification-driven demand growth is a differentiated catalyst. With 23 consecutive years of dividend growth, a 2.88% yield, and forward P/E of 17.44, Sempra trades at a discount to utility peers while offering a superior growth profile. CEO Martin&#39;s strategic transformation from a regional utility to a national infrastructure platform demonstrates disciplined capital allocation over a multi-decade horizon.</div>
+    <div class="thesis-text">Bear case risks include the elevated trailing P/E of 28.5x, which reflects depressed near-term earnings from regulatory lag and investment cycle timing rather than permanent overvaluation <span class="source-ref">[4]</span>. The 85% payout ratio limits retained earnings for reinvestment, and the $65B capital plan requires significant external financing that could dilute shareholders or pressure credit metrics if interest rates remain elevated <span class="source-ref">[7]</span>. Revenue growth of just 1.6% YoY and 3.8% 5yr CAGR reflects the inherent slow-growth nature of regulated utilities, and ROE of 6.77% trails the 15% target meaningfully <span class="source-ref">[4]</span>. California regulatory risk remains a persistent overhang, with wildfire liability, rate case outcomes, and political uncertainty around energy policy. The Inspire Impact score of -49 (MISALIGNED) may deter faith-aligned investors despite the company&#39;s extensive positive ESG attributions across 20 categories <span class="source-ref">[6]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Execution on $65B capital plan driving 11% rate base CAGR through 2030, with Oncor capturing accelerating data center and electrification demand in Texas</li>
+        
+        <li>Port Arthur LNG and Cameron LNG Phase 2 development milestones de-risking Sempra Infrastructure&#39;s growth platform and unlocking earnings visibility</li>
+        
+        <li>Continued dividend growth trajectory — 24th consecutive annual increase expected in 2026 — supported by regulated earnings mix improving to 95% by 2030</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>California regulatory and wildfire liability risk — rate case outcomes, political intervention, and catastrophic event exposure could impair utility earnings and create capital calls</li>
+        
+        <li>Elevated 85% payout ratio and massive $65B capital plan require significant external financing; sustained high interest rates could compress returns on invested capital below regulatory assumptions</li>
+        
+        <li>LNG development timeline and cost overruns — multi-billion-dollar infrastructure projects face construction risk, permitting delays, and potential demand shifts if global LNG markets soften</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Sempra&#39;s core business — regulated electricity transmission and distribution, natural gas delivery, and LNG infrastructure — faces virtually zero direct AI substitution risk <span class="source-ref">[6]</span>. Physical utility infrastructure cannot be digitized, and regulated monopoly franchises in California and Texas provide structural moats against any form of technological displacement. Moreover, AI-driven demand for electricity through data center proliferation is a significant tailwind — Oncor in Texas is particularly well-positioned as data center operators seek reliable power in the ERCOT market <span class="source-ref">[1]</span><span class="source-ref">[7]</span>. The only AI-related risk is potential optimization of distributed energy resources reducing centralized grid dependence over the very long term, but near-term AI actually increases grid demand. AI Opportunity (1/1): Sempra deploys AI for weather forecasting, grid monitoring, predictive maintenance, and infrastructure safety, generating measurable operational improvements across its utility operations <span class="source-ref">[6]</span>. The massive growth in AI data center power demand directly drives rate base growth at Oncor and capital investment opportunities across Sempra&#39;s portfolio <span class="source-ref">[7]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Sempra Q2 2026 Earnings Press Release, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Sempra Q1 2026 Earnings Release, April 2026</li>
+        
+        <li><span class="src-num">3.</span> Sempra 2025 Annual Report and Corporate Profile</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis.com — SRE key statistics and valuation metrics, accessed September 2026</li>
+        
+        <li><span class="src-num">5.</span> Glassdoor — Sempra Employee Reviews (4.3/5 across 213 reviews), accessed September 2026</li>
+        
+        <li><span class="src-num">6.</span> Sempra Innovation, ESG, and Sustainability Reports, accessed September 2026</li>
+        
+        <li><span class="src-num">7.</span> Sempra $65B Capital Plan Announcement and Investor Day Presentation, June 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

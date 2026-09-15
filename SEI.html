@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SEI — Solaris Energy Infrastructure, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SEI_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SEI')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SEI
+            <span class="stock-name-full">Solaris Energy Infrastructure, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-06</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 20</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">68</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Energy</span>
+        <span class="sep">&middot;</span><span>Oil & Gas Equipment & Services</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Solaris Energy Infrastructure, Inc. is an energy infrastructure company providing distributed behind-the-meter power solutions for AI data centers, industrial loads, and oil and gas operations. Formerly Solaris Oilfield Infrastructure, the company renamed in September 2024 after acquiring Mobile Energy Rentals (MER), pivoting from frac sand logistics into natural gas-powered turbine leasing for hyperscaler data centers. Q2 2026 revenue of $219.4M grew 47% YoY with adjusted EBITDA of $108.3M. The company operates approximately 3,100 MW of total power generation capacity with over 2 GW under long-term contracts (10-15 year terms) with leading global technology companies. Completed nearly $2B in financing ($1.3B senior unsecured notes + $650M revolving credit facility).</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>468 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.solaris-energy.com" target="_blank" rel="noopener">www.solaris-energy.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Solaris executed one of the most dramatic business transformations in the energy sector, pivoting from oilfield frac sand logistics to AI data center power infrastructure. Q2 2026 revenue of $219.4M grew 47% YoY, with Power Solutions segment revenue of $158.3M and ~950 MW average earning revenue <span class="source-ref">[1]</span>. The company expanded three long-term contracts expected to add over $100M of annual adjusted EBITDA, including a turnkey ~660 MW power plant for an AI workload customer <span class="source-ref">[1]</span>. The MER and Genco Power Solutions acquisitions expanded capacity to ~3,100 MW. AI Deployment (1/2): Solaris does not deploy AI in its operations but is a critical physical enabler of AI infrastructure. Natural gas turbines provide the power AI data centers require. Some operational analytics likely used but AI is not a product differentiator. Market Share (1/2): Solaris is an emerging leader in distributed behind-the-meter power for data centers, with 3,100 MW total capacity and 2+ GW contracted with hyperscalers <span class="source-ref">[2]</span>. The market is early-stage with many new entrants scaling. Product Pipeline (2/2): Exceptional forward visibility. Contracted capacity phases in through 2029 with 10-15 year terms. The expanded contracts adding $100M+ annual EBITDA and 660 MW turnkey power plant provide near-term growth visibility. Target of 3.1 GW net owned by 2029 with projected $1.7B revenue <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Significant capital investment in new turbine technology (NovaLT16 diversifies equipment base) and $2B in financing to fund capacity expansion <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Founder Bill Zartler built Solaris from startup through IPO and now a dramatic transformation. The emerging mission of &#39;powering the digital economy&#39; through behind-the-meter data center infrastructure has genuine purpose, but the company articulates this primarily in financial terms. The September 2024 rebrand from Solaris Oilfield Infrastructure signals the pivot, but continued frac sand logistics operations ($61.1M Q2 revenue) suggest the pivot is more opportunistic than mission-driven <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. Community Impact (1/2): The Inspire Impact Score of 20 (MIXED) with positive attributions for Business Ethics, Business Resilience, and GHG Emissions reflects some ESG commitment <span class="source-ref">[4]</span>. Natural gas turbines are cleaner than diesel alternatives in temporary power. However, fossil fuel-based power generation inherently limits environmental inspiration. Employee Retention (1/2): The 468-person team has executed a remarkable transformation — pivoting from oilfield services to data center power, completing multiple acquisitions, and integrating new capabilities. The co-CEO structure (Zartler and Johnson) provides leadership continuity. Limited public data on culture metrics. Insider Buying (0/2): Significant insider selling of $2.8M over the past 3 months undermines conviction signals. The 87.6% increase in shares outstanding over one year from financing and equity issuances creates substantial dilution for existing shareholders <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics as a Growth stock. Q2 2026 delivered strong results: revenue $219.4M (+47% YoY), net income $25.2M ($0.26/diluted share), adjusted EBITDA $108.3M (+30% sequential) <span class="source-ref">[1]</span>. Profit margin improved to 11.5% (up from 6.69% in Q1), reflecting operating leverage as Power Solutions scales <span class="source-ref">[1]</span>. PEG of ~0.9 scores 1.0 with 2x growth weight — the growth rate exceeds the earnings multiple. D/E of ~146% scores 0.67 (elevated due to $2B financing package including $1.3B notes and $650M revolver) <span class="source-ref">[1]</span>. ROE of ~8% scores 0.53 with 2x growth weight. Forward P/E of ~32 scores 0.70. Revenue growth of 47% YoY scores 1.0. The 87.6% year-over-year increase in shares outstanding represents significant equity dilution from financing activities <span class="source-ref">[5]</span>. Company raised Q3/Q4 guidance following strong Q2 results. Liquidity floor cleared: avg daily volume ~2.35M at ~$80 = ~$188M daily turnover.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Solaris under Bill Zartler demonstrates exceptional existential flexibility — the pivot from oilfield services to AI data center power is a textbook Sinek transformation. However, the Just Cause remains underdeveloped (more opportunistic than mission-driven), significant insider selling and share dilution raise concerns about leadership alignment, and limited visibility into organizational culture prevents full assessment. The company makes bold long-term bets (10-15 year contracts, $2B financing) while still operating in the inherently cyclical energy services sector.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Solaris&#39;s emerging cause of &#39;powering the digital economy&#39; through reliable energy infrastructure has genuine purpose, but the company articulates this primarily in financial terms — yields, EBITDA, and contract values <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The continued operation of frac sand logistics ($61.1M Q2 revenue) alongside power solutions suggests the pivot is opportunistic rather than cause-driven <span class="source-ref">[1]</span>. Zartler&#39;s 30+ years in energy investing suggests a financially-driven leadership style. The strategic brilliance of the pivot is undeniable, but it followed demand signals rather than a pre-existing Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The 468-person team successfully executed a dramatic business transformation — pivoting operations, completing multiple acquisitions (MER, Genco), integrating new capabilities, and closing $2B in financing — which implies strong internal alignment <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The co-CEO structure provides collaborative leadership. However, the rapid growth (87.6% share dilution, massive capacity expansion) could stress organizational cohesion, and limited public data on culture prevents thorough assessment.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Solaris competes in distributed power with established players and new entrants attracted by AI demand. The company differentiates through scale (3,100 MW), long-term contracted revenue (2+ GW under 10-15 year terms), and equipment diversity (NovaLT16 diversification) <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The willingness to partner with hyperscalers on turnkey solutions (660 MW power plant) rather than merely lease equipment shows adaptive competitive positioning.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): The transformation from Solaris Oilfield Infrastructure to Solaris Energy Infrastructure is a textbook existential pivot — leveraging existing equipment logistics capabilities for an entirely new purpose (powering AI data centers instead of frac operations) <span class="source-ref">[1]</span><span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The acquisitions (MER, Genco), name change, and 10-15 year contract structure demonstrate willingness to fundamentally reshape the business. Q2 2026 shows the Power Solutions segment now generates 72% of total revenue ($158.3M of $219.4M), confirming the transformation&#39;s success <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Zartler made a genuinely courageous bet pivoting to data center power. The $2B financing package ($1.3B notes + $650M revolver) and the 660 MW turnkey power plant commitment represent deep conviction <span class="source-ref">[1]</span>. However, significant insider selling ($2.8M in 3 months) and the 87.6% share dilution over one year create tension — the company is growing aggressively but at substantial cost to existing shareholders&#39; ownership <span class="source-ref">[5]</span>. Bold infrastructure bets are partially offset by financial engineering that dilutes the founders&#39; and shareholders&#39; stakes.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Solaris Energy Infrastructure is one of the purest plays on the AI power infrastructure bottleneck, with over 2 GW of natural gas power generation contracted under 10-15 year terms with investment-grade technology companies <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Q2 2026 delivered $219.4M revenue (+47% YoY), adjusted EBITDA of $108.3M (+30% sequential), and Power Solutions now represents 72% of revenue <span class="source-ref">[1]</span>. The expansion of three contracts adding $100M+ annual EBITDA and a turnkey 660 MW power plant for an AI customer demonstrate accelerating demand <span class="source-ref">[1]</span>. PEG of ~0.9 — below 1.0 — is exceptional for a company growing revenue at 47%. Profit margin improved to 11.5% (from 6.69%) as operating leverage materializes. The $2B financing package provides capital to execute the capacity expansion toward 3.1 GW and $1.7B revenue by 2029 <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. Grid capacity constraints structurally favor distributed behind-the-meter power, and Solaris is the scaled leader.</div>
+    <div class="thesis-text">The primary risks are financial leverage and dilution. D/E of ~146% and $2B in new financing create substantial debt burden, with operating cash flow covering only 20% of total debt <span class="source-ref">[5]</span>. The 87.6% increase in shares outstanding over one year represents dramatic dilution — existing shareholders&#39; ownership has been nearly halved to fund the capacity expansion, and further equity issuances may be needed <span class="source-ref">[5]</span>. Insider selling of $2.8M over 3 months is concerning for a founder-led company, suggesting even management is reducing exposure despite bullish operational momentum. Profit margin of 11.5% is improving but still thin for an infrastructure company, and GAAP EPS of $0.26/quarter underperforms the adjusted $0.39 due to non-cash charges. Trailing PE of 77x prices in significant future earnings that must materialize from contracted capacity converting to revenue. Technology risk from nuclear SMRs and grid buildouts could reduce long-term demand for gas distributed power, and the legacy frac sand business ($61.1M Q2) remains exposed to oilfield cyclicality.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Expanded contracts adding over $100M of annual adjusted EBITDA, including a turnkey 660 MW power plant for an AI workload customer, with contracted capacity phasing in through 2029 under 10-15 year terms <span class="source-ref">[1]</span></li>
+        
+        <li>Margin expansion accelerating as high-margin Power Solutions grows as a percentage of revenue — Q2 profit margin of 11.5% up from 6.69% in Q1, with Power Solutions EBITDA margin of 61% demonstrating the segment&#39;s economics <span class="source-ref">[1]</span></li>
+        
+        <li>AI data center power demand significantly exceeding grid capacity, creating structural demand for distributed on-site generation that Solaris serves at 3,100 MW scale — the $2B financing provides capital to execute toward 3.1 GW and $1.7B revenue by 2029 <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Financial leverage risk: D/E ~146% with $2B in new financing and operating cash flow covering only 20% of total debt — any slowdown in AI data center buildout or contract delays would pressure the highly leveraged balance sheet <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Share dilution: 87.6% increase in shares outstanding over one year and $2.8M in insider selling over 3 months — existing shareholders&#39; ownership has been nearly halved, and further equity issuances may be needed to fund capacity expansion <span class="source-ref">[5]</span></li>
+        
+        <li>Technology disruption risk from nuclear SMRs, utility grid modernization, or renewable/battery solutions reducing demand for natural gas distributed power over the 10-15 year contract horizon — plus continued exposure to cyclical oilfield services through the legacy logistics segment <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Solaris is one of the most directly AI-benefiting business models in the energy sector. The company provides physical power generation equipment that AI data centers require — every GPU running AI workloads needs electricity, and Solaris supplies it through natural gas turbines leased on 10-15 year terms to investment-grade technology companies <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. AI cannot substitute for physical power generation; it can only increase demand. The Q2 expansion of three contracts adding $100M+ annual EBITDA and the 660 MW turnkey power plant for an AI customer underscore accelerating demand <span class="source-ref">[1]</span>. The distributed behind-the-meter model addresses a critical bottleneck — grid capacity constraints force hyperscalers to procure on-site power <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The only risk is potential technology shifts (nuclear SMRs, grid modernization) that could reduce gas turbine demand over the 10-15 year horizon, but near-term AI power demand far exceeds alternatives. AI Opportunity (1/1): AI is Solaris&#39;s primary growth catalyst. Revenue from technology company contracts is surging, with Power Solutions generating $158.3M in Q2 (72% of total revenue) with segment EBITDA of $96.4M <span class="source-ref">[1]</span>. The pivot from oilfield services was entirely driven by AI power demand, and the $1.7B 2029 revenue target is fundamentally an AI data center power thesis <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            20
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Solaris Energy Infrastructure Q2 2026 Results — Revenue $219.4M (+47%), EBITDA $108.3M (+30% seq), NI $25.2M, Expanded contracts adding $100M+ annual EBITDA, 660 MW turnkey plant, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Solaris Energy Infrastructure Investor Presentation — 2+ GW contracted, 3.1 GW target by 2029, $1.7B revenue target, ir.solaris-energy.com, 2026</li>
+        
+        <li><span class="src-num">3.</span> Solaris Energy Infrastructure Strategic Transformation — MER/Genco acquisitions, Behind-the-meter AI data center power, Yahoo Finance, Simply Wall St, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Inspire Insight — SEI Faith-Based ESG Score 20 (MIXED), Business Ethics, Business Resilience, GHG Emissions, accessed September 2026</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis, SimplyWallSt — SEI Key Statistics: Stock ~$80, Market cap $5.56B, D/E 146%, Shares +87.6% YoY, Insider selling $2.8M, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
