@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RPD — Rapid7, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RPD_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RPD')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RPD
+            <span class="stock-name-full">Rapid7, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">51</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Cybersecurity</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Rapid7 provides cloud-native cybersecurity solutions including vulnerability management (InsightVM), detection and response (InsightIDR), and managed detection and response (MDR) services through its Command Platform, serving over 11,000 customers globally. In June 2026, long-time CEO Corey Thomas transitioned to Executive Chairman focused on AI strategy, with Wael Mohamed assuming CEO responsibilities. ARR declined to $824M in Q2 2026 — the first sustained YoY contraction in company history — while the company pivots toward an AI-first SecOps platform and profitability optimization, guiding to $130M in full-year free cash flow.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>2,200 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.rapid7.com" target="_blank" rel="noopener">www.rapid7.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Rapid7 consolidated its product portfolio into the unified Command Platform and launched Exposure Command, Surface Command, and Vector Command, but revenue stalled — Q2 2026 revenue of $210.9M declined 1.5% YoY and FY2026 guidance of $837-841M implies continued contraction, suggesting recent launches have not driven incremental demand <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The Kenzo Security acquisition (agentic AI platform) remains incremental rather than transformative. AI Deployment (1/2): The company acquired Kenzo Security&#39;s agentic AI platform and is building AI-SOC capabilities with an agentic AI initiative, but no specific AI-driven revenue or quantified cost savings have been disclosed through Q2 2026 <span class="source-ref">[3]</span>. CEO Mohamed has positioned AI SOC as the strategic priority. Market Share (1/2): Rapid7 holds a meaningful mid-market cybersecurity position with 11,000+ customers, but ARR contracted to $824M while CrowdStrike ($4B+ ARR) and Palo Alto Networks ($5B+ ARR) grow double digits — the company is losing share in cloud security and MDR <span class="source-ref">[2]</span>. Product Pipeline (1/2): The AI-SOC strategy and Kenzo integration provide strategic direction with detection and response ARR (~55% of total) still growing ~5% YoY, but no specific next-gen product launches with dates or revenue targets have been announced <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Rapid7 maintains R&amp;D spending of approximately 20-25% of revenue, above the software industry average, supporting platform development and AI capabilities.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Rapid7&#39;s mission of democratizing cybersecurity — making security accessible to organizations beyond those with large dedicated teams — is clear and identifies the company&#39;s purpose but is not distinctive enough to differentiate from any cybersecurity peer <span class="source-ref">[5]</span>. Community Impact (1/2): The company publishes an annual Social Good Report, joined the UN Global Compact, committed to carbon neutrality, and maintains philanthropic programs — general corporate philanthropy without distinctive community investment at scale <span class="source-ref">[5]</span>. Employee Retention (0/2): Glassdoor rating declined to 3.4/5 with employees citing cultural disruption from wholesale leadership changes — new CEO, CFO, CCO, CPTO all replaced within 12 months — and reviews noting leadership &#39;translated company failures as entirely a People problem&#39; <span class="source-ref">[3]</span>. Insider Buying (1/2): CEO Corey Thomas purchased ~$200K in shares at $13.82/share, and total insider buying of $15.1M exceeded selling of $4.4M over the trailing period, though more recent data shows $8.3M in insider selling, creating mixed conviction signals <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. The extremely low forward P/E of 7.52x and PEG of 0.26x drive the score, reflecting severe market repricing (-61% over 52 weeks) that creates deep value on non-GAAP earnings <span class="source-ref">[4]</span>. ROE of 19.7% exceeds the 15% target, scoring 1.0 at 2x weight. The estimated 5-year revenue CAGR of ~10% hits target at 2x weight, reflecting strong historical growth before the recent stall. Forward PEG of 0.26x scores maximum at 2x weight. However, D/E of 552% from $965M in convertible note debt against ~$175M equity scores 0.0 (above 300% floor), and GAAP profit margin of 2.61% scores only 0.13 <span class="source-ref">[4]</span>. Revenue growth YoY of -1.5% scores 0.617 on interpolation. Q2 2026 delivered $31.9M free cash flow with $670M total liquidity <span class="source-ref">[2]</span>. Liquidity check: 4,531,458 avg volume x $11.61 = $52.6M daily — passes the $1M threshold.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Rapid7 under its leadership transition exhibits predominantly finite game characteristics — optimizing for near-term survival and profitability rather than advancing an enduring cause. The wholesale leadership refresh (CEO, CFO, CCO, CPTO all replaced within 12 months) and pivot to AI SOC were reactive to competitive deterioration and a 61% stock decline, not proactive advances of a long-term vision. Corey Thomas&#39;s 12+ years of leadership continuity provides some institutional memory as Executive Chairman, but the operational shift to financial optimization over growth investment reflects finite-game thinking.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Rapid7&#39;s purpose of democratizing cybersecurity is functional but reads as a business description rather than an inspiring vision of a better future. Corey Thomas embodied this mission for 12+ years, but his transition to Executive Chairman while an operator (Mohamed) runs the business raises questions about whether the cause will survive — precisely the test a Just Cause must pass <span class="source-ref">[3]</span>. The pivot to AI SOC strategy represents the latest strategic repositioning, suggesting purpose follows market pressure rather than guiding it.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Glassdoor ratings declined to 3.4/5, with employees explicitly citing cultural deterioration from wholesale leadership changes — &#39;new senior and executive leadership translated company failures as entirely a People problem&#39; <span class="source-ref">[3]</span>. Four C-suite positions (CEO, CFO, CCO, CPTO) were replaced within 12 months, creating organizational instability inconsistent with psychological safety. The cultural disruption during the most critical competitive period in cybersecurity undermines the trust foundation needed for a transformation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of an infinite competitive mindset in recent management communications. Competitive positioning focuses on product capabilities and &#39;preempting attackers at machine speed&#39; rather than learning from CrowdStrike&#39;s or Palo Alto Networks&#39; strengths <span class="source-ref">[3]</span>. The company frames competition as a market share battle to survive rather than an opportunity for self-improvement.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The pivot from traditional vulnerability management toward an AI-powered SOC with the Kenzo Security acquisition represents meaningful strategic adaptation <span class="source-ref">[3]</span>. Detection and response ARR now constitutes 55% of total and is the only growing segment at ~5% YoY, showing the company can shift its center of gravity <span class="source-ref">[2]</span>. However, this is incremental evolution of the existing security platform rather than a transformative reinvention — the core customer base and market segment remain unchanged.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The decision to accept near-term revenue contraction (-1.5% YoY) while investing in the AI-SOC pivot and restructuring operations toward $130M in free cash flow demonstrates some willingness to sacrifice current growth for future positioning <span class="source-ref">[2]</span>. However, the restructuring appears driven by competitive necessity — ARR is declining because the market is forcing change — rather than proactive leadership choosing to invest ahead of the curve. Cost discipline (non-GAAP operating margin expanding to 15.6%) reflects optimization more than courage.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Rapid7 at 7.52x forward earnings and 0.26x PEG offers deep value in cybersecurity — a sector with durable secular demand driven by escalating AI-generated threats and regulatory compliance requirements. Q2 2026 delivered $31.9M in free cash flow (15.1% margin) and full-year guidance of ~$130M FCF (~15.5% margin) demonstrates the profitability pivot is working, with non-GAAP operating income of $28.9M (13.7% margin) expanding sequentially <span class="source-ref">[2]</span>. The $824M ARR base provides recurring revenue visibility, with detection and response (~55% of ARR) still growing ~5% YoY. At a ~$700M market cap, the ~18.6% FCF yield is compelling if the revenue base stabilizes. Insider buying of $15.1M by CEO Thomas and directors signals leadership conviction <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">The bear case is severe: ARR declined to $824M from $837M a year ago, and Q3 guidance of ~$812M implies continued contraction through year-end — signaling persistent competitive displacement by CrowdStrike and Palo Alto Networks who grow 15-30% while Rapid7 shrinks <span class="source-ref">[2]</span>. D/E of 552% from $965M in convertible note debt against $670M cash creates refinancing risk if the turnaround stalls <span class="source-ref">[4]</span>. Wholesale C-suite turnover (CEO, CFO, CCO, CPTO replaced within 12 months) and declining Glassdoor ratings (3.4/5) risk talent attrition during the AI-SOC pivot that requires deep technical execution <span class="source-ref">[3]</span>. GAAP profit margin of just 2.61% exposes the gap between non-GAAP presentation and actual profitability — stock-based compensation and amortization consume most of the operating income. The Inspire Impact Score of -49 (MISALIGNED) limits allocation for faith-based investors.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI-SOC platform powered by Kenzo Security&#39;s agentic AI could differentiate Rapid7&#39;s MDR offering and stabilize ARR if autonomous investigation capabilities demonstrate measurable customer outcomes by H1 2027 <span class="source-ref">[3]</span></li>
+        
+        <li>Free cash flow of ~$130M annually (~18.6% FCF yield at $700M market cap) and forward P/E of 7.52x create substantial re-rating potential if ARR decline bottoms — detection and response segment still growing ~5% suggests a floor <span class="source-ref">[2]</span></li>
+        
+        <li>Escalating AI-powered cyber attacks and regulatory compliance mandates (SEC cyber disclosure rules, DORA in Europe) creating secular budget tailwinds that could lift mid-market security spending <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>ARR contracting from $837M to $824M to guided $812M signals accelerating competitive displacement by CrowdStrike and Palo Alto Networks — if core platform ARR (growing only ~1%) turns negative, the customer base is in structural decline <span class="source-ref">[2]</span></li>
+        
+        <li>Convertible note debt of $965M (D/E 552%) creates refinancing risk if the stock price remains below conversion prices — upcoming maturities could drain the $670M liquidity cushion and force dilutive capital raises <span class="source-ref">[4]</span></li>
+        
+        <li>Wholesale C-suite turnover and declining employee sentiment (Glassdoor 3.4/5) risk talent attrition during a period when execution on the AI-SOC transformation is existential to the company&#39;s competitive survival <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): Cybersecurity as an industry benefits from AI-driven threats — more sophisticated attacks require more protection, and regulatory compliance mandates are immune to AI substitution. However, Rapid7&#39;s specific position is exposed: larger competitors CrowdStrike and Palo Alto Networks are integrating AI capabilities faster and taking share, with Rapid7&#39;s ARR contraction to $824M evidence that AI-driven competitive displacement is already underway <span class="source-ref">[2]</span>. AI-native security startups and automated SOC tools could compress the managed detection and response services that Rapid7 monetizes. AI Opportunity (1/1): Rapid7 is actively building AI-powered security products — the AI-SOC initiative with Kenzo Security&#39;s agentic AI platform represents genuine AI product commercialization, and detection and response ARR (~55% of total, ~$453M) growing ~5% YoY includes AI-enhanced capabilities, though no separately quantified AI revenue has been disclosed <span class="source-ref">[2]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Rapid7 Q1 FY2026 Earnings Release — Revenue $210M (-0.3% YoY), ARR $832M, Non-GAAP Operating Income $24.4M, FCF $33.4M, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Rapid7 Q2 FY2026 Earnings Release — Revenue $210.9M (-1.5% YoY), ARR $824M, Non-GAAP EPS $0.44, FCF $31.9M, Full-Year Guidance Revenue $837-841M, FCF ~$130M, Q3 ARR ~$812M, August 2026</li>
+        
+        <li><span class="src-num">3.</span> Rapid7 Leadership Transition and AI Strategy — Thomas to Executive Chairman, Mohamed CEO (June 2026), Kenzo Security Acquisition, AI-SOC Platform — Company Reports, Glassdoor, Built In, 2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis, GuruFocus, Yahoo Finance — RPD Key Statistics: Forward P/E 7.52x, PEG 0.26x, ROE 19.7%, D/E 552%, Stock Price $11.61, Avg Volume 4.5M, Insider Trading Activity, accessed September 2026</li>
+        
+        <li><span class="src-num">5.</span> Rapid7 Social Good Report, UN Global Compact Membership, Carbon Neutrality Commitment — Company ESG Disclosures, 2023-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

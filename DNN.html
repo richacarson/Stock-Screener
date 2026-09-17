@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DNN — Denison Mines Corp.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DNN_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DNN')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DNN
+            <span class="stock-name-full">Denison Mines Corp.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">44</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Energy</span>
+        <span class="sep">&middot;</span><span>Uranium</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Canada</span>
+    </div>
+    
+    <div class="profile-desc">Denison Mines Corp. engages in the acquisition, exploration, and development of uranium bearing properties in Canada. It holds a 95% interest in the flagship Wheeler River uranium project in the Athabasca Basin region of northern Saskatchewan, which includes the Phoenix ISR deposit (world's highest-grade undeveloped uranium resource) and the Gryphon underground deposit. In Q2 2026, Denison sold 750,000 lbs U3O8 at $122.16/lb for $91.6M in gross proceeds to fund Phoenix ISR construction, which is underway with first production targeted mid-2028. Market cap approximately $2.9B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>139 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://denisonmines.com" target="_blank" rel="noopener">denisonmines.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Denison secured CNSC federal construction approval in February 2026 for Phoenix ISR and commenced site preparation and early works — completing a multi-year permitting milestone that represents significant execution for a development-stage uranium company <span class="source-ref">[1]</span>. The Q2 2026 sale of 750,000 lbs U3O8 at $122.16/lb for $91.6M gross proceeds ($64.1M gain, 233% above 2021 cost) demonstrates shrewd capital management <span class="source-ref">[2]</span>. AI Deployment (0/2): No AI products, AI-powered operations, or quantified AI-driven cost savings — Denison is a traditional mining development company with no AI deployment <span class="source-ref">[3]</span>. Market Share (1/2): Phoenix ISR hosts the world&#39;s highest-grade undeveloped uranium deposit with feasibility study base-case operating costs of ~$6.28 USD/lb U3O8, but the company has zero production market share currently — it is pre-revenue and competing for market position with established producers Cameco and Kazatomprom <span class="source-ref">[1]</span>. Product Pipeline (1/2): Wheeler River encompasses both Phoenix (mid-2028 production target) and Gryphon (after-tax NPV $864M, IRR 37.6%), with construction underway and Wood Canada Limited managing construction <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Minimal R&amp;D spending — development-stage mining company focused on construction execution.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Denison positions itself as enabling carbon-free nuclear energy through responsible uranium mining, addressing baseload clean power needs for the global energy transition — a clear societal contribution but generic for the uranium sector and not uniquely differentiated from peers like NexGen or Cameco <span class="source-ref">[4]</span>. Community Impact (1/2): Denison emphasizes &#39;best in class&#39; engagement with Indigenous communities in northern Saskatchewan, participates in local employment and training programs, and publishes annual ESG reports highlighting environmental and biodiversity commitments <span class="source-ref">[4]</span>. However, no specific charitable foundation or dollar amounts for community investment were identified. Employee Retention (0/2): Only 139 employees across 3 continents. CEO David Cates has led since 2015 (11 years), providing strong leadership continuity, but no specific turnover or retention data is available for such a small team <span class="source-ref">[3]</span>. Insider Buying (0/2): Net insider selling of CA$3.2M in the last 12 months. CEO Cates sold approximately 360K shares at ~CA$5.82/share in January 2026, representing 15% of his direct holdings <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 0%"></div>
+        </div>
+        <span class="score-num red">0</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Denison is a pre-production development company with minimal operating revenue (CAD $4.09M TTM), yielding zeros on nearly all metrics. D/E of 281% scores 0.08 (near the 300% floor) <span class="source-ref">[5]</span>. ROE of -19.96% scores 0.0 at 2x weight. Forward P/E of 93.87 exceeds the 60x floor (score 0) <span class="source-ref">[5]</span>. Profit margin of -6,732.67% scores 0.0. Revenue growth metrics are not meaningful for a company with near-zero revenue — excluded as null. PEG ratio unavailable — excluded. Weighted sum of 0.08 on max weighted sum of 5 yields Infrastructure 0 (rounded). This score reflects the financial reality of a construction-stage mining company; it does not capture the $2.34B NPV Phoenix ISR project currently under construction. Liquidity passes: $3.26 x ~35M avg vol = ~$114M daily trading volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Denison has patiently developed the Wheeler River project over more than a decade, demonstrating the multi-generational thinking inherent to mining development. CEO Cates&#39; 11-year tenure and disciplined progression through permitting, engineering, and construction reflect long-term patience. However, Denison is ultimately a single-commodity, single-project company with no transformative purpose beyond uranium extraction, no evidence of existential flexibility, and net insider selling that undermines the infinite game narrative.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Enabling carbon-free nuclear energy through uranium mining addresses a genuine global need, but Denison&#39;s articulation is generic for the sector — interchangeable with any uranium miner&#39;s positioning around clean energy <span class="source-ref">[4]</span>. The company does not articulate a deeper vision of what the world should look like beyond providing uranium fuel. The cause exists but is shallow — it reads as sector-standard marketing rather than a genuine Just Cause that drives strategic sacrifice.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Small, specialized team of 139 employees with CEO David Cates providing 11 years of leadership continuity since 2015 <span class="source-ref">[3]</span>. Successfully navigating the complex provincial and federal environmental approval process for Wheeler River demonstrates high organizational competence and internal coordination. The addition of a former Ontario Power Generation CEO to the board strengthens governance depth <span class="source-ref">[3]</span>. No specific negative culture indicators found, but the team is too small for Sinek&#39;s framework to be meaningfully tested.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Denison competes against Cameco and NexGen Energy in the Athabasca Basin and Kazatomprom globally. Management&#39;s competitive language focuses on differentiating through ISR technology and grade advantages rather than market share warfare <span class="source-ref">[1]</span>. CEO Cates serves as a strategic advisor to other uranium companies (Cosa Resources), demonstrating collaborative industry engagement rather than zero-sum competitive thinking.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (0/2): Denison remains a single-commodity uranium company with no evidence of transformative strategic pivots in its history. The progression from exploration to development to construction is linear execution of the original thesis, not existential flexibility. If uranium fundamentals deteriorate or Wheeler River encounters technical issues, there is no fallback business model, diversification, or evidence of willingness to pivot <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Committing to final investment decision on Phoenix ISR and selling 750,000 lbs of physical uranium ($91.6M) to fund construction while the company generates essentially zero operating revenue demonstrates conviction in long-term project economics <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The multi-year development timeline requires patient capital deployment against uncertain commodity prices. However, CEO Cates&#39; simultaneous sale of 15% of his personal holdings (CA$2.1M) undermines the leadership conviction narrative <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Denison Mines holds the world&#39;s highest-grade undeveloped uranium deposit (Phoenix ISR) with exceptional project economics — $2.34B pre-tax NPV, 105.9% IRR, and operating costs of $6.28/lb, positioning it as the lowest-cost uranium producer globally when production begins <span class="source-ref">[1]</span>. CNSC construction approval was secured in February 2026, site preparation is underway with Wood Canada managing construction, and first production is targeted mid-2028. The Q2 2026 uranium sale of 750,000 lbs at $122.16/lb for $91.6M ($64.1M gain, 233% return on 2021 cost) demonstrates shrewd capital management and self-funding capability <span class="source-ref">[2]</span>. The AI-driven nuclear renaissance provides a structural tailwind: hyperscaler nuclear power agreements are projected to drive uranium demand higher as data center electricity consumption doubles by 2030 <span class="source-ref">[3]</span>. At $3.26 (~$2.9B market cap), analysts have a consensus Strong Buy with a $4.99 target (51% upside) <span class="source-ref">[5]</span>.</div>
+    <div class="thesis-text">The bear case centers on execution risk, commodity exposure, and pre-production fragility. First Phoenix production is 2+ years away (mid-2028), and construction delays or cost overruns could significantly impair the 105.9% IRR — a judicial review application regarding the provincial environmental assessment adds regulatory uncertainty <span class="source-ref">[4]</span>. D/E of 281% and FY2026 consensus EPS of -$0.04 reflect the financial reality of a pre-production company that must fund construction through uranium sales and potential capital raises <span class="source-ref">[5]</span>. CEO Cates&#39; sale of 15% of his personal holdings and net insider selling of CA$3.2M in the last 12 months raises questions about management conviction at current valuations <span class="source-ref">[5]</span>. Uranium prices are inherently volatile — a sustained decline below $60/lb would compress project margins despite industry-leading costs. The ISR method, while proven elsewhere, has not been commercially deployed at Phoenix&#39;s specific high-grade geological conditions, introducing technical execution risk. The $2.9B market cap represents ~1.2x Phoenix NPV, pricing in successful execution with limited margin of safety.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Phoenix ISR construction milestones through 2026-2027 including well field installation, process plant construction, and grid connection — each de-risking the mid-2028 production target and potentially triggering re-rating <span class="source-ref">[1]</span></li>
+        
+        <li>AI-driven nuclear power demand from hyperscaler data centers — Microsoft, Amazon, and Google nuclear agreements structurally support long-term uranium prices above $80/lb, directly benefiting Denison&#39;s future production economics <span class="source-ref">[3]</span></li>
+        
+        <li>Additional uranium inventory monetization — Denison&#39;s remaining physical uranium holdings can be sold at spot prices ($120+/lb) to self-fund construction without dilutive equity raises, as demonstrated by the $91.6M Q2 2026 sale <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Construction execution risk — delays or cost overruns at Phoenix ISR could push first production beyond mid-2028 and erode the 105.9% IRR; judicial review of provincial environmental assessment adds regulatory uncertainty <span class="source-ref">[1]</span><span class="source-ref">[4]</span></li>
+        
+        <li>Uranium price volatility — sustained spot prices below $60/lb would compress project economics despite industry-leading $6.28/lb production costs; the company has no hedging to protect against price declines</li>
+        
+        <li>Pre-production financing risk — D/E of 281% with consensus EPS of -$0.04 and net insider selling of CA$3.2M raises dilution risk if construction costs exceed self-funding capacity from uranium sales <span class="source-ref">[2]</span><span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Uranium mining is a physical-world commodity business that AI structurally cannot disrupt — nuclear power plants require physical U3O8 fuel regardless of technological advances, and mining operations involve geological assessment, regulatory compliance, physical extraction, and processing that have no AI substitution pathway <span class="source-ref">[1]</span>. Moreover, AI is actively increasing demand for uranium: AI data center electricity consumption is projected to more than double by 2030, driving hyperscalers like Microsoft, Amazon, and Google to sign nuclear power agreements that structurally support long-term uranium demand above historical baselines <span class="source-ref">[3]</span>. Denison&#39;s product becomes more valuable as AI scales. AI Opportunity (1/1): AI-driven electricity demand is a direct structural tailwind for uranium producers — the nuclear renaissance narrative is explicitly tied to AI data center power requirements, representing measurable demand creation for Denison&#39;s future Phoenix ISR production <span class="source-ref">[3]</span>. While Denison does not generate AI revenue directly, its uranium output will fuel the AI infrastructure buildout.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Denison Mines Wheeler River Feasibility Study — Phoenix ISR Economics ($2.34B NPV, 105.9% IRR, $6.28/lb Costs), CNSC Construction Approval February 2026, Wood Canada Construction Management</li>
+        
+        <li><span class="src-num">2.</span> Denison Mines Q2 2026 Earnings Report — 750,000 lbs U3O8 Sold at $122.16/lb, $91.6M Gross Proceeds, $64.1M Gain (233%), Phoenix ISR Construction Progress — PRNewswire, StockTitan, August 2026</li>
+        
+        <li><span class="src-num">3.</span> Nuclear Renaissance and AI Data Center Demand — Hyperscaler Nuclear Power Agreements, Data Center Electricity Doubling by 2030 — Industry Analysis, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Denison Mines Corporate Website — ESG Reports, Environmental Assessment, Community Engagement, Board Additions — DenisonMines.com, accessed August 2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance, StockAnalysis, MacroAxis — DNN Key Statistics: Stock Price $3.26, D/E 281%, ROE -19.96%, Forward P/E 93.87, Market Cap ~$2.9B, Insider Selling CA$3.2M — accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
