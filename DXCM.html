@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DXCM — DexCom, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DXCM_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DXCM')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DXCM
+            <span class="stock-name-full">DexCom, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-25</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 51</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">72</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Medical Devices</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">DexCom, Inc. designs, develops, and commercializes continuous glucose monitoring (CGM) systems for diabetes management and metabolic health. Products include Dexcom G7 (prescription CGM) and Stelo (OTC biosensor for general wellness). Founded in 1999 in San Diego, DexCom pioneered CGM technology over 25+ years. Q2 2026 revenue of $1.31B (+13.1% YoY) with raised full-year guidance to $5.18-5.25B. Market cap approximately $35B under new CEO Jake Leach (January 2026).</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>10,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.dexcom.com" target="_blank" rel="noopener">www.dexcom.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): DexCom launched the Stelo biosensor in 2024 as its first OTC CGM product, expanding the addressable market beyond insulin-dependent diabetics to 100M+ Americans with prediabetic conditions <span class="source-ref">[1]</span>. The G7 system represented a 60% smaller form factor with direct-to-watch connectivity, and the G7 15-day sensor transition is driving gross margin expansion to 64.1% in Q2 2026 <span class="source-ref">[2]</span>. However, the core business model remains CGM sensors without a transformative category-defining pivot. AI Deployment (1/2): DexCom ships AI-powered Smart Food Logging using image recognition to estimate nutritional content and correlate with glucose response, and the Stelo app integrates Google AI for personalized metabolic insights <span class="source-ref">[3]</span>. The company published formal AI Principles and deployed AI features that auto-identify food ingredients in the G7/Stelo apps <span class="source-ref">[3]</span>. No separate AI revenue is quantified. Market Share (2/2): DexCom is the dominant CGM platform with approximately 35-40% global market share and category leadership in the U.S. prescription CGM segment. Q2 2026 international revenue grew 19% as the G7 gains traction globally, and integration partnerships with Insulet Omnipod 5, NovoPen 6, and Oura Ring signal ecosystem dominance <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Product Pipeline (1/2): The reimagined Stelo app experience is launching in 2026, Smart Basal received FDA clearance in November 2025 enabling insulin therapy integration, and the pipeline includes extended sensor durations and implantable long-term sensors <span class="source-ref">[1]</span>. Specific next-gen product launch dates beyond 2026 are not committed. R&amp;D Intensity (1/1): R&amp;D spending of approximately 13-14% of revenue is well above the medtech industry average of 6-8%, representing sustained investment in sensor technology, AI, and platform expansion <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): DexCom&#39;s purpose of empowering people to take control of their health through innovative biosensing technology is specific, thoughtful, and has been consistently pursued since 1999. The Stelo expansion into general metabolic wellness demonstrates strategic decisions directly tracing to this purpose <span class="source-ref">[1]</span>. The formation of a permanent Customer Advisory Council in January 2026 — bringing together diabetics, caregivers, and healthcare professionals — reflects genuine commitment to patient empowerment <span class="source-ref">[3]</span>. Falls short of a 4 because the recent CEO transition from Kevin Sayer to Jake Leach has not yet been tested through crisis. Community Impact (1/2): DexCom supports diabetes advocacy organizations and patient assistance programs to expand CGM access, and the Customer Advisory Council demonstrates community engagement with specific commitments to improving product performance and user experience <span class="source-ref">[3]</span>. No distinctive large-scale philanthropic program with specific dollar amounts was identified. Employee Retention (1/2): Approximately 10,000 employees with stable leadership. CEO Jake Leach has 20+ years at DexCom, and the recruitment of high-profile board members like Rick Osterloh (Google SVP) and Dr. Euan Ashley (Stanford Chair of Medicine) signals an attractive culture for top talent <span class="source-ref">[1]</span>. No specific turnover or tenure data is available. Insider Buying (1/2): CEO Jacob Leach purchased $1.0M worth of shares at $55.04 in November 2025, demonstrating meaningful personal conviction during a period of stock price weakness. Net insider activity shows more bought than sold over the trailing 12 months <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored for a Growth stock. DexCom&#39;s financial profile is excellent across nearly all metrics. D/E of 53% is well below the 70% target with net cash of $548.6M ($1.95B cash against $1.40B debt) <span class="source-ref">[5]</span>. ROE of 38.49% far exceeds the 15% target, reflecting efficient capital deployment boosted by $600M in Q2 2026 buybacks. Revenue growth YoY of 13.1% in Q2 2026 exceeds the 10% target, and 5-year revenue CAGR of approximately 17% (from $2.45B in 2021 to ~$5.2B run-rate) is well above target <span class="source-ref">[2]</span>. Profit margin of 20.12% hits the 20% target, up from 19.3% as operating leverage kicks in (operating margin expanded to 24.3% from 18.4% YoY) <span class="source-ref">[2]</span>. The primary drags are Forward P/E of 27.28, above the 20 target (scores 0.82), and Forward PEG of 1.55, modestly above the 1.0 target (scores 0.73 with 2x weight). The stock&#39;s 30% rally from $70 to $91 following Q2 results increased valuation multiples versus the June screen. Liquidity floor easily cleared at $476M+ daily dollar volume <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">DexCom demonstrates meaningful infinite game characteristics — a consistent 27-year purpose of empowering health through biosensing, courageous market expansion through Stelo cannibalization, and an infinite competitive mindset toward rival Abbott. CEO Jake Leach&#39;s 20+ year tenure at DexCom ensures continuity of purpose through the leadership transition. However, the company is still relatively young as a public entity and the new CEO has not yet been tested through an existential crisis. The formation of a permanent Customer Advisory Council signals genuine commitment to purpose over pure profit optimization.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): DexCom&#39;s purpose of empowering people to take control of their health through innovative biosensing is genuine, distinctive, and consistently pursued since 1999 <span class="source-ref">[1]</span>. The Stelo expansion from Type 1 diabetes to general metabolic wellness, the Customer Advisory Council formation, and Smart Basal insulin integration all trace back to this purpose <span class="source-ref">[3]</span>. CEO Jake Leach, with 20+ years at DexCom, provides continuity. However, the company has not yet been tested through a multi-decade, multi-crisis consistency that would validate a transformative Just Cause at the highest level.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): DexCom maintains a stable 10,000-person organization with consistent leadership. Jake Leach&#39;s 20+ year tenure and smooth CEO transition signal organizational maturity <span class="source-ref">[1]</span>. The Customer Advisory Council&#39;s frank user feedback and Dexcom&#39;s public commitment to act on criticism (including pledging easier sensor replacements) demonstrate openness to external challenge <span class="source-ref">[3]</span>. Board additions of Rick Osterloh and Dr. Euan Ashley suggest an organization that attracts top-tier talent. No specific turnover or tenure data indicating exceptional trust was found.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): DexCom consistently acknowledges Abbott&#39;s FreeStyle Libre as a competitor whose strengths drive improvement. The G7&#39;s smaller form factor, Stelo&#39;s OTC positioning, and the 15-day sensor transition were developed in response to Abbott&#39;s aggressive pricing and market expansion <span class="source-ref">[2]</span>. Management consistently frames competition as growing the total CGM category rather than destroying rivals, and the Q2 2026 earnings call emphasized international expansion and new patient starts rather than competitive warfare.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): DexCom has meaningfully evolved from prescription-only CGM for Type 1 diabetics to the OTC Stelo biosensor targeting the massive metabolic wellness market, with Smart Basal expanding into insulin therapy integration <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This represents entering adjacent markets with new distribution models (DTC, no prescription). However, this is incremental evolution of the core CGM platform rather than the kind of transformative reinvention that abandons a core business entirely.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Stelo&#39;s OTC launch at a significantly lower price point demonstrated willingness to cannibalize higher-margin prescription CGM revenue to expand the addressable market — a genuinely courageous strategic decision <span class="source-ref">[1]</span>. The company maintained 13-14% R&amp;D intensity during 2024-2025 when the stock was under severe pressure following a disappointing guidance cut. Deploying $600M in Q2 2026 buybacks while investing in platform expansion shows capital discipline <span class="source-ref">[2]</span>. However, these represent a single pattern of courage rather than the repeated, multi-decade pattern of costly long-term bets required for a 2.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">DexCom delivered a strong Q2 2026 with revenue of $1.31B (+13.1% YoY) beating consensus, adjusted EPS of $0.70 (+14.8% beat), and gross margin expanding 400bps to 64.1% driven by the G7 15-day sensor transition <span class="source-ref">[2]</span>. Full-year 2026 guidance was raised to $5.18-5.25B with operating margin guidance lifted to 23.5-24%, reflecting accelerating profitability inflection <span class="source-ref">[2]</span>. The balance sheet is clean with $548.6M net cash and $600M Q2 buyback demonstrating capital return capability. At forward P/E of 27.3x and forward PEG of 1.55, valuation is reasonable for a medtech leader with 38.5% ROE, 17% 5-year revenue CAGR, and a $100B+ TAM expansion through Stelo targeting 100M+ Americans with prediabetic conditions <span class="source-ref">[5]</span>. AI-powered Smart Food Logging, Google AI integration in Stelo, and Smart Basal insulin therapy create platform stickiness differentiating DexCom from commodity sensor competitors.</div>
+    <div class="thesis-text">The bear case centers on growth deceleration and valuation risk after a 30% stock rally from the June lows. Revenue growth has slowed from 24% in 2023 to 13% in Q2 2026, and the stock&#39;s re-rating to 36.4x trailing P/E and 1.55x PEG leaves limited margin of safety if Stelo adoption or international expansion disappoint <span class="source-ref">[5]</span>. The CEO transition from Kevin Sayer to Jake Leach, while smooth so far, introduces execution risk during a critical growth phase — Leach has not yet navigated a major strategic crisis as CEO <span class="source-ref">[1]</span>. Abbott&#39;s FreeStyle Libre holds majority global CGM market share at lower price points, and potential big tech entrants (Apple, Samsung) into non-invasive glucose sensing could commoditize the CGM category over the medium term. Two FDA recalls of Dexcom mobile apps and a class action lawsuit over G7 connectivity issues highlight product quality risks that could erode the brand trust essential to DexCom&#39;s premium pricing <span class="source-ref">[6]</span>. The Inspire Impact Score of 51 (ALIGNED) is favorable for faith-based investors, but the healthcare device sector&#39;s regulatory and reimbursement complexity adds structural uncertainty.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>G7 15-day sensor transition driving gross margin expansion to 64.1% with operating margin reaching 24.3% — continued margin inflection could re-rate the stock toward a high-growth software-like margin profile <span class="source-ref">[2]</span></li>
+        
+        <li>Stelo OTC expansion and reimagined app with Google AI targeting the 100M+ American prediabetic market, potentially transforming DexCom from a diabetes device company into a metabolic health platform <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>International revenue growing 19% in Q2 2026 with further geographic expansion opportunity as CGM adoption penetrates new markets and reimbursement frameworks expand globally <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Revenue growth deceleration from 24% (2023) to 13% (Q2 2026) may continue, and the stock&#39;s 30% rally has compressed the margin of safety — forward PEG of 1.55 leaves limited room for disappointment in Stelo adoption or international expansion <span class="source-ref">[2]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Abbott FreeStyle Libre holds majority global CGM share at lower prices, and potential non-invasive glucose sensing from Apple, Samsung, or other tech entrants could fundamentally disrupt the CGM hardware model over the medium term</li>
+        
+        <li>CEO Jake Leach&#39;s first year leading DexCom has been smooth, but the Q2 2024 guidance debacle under prior CEO Sayer damaged institutional trust — any guidance miss under Leach could trigger an outsized negative reaction given the elevated multiples <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): DexCom&#39;s core business is manufacturing FDA-regulated Class II medical devices — physical biosensors adhered to the body that measure interstitial glucose via electrochemistry <span class="source-ref">[1]</span>. AI structurally cannot replace the need for physical sensors, and the CGM market is protected by deep regulatory moats (FDA 510(k) clearance, CE marking), switching costs (insulin pump integrations, physician prescribing habits), and proprietary sensor chemistry developed over 25+ years. Q2 2026 gross margins of 64.1% reflect the pricing power of these defensive moats <span class="source-ref">[2]</span>. Analysts note DexCom is &#39;gaining from AI, not disrupted by it&#39; as AI integration increases the platform&#39;s value proposition and expands the addressable market <span class="source-ref">[6]</span>. The one point deducted reflects theoretical risk from potential big tech entrants (Apple, Samsung) in biometric sensing, though none have achieved FDA clearance for glucose monitoring. AI Opportunity (1/1): DexCom generates meaningful AI-embedded revenue through the Stelo biosensor with Google AI integration, AI-powered Smart Food Logging shipping to customers, and Smart Basal FDA-cleared insulin therapy integration. AI features are live, shipping, and differentiating DexCom&#39;s platform from commodity sensor competitors <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            51
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> DexCom CEO Transition and Corporate Strategy — Jake Leach appointed January 2026, 20+ year Dexcom veteran, Customer Advisory Council formation — investors.dexcom.com, 2026</li>
+        
+        <li><span class="src-num">2.</span> DexCom Q2 2026 Earnings Release — Revenue $1.31B (+13.1% YoY), Gross Margin 64.1% (+400bps), Operating Margin 24.3%, Adjusted EPS $0.70, Full-Year Guidance Raised to $5.18-5.25B, $600M Buyback — July 30, 2026</li>
+        
+        <li><span class="src-num">3.</span> DexCom AI Strategy and Product Innovation — Smart Food Logging, Google AI in Stelo, AI Principles, Smart Basal FDA Clearance — dexcom.com, BusinessWire, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> DexCom Insider Activity — CEO Leach $1.0M share purchase at $55.04 (Nov 2025), Director Augustinos charitable donation (Aug 2026) — SEC Form 4 Filings</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance, StockAnalysis, GuruFocus — DXCM Key Statistics: Stock Price $91.51, Forward P/E 27.28, PEG 1.55, ROE 38.49%, D/E 53%, Profit Margin 20.12%, Avg Volume 5.2M, accessed August 2026</li>
+        
+        <li><span class="src-num">6.</span> Seeking Alpha — 'Dexcom: A Medical Platform Play Gaining From AI, Not Disrupted By It'; MedTech Dive — FDA Recall Coverage, 2025-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

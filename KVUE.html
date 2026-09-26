@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen KVUE — Kenvue Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/KVUE_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('KVUE')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            KVUE
+            <span class="stock-name-full">Kenvue Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-12</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 54</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">50</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Consumer Defensive</span>
+        <span class="sep">&middot;</span><span>Household & Personal Products</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Kenvue is the world's largest pure-play consumer health company, spun off from Johnson & Johnson in May 2023. It operates iconic brands including Tylenol, Listerine, Band-Aid, Aveeno, and Neutrogena across Self Care, Skin Health, and Essential Health segments. In 2026, the board fired CEO Thibaut Mongon and appointed Kirk Perry as interim CEO, launching a strategic review to identify a permanent CEO and redefine the company's growth strategy.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>21,780 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.kenvue.com" target="_blank" rel="noopener">www.kenvue.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Q1 2026 revenue of $3.91B grew 4.5% YoY with organic growth of 0.7%, followed by Q2 2026 net sales up 3.0% with organic growth improving to 1.6% <span class="source-ref">[1]</span>. Adjusted EPS of $0.32 in Q1 (up from $0.24) and $0.31 in Q2 (up from $0.29) demonstrate earnings improvement. However, organic growth remains anemic for a $15B+ revenue consumer health company, and the CEO was fired mid-year as the board recognized the need for transformative leadership <span class="source-ref">[3]</span>. AI Deployment (0/2): Chief Technology &amp; Data Officer leverages &#39;applied technology and predictive data,&#39; and CMO is exploring AI for marketing, but no specific AI-powered products or quantified AI-driven cost savings have been reported <span class="source-ref">[2]</span>. Market Share (2/2): World&#39;s largest pure-play consumer health company with #1 or #2 category positions in multiple segments — Tylenol in analgesics, Listerine in mouthwash, Band-Aid in adhesive bandages, Neutrogena and Aveeno in skincare <span class="source-ref">[1]</span>. Pipeline (0/2): No specific next-generation product launches with defined timelines announced. Innovation is incremental (reformulations, line extensions) rather than breakthrough. R&amp;D Intensity (1/1): R&amp;D spending of approximately 3% of revenue is at or slightly above consumer health peers (P&amp;G ~2.5%, Unilever ~2%), reflecting appropriate investment in formulation and regulatory capabilities.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Kenvue&#39;s mission to &#39;Realize the extraordinary power of everyday care&#39; is clear and connects branded products to consumer empowerment. The &#39;Healthy Lives Mission&#39; ESG strategy shows purposefulness <span class="source-ref">[4]</span>. However, the mission is not distinctively articulated — it could apply to any consumer health company — and the CEO firing undermines the narrative of purpose-driven leadership. Community Impact (1/2): Kenvue&#39;s sustainable sourcing position covers palm oil, wood and paper-based packaging, and soy, demonstrating supply chain responsibility <span class="source-ref">[4]</span>. No specific philanthropic dollar amounts or distinctive community programs were identified beyond standard ESG commitments. Employee Retention (0/2): CEO Thibaut Mongon was fired in 2026, CFO departed during the Kimberly-Clark integration period, and a 3.5% workforce reduction ($250M restructuring) was executed <span class="source-ref">[3]</span>. These leadership and workforce disruptions in a company only 3 years old signal significant organizational instability. Insider Buying (0/2): No evidence of meaningful net insider buying by management. Activist investor Starboard Value purchased $55.6M in shares, signaling external conviction, but this is activist positioning rather than insider alignment <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on Growth sleeve metrics (company only public since 2023, insufficient dividend history for Dividend sleeve despite paying dividends). D/E of 81% is conservative, scoring 0.95 <span class="source-ref">[5]</span>. ROE of 13.6% is below the 15% target, scoring 0.90 at 2x growth weight <span class="source-ref">[5]</span>. Revenue growth of 3.0% YoY in Q2 2026 is below the 10% target, scoring 0.77 <span class="source-ref">[1]</span>. Forward P/E of 13.4 is well below the 20 target, scoring 1.0 <span class="source-ref">[5]</span>. Net profit margin of 10.6% is below the 20% target, scoring 0.53 <span class="source-ref">[1]</span>. Revenue 5yr CAGR and Forward PEG excluded (company too recently public). Payout ratio improved dramatically from 109% to 65%, indicating improved earnings coverage of the dividend <span class="source-ref">[5]</span>. Stock price appreciation from $17 to $21 reflects market confidence in the operational improvement. Liquidity: 23.4M avg volume x $21.60 = $505M daily — well above $1M floor.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Kenvue&#39;s infinite game narrative is undermined by the CEO firing, CFO departure, workforce reduction, and identity uncertainty just three years after spinning off from Johnson &amp; Johnson. While the brand portfolio has served consumers for 100+ years, the corporate entity is in leadership crisis. The board&#39;s decision to fire CEO Mongon and launch a strategic review signals finite thinking — reacting to poor performance rather than advancing a Just Cause. Interim CEO Kirk Perry brings 30+ years of consumer goods experience but the organizational instability creates a low-trust environment.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Kenvue&#39;s brands have served consumer health needs for over a century — Tylenol, Listerine, and Band-Aid are woven into everyday life globally. This heritage creates a foundation for a genuine cause of &#39;everyday care.&#39; However, the company is only 3 years old as an independent entity and has not articulated a distinctive Just Cause beyond generic consumer health positioning <span class="source-ref">[4]</span>. The CEO firing and strategic review suggest the company hasn&#39;t yet found its long-term identity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): The organizational environment shows significant trust deficits. CEO Mongon was fired in 2026, CFO departed during the integration period, a 3.5% global workforce reduction was executed, and the company suspended forward guidance <span class="source-ref">[3]</span>. For a company only 3 years post-spinoff, this level of leadership upheaval creates profound uncertainty among the 21,780-person workforce. Employees face questions about the company&#39;s strategic direction, the status of the Kimberly-Clark merger, and their own job security.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Kenvue competes with Procter &amp; Gamble, Unilever, and Reckitt Benckiser. The competitive language emphasizes brand heritage and category leadership — &#39;world&#39;s largest pure-play consumer health company&#39; — rather than learning from rivals&#39; strengths <span class="source-ref">[1]</span>. The Kimberly-Clark merger pursuit was partially a response to competitive scale disadvantages, suggesting a finite mindset of &#39;we need to be bigger to win&#39; rather than &#39;how can we be better.&#39;</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The board&#39;s willingness to fire the CEO and launch a comprehensive strategic review demonstrates flexibility — the board recognized the current trajectory was insufficient and is willing to fundamentally reshape leadership and strategy <span class="source-ref">[3]</span>. If the Kimberly-Clark merger proceeds, combining two $15B+ companies would be a transformative strategic shift. However, pursuing a mega-merger just two years after spinning off from J&amp;J suggests the standalone thesis was never fully validated, raising questions about strategic coherence.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The board&#39;s decision to fire CEO Mongon and pursue a strategic review took courage — acknowledging that the founding CEO was not delivering and accepting the disruption of a leadership transition <span class="source-ref">[3]</span>. Appointing Kirk Perry as interim CEO with 30+ years of consumer goods experience shows intentional governance. However, this is reactive courage (responding to underperformance) rather than proactive courage (making costly bets on long-term capability).</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Kenvue&#39;s financial fundamentals are improving despite leadership turmoil. Q1 2026 adjusted EPS of $0.32 (up 33% YoY) and Q2 adjusted EPS of $0.31 (up 7% YoY) demonstrate margin expansion, with net margin improving to 10.6% <span class="source-ref">[1]</span>. The dividend payout ratio improved dramatically from 109% to 65%, making the $0.84 annual dividend sustainable at a 3.9% yield <span class="source-ref">[5]</span>. At 13.4x forward earnings, Kenvue offers a defensive consumer health portfolio at a discount to consumer staples peers (P&amp;G at ~25x, Unilever at ~19x). The stock&#39;s 25% appreciation from $17 to $21 reflects market confidence in the operational improvement trajectory. Analyst projections of $1.16 EPS in FY2026 (up 7.4%) and $1.23 in FY2027 (up 6%) suggest steady earnings growth. Activist Starboard Value&#39;s $55.6M share purchase provides an external catalyst for value creation <span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case centers on leadership instability and organic growth weakness. CEO Mongon was fired in 2026, CFO departed, and a 3.5% workforce reduction was executed — all within three years of the J&amp;J spinoff, signaling a company struggling to find its independent identity <span class="source-ref">[3]</span>. Organic growth of just 0.7-1.6% in H1 2026 is anemic for a consumer health leader, driven primarily by price increases rather than volume. The Kimberly-Clark merger status is uncertain amid the strategic review, and if it proceeds, integrating two $15B+ companies carries significant execution risk and management distraction. Talc litigation legacy from J&amp;J continues to create legal overhang — UK legal action involving ~3,000 claimants names both J&amp;J and Kenvue <span class="source-ref">[4]</span>. The 3-year dividend history provides no track record comfort for income investors, and a dividend cut — while less likely with the improved 65% payout ratio — cannot be ruled out if organic growth stalls.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>New permanent CEO appointment following strategic review — bringing experienced consumer goods leadership could catalyze strategic clarity and operational acceleration</li>
+        
+        <li>Margin expansion trajectory continuing with Q1-Q2 2026 EPS growth of 7-33% YoY, supported by cost restructuring savings and improving payout ratio from 109% to 65%</li>
+        
+        <li>Resolution of Kimberly-Clark merger status — either completion unlocking cost synergies or formal withdrawal allowing management to focus on organic brand investment</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Leadership instability — CEO firing, CFO departure, and ongoing search for permanent CEO create strategic uncertainty and potential talent flight across the 21,780-person organization</li>
+        
+        <li>Anemic organic growth of 0.7-1.6% driven by pricing rather than volume suggests weakening brand pull and competitive pressure from private label alternatives</li>
+        
+        <li>Talc litigation legacy — UK legal action by ~3,000 claimants naming Kenvue alongside J&amp;J creates ongoing legal and reputational liability that could resurface in other jurisdictions</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Consumer health products are highly resistant to AI disruption — Tylenol, Listerine, Band-Aid, Aveeno, and Neutrogena are physical goods purchased through habitual consumer behavior, brand trust built over decades, and retail distribution relationships that AI cannot replicate or substitute <span class="source-ref">[1]</span>. No analyst has identified AI as a displacement risk for OTC health, oral care, or skincare products. The competitive moat is built on brand equity, regulatory approval, shelf space, and consumer habit — structural barriers that are AI-immune. AI could enhance marketing personalization and supply chain efficiency but these are incremental operational improvements, not existential threats. AI Opportunity (0/1): No meaningful AI revenue. Technology exploration in marketing and data analytics is at an early stage with no quantified revenue contribution from AI-powered products or services <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            54
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Kenvue Q1 2026 and Q2 2026 Earnings Results — Kenvue IR, TradingView, Barchart, Yahoo Finance, Simply Wall St, 2026</li>
+        
+        <li><span class="src-num">2.</span> Kenvue AI Strategy and Technology — Medium (Authority Magazine), company website, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Kenvue CEO Transition and Strategic Review — Consumer Goods Technology, MexicoBusiness, Reuters, Simply Wall St, 2026</li>
+        
+        <li><span class="src-num">4.</span> Kenvue ESG, Talc Litigation, and J&J Legacy — Sustainable Brands, SahmCapital, Kenvue IR ESG page, 2025-2026</li>
+        
+        <li><span class="src-num">5.</span> Kenvue (KVUE) Financial Statistics — StockAnalysis.com, Yahoo Finance, GuruFocus, WallStreetZen, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RBA — RB Global, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RBA_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RBA')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RBA
+            <span class="stock-name-full">RB Global, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">64</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Specialty Business Services</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Canada</span>
+    </div>
+    
+    <div class="profile-desc">RB Global, Inc. (formerly Ritchie Bros. Auctioneers) operates the world's largest commercial asset marketplace, facilitating the buying and selling of heavy equipment, trucks, and other industrial assets through live and online auctions. Following its transformative 2023 merger with IAA (Insurance Auto Auctions), the company expanded into the insurance salvage vehicle market. Also operates SmartEquip (parts procurement), Rouse Services (data analytics), and Big Iron (agriculture equipment, acquired May 2026). Headquartered in Burnaby, British Columbia. Q2 2026 revenue of $1.3B (up 11% YoY) with net income of $132M (up 33%).</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>8,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.rbglobal.com" target="_blank" rel="noopener">www.rbglobal.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): The $7.3B merger with IAA in March 2023 was a transformative business model expansion, combining Ritchie Bros.&#39; industrial equipment marketplace with IAA&#39;s insurance salvage vehicle auctions to create the world&#39;s largest commercial asset marketplace <span class="source-ref">[1]</span>. The May 2026 acquisition of Big Iron Auction Company extended into U.S. agriculture markets, further broadening the platform <span class="source-ref">[3]</span>. Revenue grew from ~$2B pre-merger to $4.85B TTM. AI Deployment (1/2): RB Global deploys proprietary machine vision technology for automated asset condition assessments and pricing models, providing customers with accurate asset valuations — a shipped AI product with measurable customer value <span class="source-ref">[2]</span>. The company also runs an AI-driven cybersecurity SOC and uses AI-based tooling for cloud cost optimization <span class="source-ref">[2]</span>. These demonstrate real AI operational deployment though specific revenue or savings figures have not been quantified. Market Share (2/2): RB Global is the undisputed global leader in commercial asset disposition, with Q2 2026 gross transaction value driving total revenue to $1.3B (up 11% YoY) and TTM revenue of $4.85B <span class="source-ref">[1]</span>. No competitor operates at comparable scale across industrial equipment, commercial vehicles, and salvage vehicles simultaneously. Product Pipeline (1/2): FY2026 GTV growth guidance of 6-9% with adjusted EBIT of $1.49-1.55B provides clear near-term visibility, and Big Iron opens the agriculture equipment market <span class="source-ref">[3]</span>. R&amp;D Intensity (0/1): R&amp;D spending is not reported as a discrete line item; technology investment is embedded in operating expenses.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): RB Global&#39;s stated purpose — &#39;connecting the world through trusted marketplaces, driving the transition to a circular economy, fostering an inclusive culture, and building resilient communities&#39; — is specific and thoughtful, directly connecting the company&#39;s auction business to the broader environmental purpose of extending asset lifecycles and reducing waste <span class="source-ref">[4]</span>. The circular economy framing differentiates from peers and reflects genuine intentionality. Community Impact (1/2): RB Global&#39;s ESG framework outlines community building and resilient communities as a pillar, and the company has been certified as a Great Place To Work, but no specific charitable programs with dollar amounts or distinctive community initiatives were identified <span class="source-ref">[4]</span>. Employee Retention (1/2): Glassdoor reviews describe &#39;transparent and approachable leadership&#39; where &#39;CEO types say hi in the hall,&#39; and a &#39;hunger for new ideas,&#39; but also note the company is &#39;still ironing out processes&#39; from the IAA integration with &#39;lots of change&#39; <span class="source-ref">[2]</span>. CEO Jim Kessler has 69% Glassdoor approval. Mixed but trending positive. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO Jim Kessler or other executives in the last 12 months was found in public filings.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a growth stock on available metrics. Q2 2026 revenue of $1.3B (up 11% YoY) with net income of $132M (up 33%) extended the strong fundamental trajectory, and management reaffirmed adjusted EBIT guidance of $1.49-1.55B <span class="source-ref">[1]</span>. The stock&#39;s 17% decline from $99.90 to $83.20 has compressed Forward P/E to 17.1x from 23.0x on the prior screen, scoring a perfect 1.0 and significantly improving the valuation picture. Revenue growth YoY of 11.1% scores 1.0. D/E of 77.6% scores 0.97, reasonable given post-merger leverage. ROE of 8.1% scores 0.54 at 2x weight, still depressed by $5B+ goodwill from IAA. Profit margin of 10.0% scores 0.50, modest for a marketplace model. Revenue growth 5yr CAGR of ~27% scores 1.0 at 2x weight (M&amp;A-driven but represents successful scale transformation). Liquidity easily clears: ~1.69M avg vol x $83.20 = $140.5M <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">RB Global demonstrates elements of infinite thinking through its circular economy mission and willingness to make transformative strategic bets (IAA merger, Big Iron acquisition), but the company&#39;s purpose articulation is relatively recent (post-IAA rebranding) and has not been validated through multiple cycles or leadership transitions. The fast-paced organizational transformation under CEO Kessler creates both energy and instability, and it remains to be seen whether the Just Cause will endure beyond the current growth phase.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): RB Global&#39;s circular economy mission — extending asset lifecycles through trusted marketplace transactions — is genuine and distinctive, connecting the company&#39;s commercial operations to an environmental purpose that resonates beyond profit <span class="source-ref">[4]</span>. However, this framing is relatively recent (post-IAA merger rebranding), and the company hasn&#39;t had multiple decades or leadership transitions to validate it. The Just Cause has not yet been tested through crisis or market adversity under the current RB Global identity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): RB Global was certified as a Great Place To Work, and Glassdoor reviews describe &#39;transparent and approachable leadership&#39; where &#39;CEO types say hi in the hall&#39; with &#39;a hunger for new ideas&#39; <span class="source-ref">[2]</span>. However, the post-IAA integration creates significant organizational flux — employees note the company is &#39;still ironing out processes&#39; with &#39;lots of change,&#39; and leadership restructuring in September 2025 added further disruption. The cultural direction is positive but stability has not yet been established.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence was found of RB Global&#39;s leadership acknowledging competitors&#39; strengths or framing competition as motivation for self-improvement. As the dominant player in commercial asset auctions, the company&#39;s public communications focus on market leadership and scale advantages rather than learning from rivals like Copart or regional competitors.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The $7.3B IAA acquisition in 2023 fundamentally transformed RB Global from a pure industrial equipment auctioneer into a diversified commercial asset marketplace spanning equipment, vehicles, and insurance salvage <span class="source-ref">[1]</span>. The Big Iron acquisition in May 2026 further extended into agriculture. The addressable market expanded dramatically, though the core auction/marketplace business model remained intact — this is adjacent expansion rather than transformative reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The $7.3B IAA merger was a bold capital allocation decision executed despite significant shareholder opposition (activist investors contested the deal), nearly tripling the company&#39;s revenue base and requiring substantial integration risk <span class="source-ref">[1]</span>. CEO Kessler has restructured leadership and maintained 6-9% GTV growth guidance despite the stock&#39;s 17% decline from its highs. However, no examples of sacrificing short-term earnings for long-term capability or walking away from profitable but misaligned businesses were identified beyond the core M&amp;A strategy.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">RB Global&#39;s 17% stock decline to $83.20 has compressed the Forward P/E from 23.0x to 17.1x against accelerating earnings growth (Q2 net income up 33% YoY to $132M), creating an increasingly attractive entry point for the world&#39;s largest commercial asset marketplace <span class="source-ref">[1]</span>. TTM revenue of $4.85B with consistent 11% YoY growth, combined with FY2026 adjusted EBIT guidance of $1.49-1.55B, demonstrates the IAA merger synergies are delivering <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The Big Iron acquisition (May 2026) opens the agriculture equipment market, and deployed machine vision AI for asset valuations provides competitive differentiation <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The circular economy business model — extending asset lifecycles through trusted marketplace transactions — has structural tailwinds as businesses increasingly prioritize used equipment over new purchases during uncertain economic conditions.</div>
+    <div class="thesis-text">The bear case centers on cyclical exposure and post-merger execution risk. The stock&#39;s decline from $99.90 to $83.20 (below the $94.76 SMA-50) reflects market concern about used equipment market softening and the macroeconomic cycle. ROE of 8.1% remains below the 15% target, depressed by $5B+ in goodwill from the IAA acquisition, and profit margin of 10.0% is modest for a marketplace business — suggesting full operating leverage from the merger has not yet materialized <span class="source-ref">[5]</span>. Trailing P/E of 35.9x vs forward of 17.1x implies the market expects significant earnings acceleration that could disappoint if construction or transportation activity weakens. The insurance salvage business (IAA) is inherently countercyclical (accidents create supply regardless of economic conditions), which provides balance but doesn&#39;t fully offset the procyclical heavy equipment business. The company&#39;s reliance on cyclical end-markets exposes it to simultaneous volume and margin compression in a downturn.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Forward P/E compression to 17.1x from 23.0x with Q2 2026 net income growing 33% YoY creates an increasingly attractive valuation for the dominant commercial asset marketplace <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Full realization of IAA merger synergies driving margin expansion, with inventory sales revenue accelerating 28% YoY in Q2 2026 and adjusted EBIT guided to $1.49-1.55B <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Big Iron Auction Company acquisition (May 2026) opening the U.S. agriculture equipment market and machine vision AI deployment providing competitive differentiation in asset valuations <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Used equipment market cyclicality — a construction or transportation downturn could compress GTV and transaction-based revenues, and the stock&#39;s 17% decline signals market concern about near-term volume trends <span class="source-ref">[5]</span></li>
+        
+        <li>ROE of 8.1% reflects $5B+ in acquisition-related goodwill that may face impairment risk if the IAA integration underdelivers on expected synergies, and profit margin of 10.0% has not yet reached marketplace-model efficiency</li>
+        
+        <li>Post-merger organizational transformation under CEO Kessler with ongoing leadership restructuring creates execution risk during a critical integration period where cultural stability is needed <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): RB Global&#39;s core business involves physical-world asset transactions — heavy equipment inspections, vehicle transport logistics, title transfers, and trust-based marketplace interactions that AI structurally cannot substitute <span class="source-ref">[1]</span>. The auction process requires physical presence of assets, complex condition assessments, regulatory compliance across jurisdictions, and buyer-seller trust built over decades. The insurance salvage business (IAA) involves physical vehicle towing, storage, and regulated title processing. These operations have deep physical and regulatory moats. However, AI could potentially enhance competitor marketplace platforms or create automated valuation alternatives, representing a modest risk to ancillary data services. AI Opportunity (1/1): RB Global&#39;s proprietary machine vision technology provides customers with automated asset condition assessments and pricing models — a deployed AI product generating measurable customer value in the marketplace <span class="source-ref">[2]</span>. The AI-driven cybersecurity SOC and AI-based cloud optimization tools demonstrate broader organizational AI adoption that drives operational efficiency.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> RB Global Q1 and Q2 2026 Earnings — Equipment World: Q1 $1.2B revenue (up 11%), $135.6M net income (up 20%); Q2 $1.3B revenue (up 11%), $132M net income (up 33%), TTM $4.85B revenue</li>
+        
+        <li><span class="src-num">2.</span> RB Global AI Innovation — Cyber Magazine: Machine Vision Asset Valuations, AI-Driven Cybersecurity SOC, Cloud Optimization; Glassdoor Reviews, CEO Kessler Approval 69%, accessed September 2026</li>
+        
+        <li><span class="src-num">3.</span> RB Global FY2026 Guidance — GTV Growth 6-9%, Adjusted EBIT $1.49-1.55B, Big Iron Acquisition May 2026</li>
+        
+        <li><span class="src-num">4.</span> RB Global ESG Report and Corporate Website — Circular Economy Mission, Great Place To Work Certification, ESG Framework, accessed September 2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance — RBA Key Statistics: $83.20 price, Forward P/E 17.07, D/E 77.6%, ROE 8.1%, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

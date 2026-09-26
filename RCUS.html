@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RCUS — Arcus Biosciences, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RCUS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RCUS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RCUS
+            <span class="stock-name-full">Arcus Biosciences, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-25</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 31</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">44</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Biotechnology</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Arcus Biosciences is a clinical-stage biopharmaceutical company developing cancer therapies that harness the immune system. The company's pipeline centers on immuno-oncology combination therapies including casdatifan (HIF-2a inhibitor for kidney cancer, in collaboration with BMS and AstraZeneca), quemliclustat (CD73 inhibitor for pancreatic and lung cancer), and earlier-stage programs targeting CD39, AXL, and inflammatory diseases. Co-founded in 2015 by CEO Terry Rosen following the sale of Flexus Biosciences to Bristol Myers Squibb. The company restructured its 10-year Gilead collaboration after the Phase 3 STAR-121 trial (domvanalimab) was terminated for futility in first-line NSCLC. Q2 2026 revenue was $41M (vs $160M YoY, reflecting Gilead partnership restructuring), net loss was $91M (-$0.72/share), and cash was $775M with runway through H2 2028.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>601 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://arcusbio.com" target="_blank" rel="noopener">arcusbio.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Arcus has built a diversified immuno-oncology pipeline from scratch since its 2015 founding, including novel mechanisms (HIF-2a, CD73, TIGIT, CD39). However, the defining event of recent years was negative: the Phase 3 STAR-121 trial of domvanalimab was terminated after an independent committee found the regimen futile versus pembrolizumab in first-line NSCLC <span class="source-ref">[3]</span>. This failure led to the restructuring of the Gilead collaboration and abandonment of multiple TIGIT programs. The casdatifan kidney cancer program with BMS and AstraZeneca represents a pivot, but has not yet delivered clinical validation. AI Deployment (0/2): No evidence of AI-powered drug discovery or AI-driven efficiency gains. Arcus uses standard drug development approaches for immuno-oncology. Market Share (0/2): Arcus is a clinical-stage company with no marketed products and therefore no market share. Product Pipeline (1/2): The pipeline includes casdatifan (Phase 2/3, kidney cancer, BMS collaboration), quemliclustat (Phase 3/1b, pancreatic and lung cancer), AB598 (Phase 1b, CD39), and AB801 (Phase 1b, AXL) <span class="source-ref">[3]</span>. These programs have specific clinical milestones but are pre-revenue. R&amp;D Intensity (1/1): As a clinical-stage biotech spending the majority of cash on R&amp;D, Arcus has very high R&amp;D intensity relative to revenue.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Arcus&#39; purpose — creating medicines for people with cancer through innovative immunotherapy approaches — identifies what the company does and for whom <span class="source-ref">[4]</span>. It connects to a meaningful societal challenge (cancer treatment), but is not distinctive from dozens of other oncology biotechs with similar stated purposes. CEO Terry Rosen&#39;s scientific credibility (30+ years in drug discovery, including the successful sale of Flexus to BMS) lends authenticity, but the mission statement itself does not articulate a vision beyond what any oncology company would claim. Community Impact (0/2): No evidence of distinctive community investment, charitable programs, or social impact initiatives was identified for this 601-person clinical-stage biotech. Employee Retention (1/2): Arcus was named &#39;Best Small and Medium Workplace in Biotechnology and Pharmaceuticals&#39; in 2025, with employees citing good community, camaraderie, and well-organized remote work logistics across time zones <span class="source-ref">[4]</span>. This suggests above-average employee engagement for a small biotech. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO Terry Rosen or other executives was identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a growth stock with severely challenged metrics. ROE of -90.8% is deeply negative, scoring 0 with 2x weight — the company burns cash as a clinical-stage biotech <span class="source-ref">[5]</span>. Revenue growth YoY of -74.4% is catastrophic, scoring 0 (1x weight), driven by the Gilead collaboration restructuring ($41M vs $160M YoY) <span class="source-ref">[1]</span>. Forward P/E is negative (-7.4x, reflecting expected losses), scored as 0 (1x weight). Profit margin of 0.0% is at the floor, scoring 0 (1x weight). PEG ratio is unavailable due to negative earnings, excluded from calculation. The only positive metric is D/E of 51.3%, well below the 70% target, scoring 1.0 with 1x weight — reflecting the company&#39;s modest $238M debt against $775M cash <span class="source-ref">[5]</span>. Revenue growth 5yr CAGR is not meaningful for a pre-commercial biotech with Gilead milestone-driven revenue, scored at 0 (2x weight). Liquidity is adequate at $34.2M daily trading value. Infrastructure calculation: weighted sum 1.0 out of max 8.0 (excluding PEG), yielding score of 1.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Arcus Biosciences shows meaningful infinite game characteristics for a clinical-stage biotech — a science-driven founder-CEO who built the company around a genuine mission to defeat cancer through novel immunotherapy, persistence through the devastating STAR-121 trial failure, and a recognized workplace culture. The company&#39;s willingness to terminate failed programs (STAR-121, multiple TIGIT trials) and restructure the Gilead partnership rather than persisting with sunk costs shows pragmatic courage. However, the company is too early in its journey to have fully validated these characteristics — no commercial products, a major clinical failure defining recent history, and a revenue decline of 74.4% YoY make the endurance question existential rather than philosophical.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Arcus was founded by Terry Rosen with a vision to create transformative cancer treatments through novel immuno-oncology approaches — a cause that connects the company&#39;s work to reducing human suffering <span class="source-ref">[4]</span>. Rosen co-founded Arcus after successfully building and selling Flexus Biosciences (a cancer immunotherapy company acquired by BMS), demonstrating that this is a lifetime commitment to the cause rather than an opportunistic venture. The company&#39;s investment decisions (building a diversified pipeline, pursuing novel mechanisms like HIF-2a and CD73) trace back to the scientific mission. However, with no commercial products and a major clinical failure (STAR-121), the cause has not yet been validated through the kind of multi-decade execution that earns a 3/3.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Arcus was recognized as a &#39;Best Small and Medium Workplace in Biotechnology and Pharmaceuticals&#39; in 2025, with employees highlighting good community, camaraderie, and well-organized remote work culture <span class="source-ref">[4]</span>. For a 601-person company navigating the STAR-121 failure and Gilead partnership restructuring, maintaining a positive workplace culture is a sign of organizational resilience. However, with only 601 employees and limited public data on retention or turnover, the evidence base is thin.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Arcus operates in immuno-oncology where Merck (Keytruda), BMS (Opdivo), and Roche (Tecentriq) are dominant players whose strengths push Arcus to differentiate through novel mechanisms and combination approaches <span class="source-ref">[3]</span>. The company&#39;s strategy is explicitly about finding therapeutic niches where existing PD-1/PD-L1 therapies are insufficient — using competitive dynamics as motivation to innovate rather than attempting to displace established leaders. The Gilead partnership restructuring and pivot to casdatifan (kidney cancer) reflect learning from competitive reality.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Arcus demonstrated meaningful strategic flexibility by terminating the STAR-121 trial, abandoning the TIGIT program, and restructuring the Gilead collaboration after data showed futility — rather than persisting with sunk costs in a losing approach <span class="source-ref">[3]</span>. The pivot to casdatifan (HIF-2a inhibitor) for kidney cancer as the lead program represents a significant strategic reorientation. However, clinical-stage biotechs are inherently flexible (they have not yet built the scale infrastructure that creates rigidity), and the pivots were forced by failure rather than driven by proactive reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Terry Rosen has maintained R&amp;D investment and pipeline development through the devastating STAR-121 failure and Gilead restructuring, choosing to continue building the company rather than selling assets or winding down <span class="source-ref">[3]</span>. The decision to terminate failed programs quickly rather than throwing good money after bad shows disciplined courage. However, these decisions are standard for a well-run clinical-stage biotech — the true test of courage would be a situation where leadership chose long-term capability over an easier short-term path, and the evidence is limited for a company that has not yet reached commercialization.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Arcus Biosciences at a $3.2B market cap offers exposure to a diversified immuno-oncology pipeline with multiple clinical catalysts, backed by $775M in cash providing runway through H2 2028 <span class="source-ref">[1]</span>. The casdatifan (HIF-2a inhibitor) program for kidney cancer — in collaboration with both BMS and AstraZeneca — represents a differentiated approach to a large oncology market where current treatments have limitations. CEO Terry Rosen brings 30+ years of drug discovery experience and previously built and sold Flexus Biosciences to BMS, demonstrating the ability to create oncology company value <span class="source-ref">[4]</span>. Q2 2026 adjusted loss of -$0.72/share beat the -$0.90 consensus estimate by 20%, and full-year revenue guidance was raised to $65-$75M from $50-$65M <span class="source-ref">[1]</span>. The Inspire Impact Score of 31 (ALIGNED) is positive for faith-based investors. Low D/E of 51.3% provides balance sheet stability for a pre-commercial biotech.</div>
+    <div class="thesis-text">The bear case is defined by clinical execution risk, revenue collapse, and the destruction of the Gilead partnership that was Arcus&#39; primary value driver. Revenue fell 74.4% YoY to $41M in Q2 as the Gilead collaboration restructuring removed the milestone and development payments that had previously inflated the topline <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The Phase 3 STAR-121 failure — domvanalimab was found futile versus pembrolizumab — eliminated what was the company&#39;s most advanced clinical program and prompted Gilead to walk away from broad option rights <span class="source-ref">[3]</span>. ROE of -90.8% and profit margin of 0.0% reflect a company burning $91M per quarter with no commercial products generating revenue <span class="source-ref">[5]</span>. Cash is declining from $1.0B (year-end 2025) to an expected $600M by year-end 2026, giving approximately 2 years of runway but creating dilution risk if clinical programs require additional capital <span class="source-ref">[1]</span>. The casdatifan and quemliclustat programs are in mid-to-late stage development but face significant clinical risk — a Phase 3 failure in either program could be existential. The stock has declined 21% from its 52-week high of $31.74, and pre-commercial biotechs face binary outcomes that make traditional valuation frameworks unreliable.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Casdatifan (HIF-2a) Phase 2/3 data readouts in kidney cancer could validate the program and potentially attract a major pharma partnership or acquisition, with both BMS and AstraZeneca already collaborating on the molecule <span class="source-ref">[3]</span></li>
+        
+        <li>Quemliclustat (CD73) Phase 3 results in pancreatic cancer — a disease with very limited treatment options — could establish a first-in-class position if positive data emerge <span class="source-ref">[3]</span></li>
+        
+        <li>Full-year 2026 revenue guidance raised to $65-$75M (from $50-$65M) and Q2 earnings beat (-$0.72 vs -$0.90 estimate) suggest improving execution and cost discipline that could extend cash runway beyond current H2 2028 projections <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Clinical binary risk: the STAR-121 failure demonstrated that Phase 3 oncology trials carry meaningful futility risk — a similar failure in casdatifan (kidney cancer) or quemliclustat (pancreatic cancer) could be existential for the company <span class="source-ref">[3]</span></li>
+        
+        <li>Cash burn and dilution risk: $91M quarterly net loss with declining cash ($775M from $1.0B year-end 2025) creates a narrowing runway through H2 2028 — if clinical programs require additional investment, equity dilution or debt financing could be necessary before any program reaches commercialization <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Gilead partnership value destruction: Gilead&#39;s decision to not continue broad option rights removed a major value driver and strategic partner, narrowing Arcus&#39; options for pipeline development and commercial partnerships <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Arcus&#39; core business — developing immuno-oncology therapies through clinical trials — is heavily protected from AI disruption. Drug development requires physical clinical trials with real cancer patients, FDA regulatory approval that takes years, and specialized manufacturing of biological therapeutics (antibodies, small molecules) that AI cannot substitute <span class="source-ref">[3]</span>. The immuno-oncology field has additional protection: combination therapy approaches require complex clinical trial designs that are inherently human-judgment-intensive, and regulatory pathways for oncology drugs involve safety monitoring that cannot be automated away. No analyst has flagged AI as a threat to clinical-stage oncology biotechs. AI could accelerate target identification and trial design, but cannot replace the clinical development and regulatory process. AI Opportunity (0/1): Arcus does not generate AI-related revenue and does not appear to use AI as a primary tool in its drug discovery process. The company&#39;s approach is grounded in traditional medicinal chemistry and immunology expertise rather than AI-driven drug design.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            31
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Arcus Biosciences Q2 2026 Earnings Release — Revenue $41M (vs $160M YoY), Net Loss $91M (-$0.72/share, beat -$0.90 estimate), Cash $775M, Raised 2026 Revenue Guidance to $65-$75M, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Arcus Biosciences 2026 Financial Outlook — Cash Expected $600M Year-End 2026, Runway Through H2 2028, $238M Debt, 2026</li>
+        
+        <li><span class="src-num">3.</span> Arcus Biosciences Pipeline and Gilead Partnership — STAR-121 Terminated (Domvanalimab Futile), Gilead Option Rights Restructured, Casdatifan Phase 2/3 Kidney Cancer with BMS/AstraZeneca, Quemliclustat Phase 3, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Arcus Biosciences Leadership and Culture — CEO Terry Rosen (Co-Founder, 30+ Years Drug Discovery), Best Small and Medium Workplace 2025, 601 Employees, 2025-2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance — RCUS Key Statistics: Forward P/E -7.4x (loss), D/E 51.3%, ROE -90.8%, Revenue Growth -74.4%, Market Cap $3.2B, Stock Price $25.06, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
