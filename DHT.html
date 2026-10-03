@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DHT — DHT Holdings, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DHT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DHT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DHT
+            <span class="stock-name-full">DHT Holdings, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-30</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 32</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Energy</span>
+        <span class="sep">&middot;</span><span>Oil & Gas Midstream</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Bermuda</span>
+    </div>
+    
+    <div class="profile-desc">DHT Holdings owns and operates a fleet of approximately 23 Very Large Crude Carriers (VLCCs) transporting crude oil globally, with management offices in Monaco, Norway, Singapore, and India. The company reported record Q2 2026 net income of $198.3M — the strongest quarter in company history — driven by multi-decade high VLCC tanker rates following Iran's closure of the Strait of Hormuz. H1 2026 shipping revenue reached $471.1M (+91% YoY). Maintains a 100% ordinary net income payout policy with 64+ consecutive quarterly dividends.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>900 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.dhtankers.com" target="_blank" rel="noopener">www.dhtankers.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): DHT executed a fleet renewal program delivering three new eco-design VLCCs and secured high-value time charters at $105,000/day (DHT Redwood) and $94,000/day (DHT Taiga), demonstrating operational sophistication in chartering strategy <span class="source-ref">[1]</span>. H1 2026 revenue surged 91% to $471.1M as VLCC rates spiked on geopolitical disruption, but this reflects market conditions rather than business model innovation <span class="source-ref">[1]</span>. AI Deployment (0/2): No evidence of AI-powered products or quantified AI-driven operational savings; technology efforts focus on cybersecurity and environmental compliance <span class="source-ref">[2]</span>. Market Share (1/2): DHT is a meaningful mid-tier VLCC operator with ~23 vessels, but is significantly smaller than category leaders like Frontline (~70 VLCCs) and COSCO Shipping <span class="source-ref">[2]</span>. Product Pipeline (1/2): Newbuild VLCC deliveries with design upgrades provide fleet expansion visibility, and management&#39;s dynamic spot/time charter mix strategy demonstrates operational planning, but tanker companies do not have next-gen products in the traditional sense <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): Investment in Exhaust Gas Cleaning Systems across all vessels and ISO 14001 environmental management certification demonstrate above-average operational technology spend for the tanker sector <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): DHT&#39;s stated approach — &#39;first rate operations and customer service, quality ships, prudent capital structure, disciplined capital allocation strategy, and transparent corporate structure&#39; — is operationally well-articulated but fundamentally interchangeable with any well-managed shipping company <span class="source-ref">[2]</span>. It does not articulate a purpose beyond executing well. Community Impact (1/2): DHT publishes a sustainability report, maintains a Human Rights Policy with zero tolerance for discrimination, and operates across four countries, but no distinctive charitable programs or community investment initiatives are evident <span class="source-ref">[3]</span>. Employee Retention (1/2): CEO Svein Moxnes Harfjeld has served since 2010 (16 years) and CFO Laila Halvorsen since 2014 (12 years), providing remarkable leadership continuity through multiple tanker cycles — rare in cyclical industries <span class="source-ref">[2]</span>. Broader employee retention data unavailable. Insider Buying (1/2): The 100% ordinary net income payout policy directly aligns management compensation with shareholder returns, and 64+ consecutive quarterly dividends demonstrate commitment to capital return consistency through cycle ups and downs <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. DHT&#39;s financial profile reached peak-cycle levels in Q2 2026 with record net income of $198.3M and profit margin of 59.31% — nearly triple the 20% target <span class="source-ref">[1]</span>. D/E of 33% is conservative and well below the 70% target, reflecting disciplined leverage management <span class="source-ref">[4]</span>. ROE of 39.18% far exceeds the 15% target. Revenue growth YoY of 91.4% (H1 2026 $471.1M vs H1 2025 $246.1M) dramatically exceeds the 10% target <span class="source-ref">[1]</span>. Forward P/E of 6.67 is deeply discounted, reflecting market skepticism about sustainability of peak rates. The primary drags are the high payout ratio of 83.3% (vs 40% target, scoring 0.28) under DHT&#39;s variable dividend policy, low consecutive years of dividend growth (2 years, scoring 0.2) due to inherently cyclical tanker dividends, a modest 5yr revenue CAGR of ~3.2% reflecting tanker cycle volatility, and a 5yr dividend growth CAGR near 0% given the variable policy <span class="source-ref">[4]</span>. Liquidity floor easily cleared: 5.19M avg volume x $19.72 = ~$102M daily liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">DHT plays a pragmatic game focused on capital discipline and shareholder returns rather than a transformative vision. The 100% ordinary net income payout policy and 64+ consecutive quarterly dividends demonstrate extraordinary consistency through tanker cycle ups and downs. CEO Harfjeld&#39;s 16-year tenure provides rare leadership continuity. However, the company&#39;s purpose is functional — transport crude oil profitably — rather than aspirational, and the business model is inherently cyclical and reactive to market forces rather than built around a cause that transcends quarterly earnings.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): DHT exists to transport crude oil reliably and return capital to shareholders — a functional purpose that lacks the aspirational quality of a Just Cause <span class="source-ref">[2]</span>. The company&#39;s sustainability report articulates environmental commitments (EGCS on all vessels, ISO 14001), but these read as compliance-driven rather than cause-driven <span class="source-ref">[3]</span>. Sinek would note the absence of a vision that transcends the commodity tanker business — no articulated future state that does not yet exist.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Leadership stability is remarkable — CEO Harfjeld (since 2010, 16 years) and CFO Halvorsen (since 2014, 12 years) provide continuity through multiple tanker cycles <span class="source-ref">[2]</span>. The lean organization across four countries suggests empowered management teams. No evidence of significant layoffs, cultural controversy, or leadership disruption. However, no specific data on employee satisfaction, tenure, or psychological safety was available beyond leadership continuity — the score reflects adequate but unexceptional evidence of organizational trust.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): DHT explicitly differentiates its strategy from larger competitors like Frontline by choosing conservative leverage (D/E 33%) and capital discipline over aggressive fleet expansion <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This strategic positioning — observing peers&#39; approaches and deliberately choosing a different path — suggests competitive self-awareness oriented toward building a more durable business rather than winning the scale race. Management commentary consistently references fleet quality and operational excellence rather than market share conquest.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): DHT has shown tactical flexibility by dynamically adjusting spot vs. time charter exposure based on market conditions — securing $105,000/day time charters when rates are favorable while increasing spot exposure in strong markets <span class="source-ref">[1]</span>. Newbuild design upgrades (delaying delivery for performance optimization) show willingness to sacrifice near-term capacity for long-term fleet quality. However, the company has not fundamentally reinvented itself — it remains a pure-play VLCC operator since inception in 2005.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): DHT maintained its conservative balance sheet (D/E 33%) and 100% payout policy through weak tanker markets when peers leveraged up for aggressive fleet expansion <span class="source-ref">[1]</span>. The fleet renewal program — ordering new eco-design VLCCs at significant capital cost — represents long-term investment in fleet quality over short-term capital preservation. However, these are fundamentally prudent business decisions rather than transformative bets that sacrifice near-term performance for long-term capability.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">DHT Holdings at 6.67x forward earnings is delivering peak-cycle profitability — Q2 2026 net income of $198.3M (+254% YoY) was the strongest quarter in company history, with H1 2026 shipping revenue of $471.1M representing 91% growth over H1 2025 <span class="source-ref">[1]</span>. D/E of 33% reflects conservative leverage, ROE of 39.18% and profit margin of 59.31% demonstrate exceptional capital efficiency at peak rates, and the 12.42% dividend yield provides substantial income under the 100% ordinary net income payout policy <span class="source-ref">[4]</span>. The fleet renewal program (three new eco-design VLCCs delivered) positions DHT for IMO 2030 environmental compliance while reducing voyage costs. The Inspire Impact Score of 32 (ALIGNED) is notable for an oil transport company, and the stock trades near its all-time high of $19.99 (August 19, 2026).</div>
+    <div class="thesis-text">The critical bear case is cyclicality — DHT&#39;s current profitability is entirely a function of historically elevated tanker rates driven by geopolitical disruption (Strait of Hormuz closure) rather than structural demand growth <span class="source-ref">[1]</span>. When rates normalize, revenue, earnings, and dividends will decline dramatically — the 83.3% payout ratio and variable dividend policy mean income investors cannot rely on stable distributions. The 5yr revenue CAGR of only ~3.2% reveals the underlying cyclical reality beneath the current surge. DHT faces future capex to replace aging fleet tonnage as IMO emissions regulations tighten <span class="source-ref">[3]</span>. The company scored 4/10 on Innovation and 4/10 on Inspiration, reflecting a competently managed commodity transporter with no moat beyond fleet quality and capital discipline. The stock trades near its all-time high ($19.72 vs $19.99), leaving limited upside if tanker rates have peaked, and forward P/E of 6.67 reflects the market pricing in rate normalization <span class="source-ref">[4]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>VLCC tanker rates remain at multi-decade highs with Iran&#39;s Strait of Hormuz closure creating sustained supply disruption — any extension of elevated geopolitical tensions could prolong the earnings super-cycle into 2027 with H1 2026 already at $471.1M revenue <span class="source-ref">[1]</span></li>
+        
+        <li>Fleet renewal program with new eco-design VLCCs improves fuel efficiency and positions DHT for IMO 2030 compliance, potentially creating competitive advantage against operators with aging fleets facing scrapping pressure <span class="source-ref">[1]</span></li>
+        
+        <li>Aging global VLCC fleet (46% over 15 years old) creating structural supply tightening as scrapping accelerates and newbuild orderbook remains limited, supporting rate environment even if geopolitical tensions ease <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Peak cycle risk: VLCC spot rates can decline 60-70% from peak levels, directly collapsing dividends under the variable 100% payout policy — DHT&#39;s 2020-2021 earnings demonstrate how violently tanker profitability can decline when market conditions shift <span class="source-ref">[1]</span></li>
+        
+        <li>Geopolitical normalization risk: resolution of Strait of Hormuz tensions, OPEC+ supply cuts, or global recession could crater rates — the 12.42% dividend yield is unsustainable at normalized tanker rates <span class="source-ref">[1]</span><span class="source-ref">[4]</span></li>
+        
+        <li>Fleet replacement capex overhang: IMO 2030 emissions regulations will force scrapping of older VLCCs, requiring significant capital expenditure for fleet renewal that could strain the balance sheet during a cyclical downturn <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): VLCC crude oil tanker operations are fundamentally physical-world businesses that AI cannot displace — ships must physically carry crude oil across oceans regardless of AI advancement <span class="source-ref">[2]</span>. The aging global VLCC fleet creates supply constraints that AI cannot solve, and geopolitical disruptions forcing longer voyage routes (Strait of Hormuz closure, Red Sea rerouting) increase tanker demand in ways entirely disconnected from AI trends. No analyst has flagged AI as a risk factor for tanker operators — the business is structurally immune to AI substitution. AI-driven economic growth may modestly increase energy demand over time, but the link between AI and crude oil transport specifically is indirect compared to electricity or semiconductors. AI Opportunity (0/1): DHT does not generate quantifiable revenue from AI products, services, or infrastructure. The company has not articulated any AI monetization strategy <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            32
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Air Quality</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> DHT Holdings Q1 & Q2 FY2026 Earnings — Record Q2 Net Income $198.3M (+254%), H1 Revenue $471.1M (+91%), Q1 EPS $1.02, VLCC Rate Surge on Strait of Hormuz Closure, Baird Maritime / Investing.com / GlobeNewsWire, 2026</li>
+        
+        <li><span class="src-num">2.</span> DHT Holdings Company Profile — CEO Svein Moxnes Harfjeld (since 2010), CFO Laila Halvorsen (since 2014), Fleet of ~23 VLCCs, Operations in Monaco/Norway/Singapore/India, dhtankers.com / Yahoo Finance, accessed August 2026</li>
+        
+        <li><span class="src-num">3.</span> DHT Holdings Sustainability & ESG — EGCS Systems on All Vessels, ISO 14001 Certification, Human Rights Policy, Sustainability Oversight Committee, SEC Filings / Oil & Gas 360, 2023-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance, StockAnalysis, Morningstar — DHT Key Statistics: Stock Price $19.72, Forward P/E 6.67, D/E 33%, ROE 39.18%, Dividend Yield 12.42%, Avg Volume 5.19M, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

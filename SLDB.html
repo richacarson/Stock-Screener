@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SLDB — Solid Biosciences Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SLDB_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SLDB')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SLDB
+            <span class="stock-name-full">Solid Biosciences Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-22</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -62</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">51</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Biotechnology</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Solid Biosciences is a clinical-stage gene therapy company developing precision genetic medicines for neuromuscular and cardiac diseases. Founded in 2013 by Ilan Ganot (whose son has Duchenne muscular dystrophy), the company is led by CEO Bo Cumbo (appointed December 2022). The lead program SGT-003 has dosed 53 participants in the Phase 1/2 INSPIRE DUCHENNE trial and entered Phase 3 (IMPACT DUCHENNE), with an FDA meeting planned for late Q4 2026. The pipeline has expanded to include SGT-212 (Friedreich's ataxia, Phase 1b), SGT-501 (CPVT), and SGT-601 (TNNT2 cardiomyopathy). Cash position of $377.7M as of June 2026 provides runway to mid-2028.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>121 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.solidbio.com" target="_blank" rel="noopener">www.solidbio.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Solid Biosciences has transformed from a single-program Duchenne company to a diversified gene therapy platform with four clinical and preclinical candidates in 3 years under CEO Bo Cumbo <span class="source-ref">[1]</span>. SGT-003 advancement to Phase 3 (IMPACT DUCHENNE) after dosing 53 participants in Phase 1/2 with generally well-tolerated results represents significant execution for a 121-person company. The expansion into Friedreich&#39;s ataxia (SGT-212) and cardiac indications (SGT-501, SGT-601) demonstrates successful pipeline diversification <span class="source-ref">[1]</span>. AI Deployment (0/2): No evidence of AI-powered products or measurable AI-driven operational improvements. Solid Biosciences operates as a traditional gene therapy biotech without notable AI integration <span class="source-ref">[2]</span>. Market Share (0/2): Pre-revenue clinical-stage company with no market share in commercialized products. Competes in the gene therapy space against larger players (Sarepta&#39;s approved Elevidys for Duchenne) without differentiated market position <span class="source-ref">[1]</span>. Product Pipeline (2/2): Specific next-generation programs with clear timelines — SGT-003 Phase 3 IMPACT DUCHENNE dosing underway with FDA meeting Q4 2026; SGT-212 Phase 1b initial data expected Q1 2027; SGT-501 Phase 1b first dosing targeted H2 2026 <span class="source-ref">[1]</span>. Multiple data readouts provide defined catalysts with visible timelines. R&amp;D Intensity (1/1): As a pre-revenue biotech, virtually all spending is R&amp;D — $54.8M net loss in Q2 2026 driven by research investment, representing top-quartile R&amp;D intensity by any measure <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Solid Biosciences&#39; mission — developing precision genetic medicines for devastating neuromuscular and cardiac diseases — is specific, deeply personal, and connects the company&#39;s work to a larger purpose. Founder Ilan Ganot started the company because his son has Duchenne muscular dystrophy, giving the mission authentic urgency and emotional depth that transcends corporate positioning <span class="source-ref">[2]</span>. The focus on rare diseases affecting children and young adults (Duchenne affects ~1 in 5,000 boys, with life expectancy of 20-30 years) creates genuine social purpose. However, the company is too young (2013) for this purpose to have been validated through decades of execution. Community Impact (1/2): The core mission directly serves a vulnerable patient population — Duchenne muscular dystrophy is a devastating childhood disease with no cure. Patient advocacy and engagement with the Duchenne community is central to the company&#39;s identity, though no specific foundation or charitable program dollar amounts were identified <span class="source-ref">[2]</span>. Employee Retention (0/2): No specific retention data available for the 121-person workforce. CEO Bo Cumbo joined in December 2022, introducing leadership change relatively early in the company&#39;s development. Insider Buying (0/2): Recent insider transactions show net selling — CEO Alexander Cumbo sold $96,923 and COO David Howton sold $43,494 in February 2026, with no evidence of meaningful open-market purchases <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock with severely limited available metrics due to pre-revenue clinical-stage status. D/E of 5.4% scores 1.0 — the balance sheet is conservatively managed with $377.7M cash providing runway to mid-2028 <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. ROE of -65.5% scores 0 (deeply below the 0% floor), reflecting the large operating losses inherent to clinical-stage biotechs investing in trials. Profit margin of 0% scores 0 (at floor). Forward P/E is negative (forward EPS -$1.73), treated as above the 60x floor, scoring 0. Revenue growth metrics are unavailable (the company has generated $0 revenue since 2022). PEG ratio is unavailable. Infrastructure scoring fundamentally disadvantages pre-revenue biotech companies whose value is in clinical pipeline optionality rather than current financial metrics. Liquidity is adequate at ~$11.3M average daily trading value, well above the $1M floor.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Solid Biosciences embodies the infinite game mindset in its founding story — Ilan Ganot started the company because his son has Duchenne muscular dystrophy, creating an authentically purpose-driven organization. The expansion from a single Duchenne program to a diversified genetic medicines platform demonstrates strategic flexibility in service of the broader cause of treating devastating genetic diseases. However, the company is young (founded 2013), small (121 employees), and led by a relatively new CEO (Bo Cumbo since 2022), limiting the track record through which infinite game thinking can be validated.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Developing cures for devastating genetic diseases — starting with Duchenne muscular dystrophy, which the founder&#39;s son suffers from — is a genuine, service-oriented cause that is resilient (these diseases will exist until cured), inclusive (the patient community rallies around therapeutic hope), and idealistic (a world where genetic diseases are treatable) <span class="source-ref">[2]</span>. The expansion to Friedreich&#39;s ataxia and cardiac conditions demonstrates the cause extends beyond any single disease. However, the company hasn&#39;t yet achieved the transformative outcome (an approved therapy) that would validate the cause through execution, and it has only operated for 13 years.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Solid Biosciences&#39; small, 121-person team is likely mission-driven given the deeply personal origin story and focus on devastating childhood diseases <span class="source-ref">[2]</span>. CEO Bo Cumbo has expanded the pipeline and strengthened the management team since December 2022, and the appointment of experienced board chairman Ian F. Smith suggests institutional maturity. However, the CEO transition from founder Ilan Ganot to professional management introduces change risk, and no specific data on employee satisfaction, turnover, or cultural practices is available.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of management referencing competitors&#39; strengths as motivation for improvement. Sarepta Genomics&#39; Elevidys (an approved Duchenne gene therapy) is the primary competitive reference, and Solid&#39;s approach appears focused on differentiation through its proprietary capsid technology and micro-dystrophin design rather than learning from Sarepta&#39;s strengths <span class="source-ref">[1]</span>. The competitive framing in public communications is about scientific differentiation, not competitive self-improvement.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Under CEO Bo Cumbo, Solid Biosciences pivoted from a singular Duchenne focus to a diversified neuromuscular and cardiac genetic medicines platform — a meaningful strategic expansion that changed the company&#39;s risk profile and addressable market <span class="source-ref">[1]</span>. The addition of Friedreich&#39;s ataxia (SGT-212), CPVT (SGT-501), and cardiomyopathy programs (SGT-601) demonstrates willingness to evolve the business model in service of the broader genetic medicines cause. However, these are extensions within gene therapy, not a fundamental reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Solid Biosciences has invested aggressively in pipeline diversification while pre-revenue — Q2 2026 net loss of $54.8M reflects heavy R&amp;D spending across four programs simultaneously <span class="source-ref">[1]</span>. The decision to expand beyond Duchenne (the founder&#39;s original motivation) into Friedreich&#39;s ataxia and cardiac diseases required strategic courage, allocating limited capital to new therapeutic areas while the lead program hadn&#39;t yet reached Phase 3. Cash management has been disciplined ($377.7M providing runway to mid-2028), demonstrating long-term capital allocation discipline.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Solid Biosciences at $8.54 offers high-risk clinical-stage gene therapy optionality with multiple near-term catalysts. The lead program SGT-003 has dosed 53 participants in Phase 1/2 INSPIRE DUCHENNE with generally well-tolerated results and advanced to Phase 3 IMPACT DUCHENNE, with an FDA meeting planned for late Q4 2026 that could define the regulatory pathway <span class="source-ref">[1]</span>. The pipeline has diversified meaningfully — SGT-212 Phase 1b data for Friedreich&#39;s ataxia expected Q1 2027, SGT-501 Phase 1b dosing for CPVT targeted H2 2026 — providing multiple shots on goal across devastating rare diseases with limited treatment options. Cash of $377.7M provides 2+ years of runway to mid-2028, reducing near-term dilution risk, and the $915M market cap reflects modest expectations for a company with a Phase 3 asset and multiple clinical-stage programs <span class="source-ref">[1]</span>.</div>
+    <div class="thesis-text">The bear case is the standard clinical-stage biotech risk profile amplified by gene therapy complexity. The company generates zero revenue, burns $111.5M in H1 2026, and will require additional capital before any product reaches market — even a successful Phase 3 requires years of data collection before BLA filing <span class="source-ref">[1]</span>. SGT-003 faces direct competition from Sarepta&#39;s Elevidys, an already-approved Duchenne gene therapy, meaning Solid must demonstrate clinically meaningful superiority to gain market share. Gene therapy manufacturing is notoriously complex and costly, with scale-up risk as programs advance. ROE of -65.5% and profit margin of 0% reflect the pre-revenue reality. Insider selling by CEO Cumbo ($97K) and COO Howton ($43K) in February 2026, while modest amounts, does not signal conviction at current prices <span class="source-ref">[4]</span>. The Inspire Impact Score of -62 (MISALIGNED) due to embryonic stem cell attribution may limit allocation for faith-based investors despite the company&#39;s patient welfare mission.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>SGT-003 Phase 3 IMPACT DUCHENNE advancement with FDA meeting planned late Q4 2026 — regulatory feedback could clarify the approval pathway and de-risk the lead asset in a $2B+ Duchenne gene therapy market <span class="source-ref">[1]</span></li>
+        
+        <li>SGT-212 Phase 1b initial data for Friedreich&#39;s ataxia expected Q1 2027 — positive results in this rare neurodegenerative disease (no approved therapies) could establish Solid as a multi-indication gene therapy platform <span class="source-ref">[1]</span></li>
+        
+        <li>SGT-501 Phase 1b first dosing for CPVT targeted H2 2026, expanding the cardiac pipeline and demonstrating the platform&#39;s applicability beyond neuromuscular diseases <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Clinical trial failure risk — SGT-003 Phase 3 IMPACT DUCHENNE is a binary event, and gene therapy clinical failures in the Duchenne space (including Solid&#39;s own prior SGT-001 setback) demonstrate the therapeutic area&#39;s high attrition rate <span class="source-ref">[1]</span></li>
+        
+        <li>Cash burn acceleration — $111.5M net loss in H1 2026 with four active programs may deplete the $377.7M cash position faster than projected, potentially requiring dilutive capital raises before Phase 3 data maturity <span class="source-ref">[1]</span></li>
+        
+        <li>Competitive displacement by Sarepta&#39;s Elevidys (already approved for Duchenne) — Solid must demonstrate clinically meaningful superiority in a disease where gene therapy is a one-time treatment, making early market entrants structurally advantaged in patient and physician adoption <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Gene therapy development is a physical-world operation that AI structurally cannot displace. Solid Biosciences&#39; work involves viral vector engineering, capsid library development, clinical trial execution with human patients, manufacturing of biological products, and navigation of FDA regulatory processes <span class="source-ref">[2]</span>. These activities require wet-lab biology, physical manufacturing capabilities, and clinical infrastructure that exist entirely outside the digital domain. AI may accelerate certain drug discovery steps (target identification, genetic regulator optimization) but cannot replace the core clinical development, manufacturing, or regulatory pathway. No analyst has flagged AI disruption as a risk for gene therapy companies. AI Opportunity (0/1): No AI revenue or AI products. Solid Biosciences is a traditional gene therapy biotech without notable AI commercialization. While the company develops platform technologies (capsid libraries, genetic regulators) that could theoretically incorporate AI, no quantifiable AI revenue has been reported <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -62
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Embryonic Stem Cells</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Solid Biosciences Q2 2026 Financial Results — $54.8M Net Loss, $377.7M Cash, SGT-003 Phase 3 IMPACT DUCHENNE Dosing, SGT-212 Phase 1b, FDA Meeting Q4 2026 — StockTitan, SEC Filings, 2026</li>
+        
+        <li><span class="src-num">2.</span> Solid Biosciences Corporate Overview — CEO Bo Cumbo, Founder Ilan Ganot, Precision Genetic Medicines Strategy, Pipeline Expansion — BioSpace, Investor Relations, Comparably, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Solid Biosciences ESG — No material ESG controversies identified; Inspire Impact Score -62 (Embryonic Stem Cells attribution)</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — SLDB Key Statistics: Forward P/E -4.93x, D/E 5.4%, ROE -65.5%, Stock Price $8.54, Avg Volume 1.3M, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

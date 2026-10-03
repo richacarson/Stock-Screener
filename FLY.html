@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FLY — Firefly Aerospace Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FLY_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FLY')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FLY
+            <span class="stock-name-full">Firefly Aerospace Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-31</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 36</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">61</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Aerospace & Defense</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Firefly Aerospace Inc. is a space and defense technology company providing end-to-end responsive space solutions including launch services (Alpha rocket), lunar operations (Blue Ghost lander), spacecraft solutions, and in-space services. The company achieved the first commercial Moon landing and holds the national security record for fastest satellite-to-orbit launch at 27 hours notice. Q2 2026 revenue of $117.7M (+659% YoY) was a record quarter, and the company reaffirmed FY2026 guidance of $420-450M revenue. Backlog of $1.5 billion. Added to S&P Aerospace & Defense Select Industry Index in June 2026.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,409 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://fireflyspace.com" target="_blank" rel="noopener">fireflyspace.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Firefly achieved two historic milestones — the first commercial Moon landing (Blue Ghost mission) and the first satellite launched to orbit with just 24-hour notice for a U.S. national security customer <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The Alpha rocket is operational, and the company has expanded from launch services into lunar landers and in-space operations, creating multiple revenue streams. However, the company is still early-stage with only $159.9M in FY2025 revenue against significant losses. AI Deployment (1/2): Firefly developed and deployed AI-powered autonomous navigation systems for the Blue Ghost lunar landing and subsequently brought this AI navigation capability in-house, acquiring Space-ng to advance autonomous space operations <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. These are real AI systems deployed in mission-critical applications, though revenue from AI-specific products is not separately quantified. Market Share (1/2): Firefly occupies a growing niche in small-to-medium launch and lunar services, but remains a smaller player compared to SpaceX, Rocket Lab, and ULA. The $1.3B backlog with 80% of FY2026 revenue already booked demonstrates meaningful market traction <span class="source-ref">[1]</span>. Product Pipeline (2/2): Clear pipeline with Alpha rocket continuation, Blue Ghost 2 and future lunar missions, Medium Launch Vehicle (MLV) in development, and in-space services expansion — all with specific timelines and a $1.3B backlog providing strong revenue visibility through FY2026 guidance of $420-450M <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): The company invests massively in technology development, with operating losses reflecting heavy R&amp;D spend typical of early-stage aerospace companies pushing the frontier of space access and autonomous operations.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Firefly&#39;s vision to &#39;light the way to a bold space ecosystem that expands humanity&#39;s future&#39; is specific, thoughtful, and connects the company&#39;s work to something genuinely bigger — expanding humanity&#39;s presence in space from Earth to the Moon and beyond <span class="source-ref">[3]</span>. The mission reflects genuine intentionality, differentiates from peers, and is partially validated by the successful Moon landing. However, the company is too young to demonstrate multi-decade consistency. Community Impact (0/2): No specific charitable programs, community investment initiatives, or foundation activities were identified in public materials. The company is pre-profit and focused on building its core business. Employee Retention (0/2): No specific retention data, average tenure, or turnover information is publicly available. CEO Jason Kim joined in October 2024, representing a relatively recent leadership transition. Insider Buying (0/2): Net insider selling over the past 6 months — zero purchases against 4 sales. AE Industrial Partners (major shareholder) sold 8 million shares at $48 per share in a significant divestiture <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics, with several excluded due to inapplicability for a pre-profit company. D/E of just 5% reflects a pristine balance sheet with only $27.2M in debt against $459.8M cash plus $175.4M in short-term investments <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. Revenue growth is explosive — Q2 2026 revenue of $117.7M (+659% YoY) and FY2026 guidance of $420-450M represents ~175% growth over FY2025&#39;s $159.9M <span class="source-ref">[1]</span>. However, ROE of -62.15% and profit margin of -193.83% (TTM) reflect a deeply unprofitable business in its investment phase, with Q2 net loss of $92.3M <span class="source-ref">[5]</span>. Forward P/E and Forward PEG are not meaningful (negative earnings expected), and 5-year revenue CAGR is not applicable given the company&#39;s August 2025 IPO. Liquidity floor cleared: 2.46M avg volume x $22.08 = $54.3M daily.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Firefly embodies natural infinite game qualities through its space exploration mission — expanding humanity&#39;s presence beyond Earth is inherently about playing an infinite game. The vision to &#39;light the way to a bold space ecosystem&#39; is genuinely inspiring and connects to something much larger than quarterly earnings. However, the company is too young (public since August 2025) to have demonstrated the consistency, crisis survival, and strategic courage that define true infinite game players. The test will come when Firefly faces its first major launch failure or funding challenge.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Firefly&#39;s vision of &#39;lighting the way to a bold space ecosystem that expands humanity&#39;s future&#39; is genuine, distinctive, and connects to something larger than the company — the expansion of human presence in space <span class="source-ref">[3]</span>. The purpose is partially validated by execution: the first commercial Moon landing, 27-hour responsive launch capability, and in-space services development all trace back to this mission. However, the company has existed for less than a decade in its current form and hasn&#39;t faced the multi-decade tests that validate a truly transformative Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The leadership team combines heritage aerospace experience (COO Ramon Sanchez from Boeing) with new space innovation, and the company describes its culture as &#39;passionate, hardworking, rapidly and continuously innovating to make customers successful&#39; <span class="source-ref">[2]</span>. CEO Jason Kim brings 25 years of satellite and rocket experience. However, he joined in October 2024 (less than 2 years), the company is relatively small, and no specific evidence of exceptional trust culture or employee empowerment was found.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Firefly competes against SpaceX, Rocket Lab, and established defense primes, but has carved a differentiated niche in responsive small-to-medium launch plus lunar services rather than trying to compete head-on with SpaceX&#39;s dominant position <span class="source-ref">[1]</span>. The company uses competitive pressure to sharpen its own capabilities — the 27-hour responsive launch capability was developed to offer something SpaceX cannot, reflecting an improvement-oriented rather than destructive competitive mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (0/2): Firefly is too young as a public company (IPO August 2025) to have faced a true test of existential flexibility. The company has not yet needed to make a painful strategic pivot or abandon a core business in service of its larger mission. The expansion from launch-only to lunar services and in-space operations shows breadth, but this was planned from inception rather than representing a transformative response to adversity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Firefly is investing massively ahead of profitability — operating losses of $95.7M in Q1 2026 alone on $80.9M revenue — to build capabilities that will take years to generate returns <span class="source-ref">[1]</span>. The decision to pursue both launch and lunar landing simultaneously, and the commitment to 24-hour responsive launch capability for national security, demonstrate willingness to make difficult, costly bets. However, this spending is funded by IPO proceeds rather than sacrificing existing profitable operations, which reduces the weight of the &#39;courage&#39; involved.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Firefly Aerospace delivered a record Q2 2026 with $117.7M revenue (+659% YoY), driven by Spacecraft Solutions ($108.3M, up from $9.2M) as the company executes on its $1.5B backlog <span class="source-ref">[1]</span>. FY2026 guidance of $420-450M was reaffirmed, representing ~175% growth from FY2025&#39;s $159.9M, with more than a half-dozen new contract wins in Q2 alone and two Moon missions added to the manifest <span class="source-ref">[1]</span>. The company holds two historic firsts — the first commercial Moon landing and the fastest national security satellite-to-orbit launch (27 hours) — and acquired Space-ng to bring AI-powered autonomous navigation in-house <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. With a pristine balance sheet (D/E 5%, $459.8M cash plus $175.4M short-term investments against just $27.2M debt) and diversified capabilities across launch, lunar, and spacecraft solutions, Firefly is positioned as a differentiated pure-play space company as defense and commercial space budgets accelerate.</div>
+    <div class="thesis-text">The bear case centers on deep unprofitability and stock decline. Q2 2026 net loss was $92.3M (-$0.57 EPS) on $117.7M revenue, and TTM losses of $358M are consuming the IPO cash position <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The stock has fallen from IPO-era highs near $48 to ~$22, down over 50%, signaling investor skepticism about the path to profitability despite strong revenue growth. Spacecraft Solutions dominated Q2 revenue ($108.3M of $117.7M) while Launch revenue was just $9.4M, raising concerns about revenue concentration and the Alpha rocket&#39;s commercial trajectory. Space launch is inherently high-risk — a single Alpha rocket failure could undermine customer confidence and impair backlog. Competition from SpaceX (dominant) and Rocket Lab (profitable) is intense, and Rocket Lab&#39;s demonstrated path to profitability sets a benchmark Firefly has yet to approach. The 8 million share insider sale by AE Industrial Partners at $48 suggests pre-IPO investors viewed earlier prices as full value. Revenue concentration in government contracts creates appropriations and budget sequestration risk.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Record Q2 2026 revenue of $117.7M (+659% YoY) demonstrates explosive Spacecraft Solutions demand, and reaffirmed FY2026 guidance of $420-450M with $1.5B backlog provides strong visibility for continued growth <span class="source-ref">[1]</span></li>
+        
+        <li>Space-ng acquisition brings AI-powered autonomous navigation and guidance in-house, creating a competitive moat in precision landing and in-space operations that enhances Blue Ghost lunar mission capabilities <span class="source-ref">[3]</span></li>
+        
+        <li>Growing U.S. defense space budgets and responsive launch requirements creating sustained demand — over a half-dozen new contract wins in Q2 2026 and two Moon missions added to the manifest demonstrate accelerating government and commercial demand <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Deeply unprofitable with $92.3M net loss in Q2 2026 on $117.7M revenue and $358M in TTM losses — the $635M in cash and short-term investments could be depleted within 2-3 years without profitability improvement or additional fundraising <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Revenue concentration risk — Spacecraft Solutions generated $108.3M of $117.7M Q2 revenue while Alpha Launch contributed just $9.4M, creating dependency on a single revenue line and raising questions about the core launch business trajectory <span class="source-ref">[1]</span></li>
+        
+        <li>Stock decline of 50%+ from IPO-era highs to ~$22 with major insider selling by AE Industrial Partners (8M shares at $48) signals investor skepticism about the path from rapid revenue growth to sustainable profitability <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): Firefly&#39;s core business — physically launching rockets to orbit, landing spacecraft on the Moon, and operating in-space systems — is the definition of AI-immune. AI cannot replace the engineering, manufacturing, testing, and execution of space launch vehicles, lunar landers, or the regulatory compliance required for rocket launches <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The barriers to entry are immense: ITAR regulations, FAA launch licenses, years of rocket development, and the physical infrastructure of launch sites. AI data centers, autonomous systems, and satellite constellations all increase demand for launch services, making AI a direct tailwind for Firefly&#39;s business. The national security dimension adds further protection through classified program requirements and government security clearances that AI cannot replicate. AI Opportunity (1/1): Firefly has deployed AI-powered autonomous navigation for lunar landing (Blue Ghost mission) and acquired Space-ng to advance autonomous space operations <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. These AI capabilities are integrated into revenue-generating missions and represent a competitive advantage in precision landing and in-space autonomy. The company brought its Moon-landing AI navigation system in-house following the Blue Ghost success.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            36
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Firefly Aerospace Q2 2026 Earnings Release — Record Revenue $117.7M (+659% YoY), Net Loss $92.3M, Backlog $1.5B, FY2026 Guidance Reaffirmed $420-450M, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Firefly Aerospace Company Overview and Mission Achievements — fireflyspace.com, First Commercial Moon Landing, 27-hour Responsive Launch, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Firefly AI Navigation and Space-ng Acquisition — GovConWire, fireflyspace.com, AI-Powered Autonomous Guidance Systems, 2026</li>
+        
+        <li><span class="src-num">4.</span> Firefly Insider Transaction Activity — StockTitan, Simply Wall St, AE Industrial Partners 8M Share Sale, 2026</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis, GuruFocus, Yahoo Finance — FLY Key Statistics: D/E 5%, ROE -62.15%, Profit Margin -193.83%, Stock Price ~$22.08, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
