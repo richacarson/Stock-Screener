@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen GLUE — Monte Rosa Therapeutics, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/GLUE_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('GLUE')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            GLUE
+            <span class="stock-name-full">Monte Rosa Therapeutics, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-16</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 26</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Healthcare</span>
+        <span class="sep">&middot;</span><span>Biotechnology</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Monte Rosa Therapeutics is a clinical-stage biotechnology company developing novel small molecule molecular glue degraders (MGDs) that harness the body's natural protein degradation mechanisms. Key programs include MRT-6160 for autoimmune diseases (licensed to Novartis, now in Phase 2 for Sjogren's disease), MRT-2359 for MYC-driven cancers (Phase 2 combo in mCRPC), MRT-8102 for inflammatory/cardiovascular diseases (Phase 1 GFORCE-1 enrollment complete), and a CDK2/Cyclin E1 program approaching IND filing. The company's QuEEN AI-guided discovery engine enables rational design of MGD candidates. Cash of $626M provides runway into 2029.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>173 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.monterosatx.com" target="_blank" rel="noopener">www.monterosatx.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Monte Rosa has advanced three clinical-stage programs since its 2019 founding, secured a landmark $150M upfront Novartis licensing deal for MRT-6160 (eligible for up to $2.1B in milestones), and demonstrated &gt;90% VAV1 degradation in Phase 1 studies <span class="source-ref">[1]</span>. Novartis has now activated a Phase 2 trial of MRT-6160 (DDY391) in Sjogren&#39;s disease, validating the platform with a major pharma partner&#39;s clinical commitment. The GFORCE-1 Phase 1 trial of MRT-8102 completed enrollment and dosing in subjects with elevated cardiovascular risk, with data readout expected H2 2026 <span class="source-ref">[1]</span>. AI Deployment (2/2): The QuEEN discovery engine combines AI-guided computational chemistry, computational biology, structural biology, and proteomics to identify degradable targets and rationally design MGDs — a genuine AI-driven drug discovery platform with measurable output (three clinical candidates, CDK2 IND planned, second-gen NEK7 degrader IND expected H2 2026) <span class="source-ref">[2]</span>. Market Share (1/2): Monte Rosa is a leading molecular glue degrader company alongside Arvinas and C4 Therapeutics, occupying a meaningful position in an emerging drug modality with differentiated QuEEN platform capabilities <span class="source-ref">[2]</span>. Product Pipeline (2/2): Strong multi-program visibility — GFORCE-1 data readout H2 2026, MODeFIRe-1 Phase 2 for MRT-2359 in mCRPC activated, Novartis Phase 2 for MRT-6160 in Sjogren&#39;s, second-gen NEK7 degrader IND H2 2026, cyclin E1 degrader IND 2027 <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): R&amp;D spending of $48M in Q2 2026 alone on $9M revenue reflects dominant R&amp;D investment as expected for a clinical-stage biotech with four active programs <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Monte Rosa&#39;s mission to &#39;unlock the potential of molecular glue degraders to address diseases previously considered undruggable&#39; is specific and thoughtful — it connects the company&#39;s work to expanding the boundaries of medicine beyond existing therapeutic approaches and clearly differentiates from generic biotech platitudes <span class="source-ref">[2]</span>. The mission reflects genuine intentionality about pushing science into new territory. Community Impact (0/2): No evidence of specific charitable programs, foundation, or community investment initiatives. The company&#39;s therapeutic work addresses unmet medical needs, but this is the core business model rather than community giving <span class="source-ref">[2]</span>. Employee Retention (1/2): Recent leadership promotions from within (Sharon Townson to CSO, Jennifer Champoux to COO with culture/engagement expertise, Phil Nickson to CBLO) suggest reasonable internal talent development and retention for a 173-person biotech. CEO Markus Warmuth has led since founding, providing continuity <span class="source-ref">[2]</span>. Insider Buying (0/2): Insider ownership is minimal at 0.56% per yfinance. No evidence of meaningful net insider buying by executives in the past 12 months; the stock has declined ~50% from 52-week highs <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mechanically scored reflecting pre-revenue clinical-stage biotech economics. D/E of 7.8% scores 1.0 — minimal debt with $626M cash providing runway into 2029 <span class="source-ref">[1]</span>. ROE of -42.7% scores 0.0 (2x weight for growth stock), reflecting ongoing cash burn inherent to clinical-stage development <span class="source-ref">[3]</span>. Revenue growth YoY of -61.3% scores 0.0, as Q2 2026 collaboration revenue of $9M declined sharply from prior-year Novartis upfront recognition — highlighting the lumpy, non-recurring nature of pre-commercialization biotech revenue <span class="source-ref">[1]</span>. Profit margin scores 0.0 (Q2 net loss of $43.4M on $9M revenue). Forward P/E (-6.89x), PEG, and 5yr CAGR are excluded as unavailable or economically meaningless. The score of 2 reflects the reality that only D/E contributes positively among available metrics (1.0 out of 5 available weight units). The $626M cash position is the critical mitigant not captured in traditional profitability metrics. Liquidity floor cleared: 1.46M avg vol x $12.92 = $18.8M daily.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Monte Rosa demonstrates mixed infinite game characteristics with a bias toward genuine long-term purpose. The commitment to expanding medicine&#39;s boundaries through molecular glue degraders reflects authentic purpose, and the patient approach to building the QuEEN AI discovery platform shows investment in enduring capability <span class="source-ref">[2]</span>. The Novartis partnership and internal promotions suggest strategic maturity. However, at only 7 years old, the company&#39;s cause has not been tested through crisis or leadership transition, and the deprioritization of MRT-2359 expansion arms following mixed data introduces finite-game pressure to conserve resources.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Monte Rosa&#39;s cause — making previously undruggable proteins druggable through molecular glue degraders — is specific, service-oriented, inclusive, and bigger than any single product <span class="source-ref">[2]</span>. The mission connects scientific innovation to patient impact across oncology, autoimmune, and inflammatory diseases. The GFORCE-1 trial completion and Novartis Phase 2 activation provide emerging validation. However, at only 7 years old and with no commercial products yet, the cause hasn&#39;t been proven through multi-decade consistency, leadership transitions, or crisis.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Internal promotions of Sharon Townson to CSO, Jennifer Champoux to COO (with culture/engagement expertise), and Phil Nickson to CBLO signal a culture of developing talent from within <span class="source-ref">[2]</span>. CEO Markus Warmuth has led since founding, providing leadership continuity. At 173 employees, the organization appears stable without public reports of significant turnover or cultural dysfunction. The emphasis on Champoux&#39;s employee engagement expertise suggests intentional focus on organizational health.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Monte Rosa&#39;s Novartis and Roche partnerships demonstrate willingness to collaborate with larger players who have complementary strengths in clinical development and commercialization, rather than competing to dominate every stage of drug development <span class="source-ref">[2]</span>. Management positions the QuEEN platform&#39;s capabilities as differentiated rather than framing Arvinas and C4 Therapeutics as enemies to defeat. The competitive language focuses on platform advantages, not rival destruction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Monte Rosa deprioritized MRT-2359 expansion arms to focus resources on the most promising indications (CRPC, ER+ breast cancer) following mixed data, demonstrating willingness to adapt strategy based on clinical evidence rather than clinging to the original plan <span class="source-ref">[1]</span>. The pipeline has evolved with new IND filings (NEK7 degrader H2 2026, cyclin E1 2027). However, these are incremental portfolio adjustments, not transformative pivots, and the core MGD strategy has remained constant since founding.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Monte Rosa invested in building the proprietary QuEEN AI discovery platform from scratch rather than licensing existing technology, a costly long-term bet in computational infrastructure <span class="source-ref">[2]</span>. The Novartis licensing decision — giving up control of MRT-6160 for $150M upfront and $2.1B potential milestones — reflects strategic courage to partner for global commercialization capability the company lacks. Maintaining $48M/quarter R&amp;D spending while stock declined ~50% shows commitment to pipeline over cost-cutting.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Monte Rosa Therapeutics is a clinical-stage biotech pioneer in molecular glue degraders with an AI-powered discovery engine (QuEEN) that has produced three clinical candidates and attracted partnerships with Novartis ($150M upfront, $2.1B milestones) and Roche <span class="source-ref">[2]</span>. Multiple near-term catalysts include GFORCE-1 Phase 1 data readout in H2 2026, Novartis Phase 2 for MRT-6160 in Sjogren&#39;s disease, MODeFIRe-1 Phase 2 activation for MRT-2359 in mCRPC, and second-gen NEK7 degrader IND expected H2 2026 <span class="source-ref">[1]</span>. The $626M cash position provides runway into 2029, eliminating near-term dilution risk. At $1.1B market cap (down from ~$2B), the stock offers significant optionality on pipeline catalysts with a strong balance sheet backstop.</div>
+    <div class="thesis-text">The bear case centers on clinical execution risk and deteriorating financial metrics. Q2 2026 collaboration revenue of $9M reflects the lumpy, unpredictable nature of pre-commercialization biotech economics — down 61% YoY as Novartis milestone recognition was non-recurring <span class="source-ref">[1]</span>. Net loss of $43.4M in Q2 alone (R&amp;D $48M + G&amp;A $10.1M vs $9M revenue) produces deeply negative margins, with full-year 2026 EPS estimated at -$1.23 <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. MRT-2359 showed mixed results leading to expansion arm deprioritization, raising questions about the breadth of the platform&#39;s clinical applicability. The stock has fallen ~50% from its 52-week high of $25.77, with short interest at 21.5% signaling significant skepticism. ROE of -42.7% and revenue declining 61% YoY will deter value-oriented investors. Any clinical setback — particularly disappointing GFORCE-1 data or CDK2 IND delays — could cause severe de-rating as the entire valuation rests on pipeline optionality, and the molecular glue degrader space is increasingly competitive with Arvinas, C4, and large pharma entering.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>GFORCE-1 Phase 1 data readout in H2 2026 for MRT-8102 in cardiovascular disease risk subjects — enrollment and dosing complete, positive interim CRP data sets a high bar <span class="source-ref">[1]</span></li>
+        
+        <li>Second-generation NEK7-directed degrader IND submission expected H2 2026 and cyclin E1-directed degrader IND in 2027, expanding the platform&#39;s clinical footprint <span class="source-ref">[1]</span></li>
+        
+        <li>Novartis Phase 2 advancement of MRT-6160 (DDY391) in Sjogren&#39;s disease, potentially triggering development milestones from the $2.1B milestone package <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Clinical trial failure risk — MRT-2359 already showed mixed data leading to arm deprioritization; GFORCE-1 or CDK2 setbacks could undermine QuEEN platform credibility and crater the $1.1B market cap <span class="source-ref">[1]</span></li>
+        
+        <li>Pre-commercialization economics — Q2 net loss of $43.4M on $9M revenue (-482% margin) with R&amp;D of $48M/quarter means cash will deplete despite the $626M runway if clinical timelines extend beyond 2029 <span class="source-ref">[1]</span></li>
+        
+        <li>Short interest at 21.5% of float signals significant market skepticism; competitive pressure from Arvinas, C4 Therapeutics, and large pharma molecular glue programs could compress Monte Rosa&#39;s perceived first-mover advantage <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Biotech drug development is structurally protected from AI disruption — AI cannot replace Phase 1-3 clinical trials, FDA regulatory review, biological validation, GMP manufacturing, or the years-long approval process required to bring therapeutics to market <span class="source-ref">[2]</span>. Monte Rosa&#39;s molecular glue degrader approach addresses &#39;undruggable&#39; protein targets requiring wet-lab chemistry and clinical testing that AI alone cannot replicate. Patent protection on specific MGD compounds creates additional barriers. The company itself uses AI as a competitive advantage through the QuEEN platform, making it an AI beneficiary rather than a target. However, AI could accelerate competitors&#39; drug design capabilities in the molecular glue space. AI Opportunity (1/1): Monte Rosa actively generates value from its QuEEN AI discovery engine, which uses AI-guided computational chemistry and proteomics to design MGD candidates. The platform has produced four programs including three clinical candidates, and pharma partnerships (Novartis, Roche) specifically leverage this AI-driven discovery capability for revenue <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            26
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Monte Rosa Therapeutics Q2 2026 Earnings — Revenue $9M, R&D $48M, Net Loss $43.4M, Cash $626M, GFORCE-1 Enrollment Complete, NEK7 IND H2 2026 — StockTitan, ChartMill, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Monte Rosa Therapeutics Corporate — QuEEN Discovery Engine, Novartis $150M License, Roche Collaboration, Pipeline Programs, Leadership Promotions — monterosatx.com, accessed September 2026</li>
+        
+        <li><span class="src-num">3.</span> Yahoo Finance, StockAnalysis, Simply Wall St — GLUE Key Statistics: Price $12.92, Market Cap $1.1B, Short Interest 21.5%, ROE -42.7%, Revenue Growth -61.3%, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

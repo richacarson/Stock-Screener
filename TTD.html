@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen TTD — The Trade Desk, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/TTD_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('TTD')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            TTD
+            <span class="stock-name-full">The Trade Desk, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-08</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 42</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">66</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Communication Services</span>
+        <span class="sep">&middot;</span><span>Advertising Agencies</span>
+        <span class="sep">&middot;</span><span>NGM</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">The Trade Desk operates the largest independent demand-side platform (DSP) for programmatic digital advertising, enabling brands and agencies to buy ad inventory across the open internet (connected TV, audio, mobile, display, digital out-of-home) outside the walled gardens of Google, Meta, and Amazon. Founded and led by CEO Jeff Green, the company champions the Unified ID 2.0 (UID2) open industry identity standard. The company reported Q1 2026 revenue of $704M (+22% YoY) but Q2 2026 decelerated sharply to $715.1M (+3% YoY), missing estimates, with Q3 2026 guidance of at least $650M implying a YoY decline [1]. Shares have fallen over 60% year-to-date amid concerns about macro headwinds in CPG and auto advertising categories, competitive pressure from walled gardens, and AI-driven market shifts. Headquartered in Ventura, California, with approximately 3,843 employees and a market capitalization of $5.7B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>3,843 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.thetradedesk.com" target="_blank" rel="noopener">www.thetradedesk.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): The Trade Desk built the largest independent DSP and developed UID2 as an open industry identity standard, but the Q2 2026 growth collapse to just 3% YoY (from historical 20%+ rates) and guided Q3 revenue decline signal a faltering rather than accelerating recent track record <span class="source-ref">[1]</span>. CEO Green acknowledged performance is &#39;below our expectations and below the standard we hold ourselves to.&#39; AI Deployment (2/2): Kokai, the AI-powered buying platform, is actively generating measurable results — management reported an average 32% improvement in cost-per-acquisition performance from early Kokai enhancements <span class="source-ref">[2]</span>. The company is testing agentic AI campaign creation with Anthropic&#39;s Claude in closed beta and piloting autonomous Koa agents with agency partner Stagwell, demonstrating AI deployment with specific, quantified outcomes <span class="source-ref">[2]</span>. Market Share (1/2): The Trade Desk remains the largest independent DSP with 217 joint business plans (JBPs, up 38% YoY), but growth deceleration and analyst concern about an &#39;agency problem becoming an earnings problem&#39; suggest real competitive pressure from Amazon and Google&#39;s AI-powered ad stacks <span class="source-ref">[1]</span>. Product Pipeline (1/2): The next-generation Zuma upgrade to Kokai adds Conversion Lift enhancements, reporting improvements, and agentic AI workflows, and management identified new inventory types (chatbot inventory, sponsored shopping listings) as addressable market expansion <span class="source-ref">[2]</span>. No firm launch date or revenue visibility for Zuma was disclosed. R&amp;D Intensity (0/1): No R&amp;D-to-revenue percentage relative to ad-tech peers was disclosed in available research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): The Trade Desk&#39;s mission to champion a fair, transparent, and independent open internet against the walled gardens of Google, Meta, and Amazon is specific, thoughtful, and has shaped strategic decisions for over a decade — most notably the development and open-sourcing of UID2 as an industry standard rather than a proprietary lock-in tool <span class="source-ref">[2]</span>. The mission differentiates meaningfully from ad-tech peers and Green has referenced it consistently through the current growth crisis. Community Impact (0/2): No evidence of distinctive charitable giving or community investment programs was found in available research. Employee Retention (0/2): The 10-K cites values of &#39;vision, agility, grit, openness, generosity, and being full-hearted&#39; and a &#39;culture of inclusion and belonging,&#39; but no specific tenure or turnover data was identified <span class="source-ref">[2]</span>. Insider Buying (2/2): CEO Jeff Green purchased approximately $150M of TTD stock (~6 million shares) through open-market purchases, one of the largest CEO insider purchases in recent memory and a powerful conviction signal during a period of severe stock decline <span class="source-ref">[3]</span>. QuiverQuant reports 4 insider purchases and 3 sales over the past 6 months, with Green&#39;s purchases dramatically outweighing all other activity.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock on available metrics. D/E of 16.9% is well below the 70% target (score 1.0), and ROE of 15.4% narrowly exceeds the 15% target (score 1.0, 2x weight) <span class="source-ref">[1]</span>. The 4-year revenue CAGR of approximately 17.3% (from $1.58B in 2022 to $2.99B TTM) scores at the 1.0 cap (2x weight), reflecting years of historical hypergrowth despite the recent slowdown. Q2 2026 revenue growth of 3.0% YoY scores 0.77, directly capturing the growth deceleration that triggered the stock decline. Forward P/E of 11.98 and PEG of 0.86 both score at the 1.0 cap — the 60%+ year-to-date stock decline has made the stock mechanically cheap even as growth has stalled <span class="source-ref">[1]</span>. TTM profit margin of 13.6% scores 0.68. Daily dollar volume of $283M provides ample liquidity. The 9/10 result reflects primarily the balance sheet strength, historical growth trajectory, and crash-driven valuation reset rather than current fundamental momentum.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">The Trade Desk under founder-CEO Jeff Green has genuinely championed the open internet against ad-tech walled gardens for over a decade, developing UID2 as an open industry standard rather than a proprietary moat and putting $150M of personal capital into the stock during its deepest decline. The current growth crisis is the first serious test of whether that purpose-driven strategy can survive real financial pressure and competitive AI disruption — Green&#39;s extraordinary personal financial commitment and consistent strategic messaging through the downturn represent strong infinite-game signals, though the ultimate outcome remains uncertain.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): The Trade Desk&#39;s mission to keep the internet &#39;fair and objective&#39; for advertisers by championing the open internet against Google, Meta, and Amazon&#39;s walled gardens is genuine and has shaped real strategic decisions — most notably the development of UID2 as an open, non-proprietary identity standard offered to the entire industry rather than monetized exclusively <span class="source-ref">[2]</span>. This cause has been consistently articulated by Green for over a decade but is now being tested through the first genuine financial crisis in the company&#39;s history.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): The Trade Desk has a relatively small team of 3,843 employees led by its founding CEO, with the 10-K citing values of &#39;vision, agility, grit, openness, generosity, and being full-hearted&#39; and a commitment to &#39;inclusion and belonging&#39; <span class="source-ref">[2]</span>. A new CFO (Alex Kayyal) and CRO (Anders Mortensen, ex-Google) strengthen the team, but no specific tenure or turnover data was found, and the severe stock decline is an untested stress point for internal morale.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): CEO Green explicitly frames AI-native competitors and walled-garden competition as opportunities to improve The Trade Desk&#39;s platform rather than threats to be destroyed, actively piloting AI tools with Anthropic and partnering with Stagwell rather than resisting the shift <span class="source-ref">[2]</span>. Green&#39;s statement that &#39;the biggest brands need a platform that protects their data and represents their interests&#39; acknowledges the strengths of walled gardens while positioning TTD&#39;s neutrality as the differentiating response.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The evolution from the original Kokai platform to the more automated, agentic Zuma interface, the expansion into CTV and audio from display-centric beginnings, and the identification of new inventory types (chatbot inventory, sponsored shopping) reflect real adaptation to changing market dynamics <span class="source-ref">[2]</span>. This is incremental platform evolution rather than a transformative abandonment of the core DSP model.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): CEO Jeff Green invested approximately $150M of personal capital in TTD stock (~6 million shares at open market prices) after the stock declined over 60%, representing one of the largest CEO insider purchases in recent memory and an extraordinary act of conviction during financial adversity <span class="source-ref">[3]</span>. Beyond the financial bet, Green maintained the company&#39;s commitment to the open internet mission and UID2 standard even as the stock crashed, and continued investing in AI capabilities (Kokai, Claude integration) rather than retreating to short-term cost-cutting. The pattern of personal sacrifice and strategic consistency during crisis is a textbook example of Sinek&#39;s courage to lead.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">The Trade Desk at $12.09 with a $5.7B market cap presents a contrarian case built on extreme valuation compression and founder conviction. Forward P/E of 11.98 and PEG of 0.86 sit at levels unseen in the company&#39;s public history, with CEO Jeff Green putting approximately $150M of personal capital behind his conviction by purchasing ~6 million shares on the open market during the decline <span class="source-ref">[3]</span>. The balance sheet is clean (D/E 16.9%, $1.5B cash against $434M debt), and the 4-year revenue CAGR of 17.3% demonstrates a platform with a proven growth trajectory, even if Q2 2026 disappointed <span class="source-ref">[1]</span>. Kokai&#39;s AI-powered bidding delivers a quantified 32% average CPA improvement, the Claude-powered agentic campaign creation is in closed beta, and the company&#39;s 217 JBPs (up 38% YoY) show deepening client relationships that create switching costs <span class="source-ref">[2]</span>. The Inspire Impact Score of +42 (ALIGNED) reflects strong ESG-adjacent practices across privacy, data security, and ethical supply chain dimensions — a genuine differentiator for faith-based investors in the ad-tech space.</div>
+    <div class="thesis-text">The bear case is now the dominant market narrative: Q2 2026 revenue grew just 3% YoY to $715.1M against $751.6M consensus, net income fell to $64.4M from $90.1M, free cash flow dropped 71% YoY, and Q3 guidance of at least $650M implies a roughly 12% YoY revenue decline — a stunning reversal for a company that grew 20%+ for most of its public history <span class="source-ref">[1]</span>. Management attributes the miss to macro headwinds in CPG and auto categories plus &#39;execution factors,&#39; but analyst concern runs deeper — Oppenheimer downgraded to Perform, Arete cut to Sell with an $11.60 target, and the consensus rating has shifted to &#39;Reduce&#39; <span class="source-ref">[3]</span>. The AI Resilience score of 6/10 (MODERATE) reflects genuine uncertainty about whether AI-native ad-buying tools inside walled gardens and emerging agentic platforms could structurally erode the independent DSP&#39;s value proposition — a risk the current growth collapse makes concrete rather than theoretical. Amazon&#39;s growing ad business and streaming partnerships make premium CTV supply harder to secure. Until The Trade Desk demonstrates several consecutive quarters of reaccelerated growth, the HOLD rating reflects the balance between extreme valuation, founder conviction, and genuine competitive/macro uncertainty.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Successful rollout of the Zuma Kokai platform upgrade with deeper agentic AI automation and the Claude-powered campaign creation beta, which could restore advertiser confidence and reaccelerate growth by reducing campaign setup friction <span class="source-ref">[2]</span></li>
+        
+        <li>CEO Jeff Green&#39;s $150M personal investment creating an alignment signal that institutional investors may follow, with the stock trading at historically depressed multiples (11.98x forward P/E, 0.86 PEG) <span class="source-ref">[3]</span></li>
+        
+        <li>Expansion into new inventory types — chatbot advertising and sponsored shopping listings — that could meaningfully grow the addressable market beyond traditional display, CTV, and audio formats <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>AI-driven competitive disruption risk: Google Performance Max, Amazon&#39;s AI ad stack, and emerging agentic ad-buying platforms could bypass independent DSPs, with the growth deceleration from 22% (Q1) to 3% (Q2) and guided decline (Q3) making this risk concrete <span class="source-ref">[1]</span></li>
+        
+        <li>Execution and &#39;agency problem&#39; risk: analysts and financial media explicitly question whether the growth deceleration reflects competitive share loss and structural DSP disintermediation rather than temporary macro headwinds — consensus rating has shifted to &#39;Reduce&#39; with average target of $20.85 <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Profitability compression with Q2 net income down 28.5% YoY to $64.4M and free cash flow declining 71%, creating risk that margin deterioration outpaces revenue recovery even if top-line growth stabilizes <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): The Trade Desk occupies an EXPOSED position — AI creates both significant opportunity and genuine substitution risk for the DSP model <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. CEO Green argues &#39;AI is not a disruption to the DSP model; it is the very essence of it,&#39; noting that with supply outpacing demand, AI-powered comparison of millions of ad opportunities is exactly what the platform does. However, the severe growth deceleration (3% Q2, guided decline Q3) coincides with aggressive AI adoption by walled gardens — Google Performance Max and Amazon&#39;s AI ad stack offer competing AI-powered buying without needing an independent DSP. The company&#39;s neutrality, advertiser data protection, and UID2 standard create meaningful defensive moats (switching costs, proprietary data) that keep it above the VULNERABLE range, but the outcome of this competitive shift is genuinely uncertain. AI Opportunity (1/1): The entire Kokai platform is AI-powered, delivering a quantified 32% average CPA improvement in early results, and the company is testing AI campaign creation with Anthropic&#39;s Claude — the platform generates revenue through AI-driven ad optimization even though AI revenue is not separately quantified <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            42
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> The Trade Desk Q1-Q2 2026 Earnings — Q1 Revenue $704M (+22% YoY), Q2 Revenue $715.1M (+3% YoY, Miss), Q2 Net Income $64.4M (-28.5% YoY), Q3 Guidance $650M+ (Decline), 217 JBPs (+38% YoY) — MarketBeat, Quartr, Vaasblock, Tikr, August 2026</li>
+        
+        <li><span class="src-num">2.</span> The Trade Desk AI Strategy — Kokai Platform (32% CPA Improvement), Zuma Agentic Upgrade, Claude Campaign Creation Beta, UID2 Open Standard, CEO Jeff Green Vision — Adweek, TTD Press Room, GuruFocus, PPC.land, 2026</li>
+        
+        <li><span class="src-num">3.</span> The Trade Desk Insider Activity and Analyst Coverage — CEO Green ~$150M Open Market Purchase (~6M Shares), Consensus 'Reduce' Rating, Oppenheimer Downgrade, Arete $11.60 Target, PitchBook ESG Risk 21.84 Med — QuiverQuant, MarketBeat, InsiderTrades, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
