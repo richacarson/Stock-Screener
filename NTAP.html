@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen NTAP — NetApp, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/NTAP_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('NTAP')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            NTAP
+            <span class="stock-name-full">NetApp, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-08</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">67</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Computer Storage & Peripherals</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">NetApp is a global intelligent data infrastructure company that provides enterprise storage, cloud data services, and AI-driven data management solutions. The company has evolved from a traditional storage vendor into a hybrid multi-cloud data platform, with all-flash revenue of $4.2B (+11% YoY), public cloud revenue of $688M (+18% YoY), and Keystone storage-as-a-service growing approximately 65% YoY in FY2026 [1]. Under CEO George Kurian (since 2015), NetApp recorded 1,100 AI and data preparation wins in FY2026, up from 400 the prior year. FY2026 revenue was $6.93B (+5% YoY) with non-GAAP EPS of $8.13 (+12% YoY) and free cash flow of $1.87B (+40% YoY) [1]. Market cap approximately $36.5B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>12,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.netapp.com" target="_blank" rel="noopener">www.netapp.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): NetApp has executed a meaningful transformation from traditional on-premises storage to hybrid multi-cloud intelligent data infrastructure over the past five years. All-flash storage grew to $4.2B in FY2026 (+11% YoY), representing the majority of product revenue. Public cloud services reached $688M (+18% YoY), and Keystone storage-as-a-service grew approximately 65% — demonstrating successful new revenue streams <span class="source-ref">[1]</span>. The pivot from hardware-centric to cloud and services is a significant business model evolution. AI Deployment (2/2): NetApp achieved 1,100 AI and data preparation wins in FY2026, up 175% from 400 in the prior year, with 500 deals in Q4 alone and approximately 50 AI factories/labs partnerships <span class="source-ref">[1]</span>. These are measurable customer deployments of AI-related products generating quantifiable revenue. Market Share (1/2): NetApp is a meaningful player in enterprise storage, competing with Dell Technologies, Pure Storage, HPE, and cloud-native storage. The company holds strong positions in hybrid cloud data management but does not dominate any single category in the increasingly competitive data infrastructure landscape. Product Pipeline (1/2): FY2027 revenue guidance of $7.33-7.58B (8% midpoint growth) provides near-term visibility. Remaining performance obligations of $5.65B (+14% YoY) signal strong forward demand. However, specific next-generation product launches with named dates are not publicly disclosed <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): NetApp invests heavily in R&amp;D relative to enterprise storage peers, funding innovations in ONTAP data management, cloud integration, and AI workload optimization. R&amp;D spending consistently exceeds industry average for storage/infrastructure companies <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): NetApp&#39;s purpose — helping enterprises unify, secure, and optimize their data across on-premises and cloud — is specific, thoughtful, and clearly differentiated from generic technology company missions. CEO George Kurian has articulated a leadership philosophy that puts customer outcomes ahead of short-term disruption: &#39;If it&#39;s good for our clients, we need to embrace it, even if it could be in the near term disruptive to our business&#39; <span class="source-ref">[2]</span>. This philosophy has driven strategic decisions including embracing cloud as an opportunity when it could have cannibalized on-premises revenue, demonstrating genuine intentionality. Community &amp; Charitable Impact (1/2): NetApp hired its first Chief Sustainability Officer (Nicola Acutt) in FY2024, increased renewable energy use by 113% over baseline, established science-based emissions targets, and earned EcoVadis Gold medal recognition (top 5% of all rated companies) <span class="source-ref">[3]</span>. These are meaningful corporate sustainability investments, though not distinctively community-focused. Employee Retention (0/2): George Kurian&#39;s 11-year tenure as CEO provides executive stability, but no specific workforce retention metrics, average tenure data, or voluntary turnover rates are publicly available. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months identified in available data.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock. NetApp demonstrates exceptional profitability with ROE of 114.82% (amplified by share buyback-reduced equity) scoring maximum with 2x weight, and profit margin of 19.19% nearly reaching the 20% target (scoring 0.96) <span class="source-ref">[4]</span>. Forward P/E of 18.72x is just below the 20x target, scoring 1.0. The forward PEG of 1.74 scores 0.63 (with 2x weight), reflecting moderate growth expectations relative to valuation. The debt-to-equity ratio of 169% is elevated (scoring 0.57 on the 70-300% interpolation scale) but manageable given the $1.87B in annual FCF. Revenue growth YoY of 5% scores 0.83, and the 5-year revenue CAGR of approximately 4% (FY2021 $5.74B to FY2026 $6.93B) scores 0.60 with 2x weight — the modest top-line growth reflecting NetApp&#39;s transition from legacy hardware to higher-margin cloud services rather than outright expansion <span class="source-ref">[1]</span>. Easily clears the liquidity floor with daily trading value of approximately $480M.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">NetApp under George Kurian is a genuine Infinite Game player in the technology infrastructure space. Kurian&#39;s 11-year tenure, his explicit philosophy of embracing disruption even when costly (&#39;If it&#39;s good for our clients, we need to embrace it&#39;), and the successful multi-year pivot from on-premises storage to hybrid cloud to AI data infrastructure demonstrate a company oriented toward long-term relevance over short-term optimization. The strategic flexibility to embrace cloud as an opportunity rather than a threat — when it could have cannibalized core on-premises revenue — earns Existential Flexibility credit. The competitive posture focuses on serving customers rather than destroying rivals.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): NetApp&#39;s purpose — unifying and optimizing enterprise data across all environments to help businesses harness their most critical asset — is genuine, distinctive, and has shaped strategic decisions for over a decade under Kurian <span class="source-ref">[2]</span>. The philosophy of embracing disruption for customer benefit, even at short-term cost, connects the company&#39;s work to something larger than quarterly revenue. The cloud pivot was driven by this customer-first purpose, not by desperation. However, the cause has not been tested through the kind of multi-decade, multi-crisis validation that earns a 3 — Kurian&#39;s tenure, while impressive at 11 years, has not yet faced a fundamental existential threat comparable to what tested Apple or NVIDIA.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): CEO Kurian&#39;s 11-year tenure provides executive continuity unusual in the technology sector, and the leadership team shows stable composition. NetApp hired its first Chief Sustainability Officer in FY2024, demonstrating investment in organizational values beyond pure technology execution <span class="source-ref">[3]</span>. The company is generally regarded as a stable employer without major cultural red flags. However, no specific evidence of exceptional employee empowerment, psychological safety initiatives, or above-average retention metrics was found to warrant a full score.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): NetApp&#39;s competitive posture explicitly focuses on self-improvement and customer outcomes rather than rival destruction. CEO Kurian&#39;s philosophy — &#39;If it&#39;s good for our clients, we need to embrace it, even if it could be in the near term disruptive to our business&#39; — demonstrates a company that uses competitive dynamics (including the cloud disruption from AWS, Azure, and GCP) to improve its own offerings rather than defensively protecting legacy business <span class="source-ref">[2]</span>. NetApp&#39;s pivot to hybrid cloud was motivated by learning from cloud-native rivals&#39; strengths, not by trying to defeat them.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): NetApp has meaningfully evolved from traditional NAS/SAN storage appliances to a hybrid multi-cloud intelligent data infrastructure platform, and more recently pivoted to AI data management. The embrace of cloud services — when cloud was viewed as an existential threat to on-premises storage vendors — demonstrates strategic adaptation <span class="source-ref">[2]</span>. Public cloud revenue grew to $688M and Keystone-as-a-service grew 65%, showing new business models gaining traction <span class="source-ref">[1]</span>. However, the underlying core (enterprise data storage and management) has remained consistent — the delivery models evolved, but the fundamental product did not undergo a transformative reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Kurian&#39;s decision to embrace cloud services when it could have cannibalized NetApp&#39;s higher-margin on-premises business required courage and long-term thinking. Continued R&amp;D investment in AI data infrastructure during periods of modest revenue growth (5% FY2026) shows willingness to invest through cycles. The shift from perpetual license to subscription/as-a-service models (Keystone) sacrifices near-term revenue for long-term recurring revenue quality <span class="source-ref">[1]</span>. However, these are strategic evolution decisions rather than the dramatic, costly bets that characterize a 2-point score.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">NetApp at 18.72x forward earnings is a well-positioned data infrastructure compounder benefiting directly from the AI buildout cycle. FY2026 demonstrated accelerating momentum: Q4 revenue grew 12% YoY to $1.95B, non-GAAP operating margin expanded 340 bps to 32%, and free cash flow surged 40% to $1.87B <span class="source-ref">[1]</span>. The AI growth engine is real — 1,100 AI wins (up 175% from 400), 500 Q4 deals, and approximately 50 AI factory/lab partnerships provide tangible evidence that enterprises are choosing NetApp as their AI data infrastructure platform. Remaining performance obligations of $5.65B (+14% YoY) and FY2027 guidance of $7.33-7.58B (8% midpoint growth) with $8.70-$9.00 EPS (9% midpoint growth) provide visibility into continued expansion. The high-margin profile (71% gross, 30% operating, 19% net) and ROE of 115% demonstrate efficient capital deployment, while the PEG of 1.74 is reasonable for a business transitioning from legacy storage to AI-driven recurring revenue with $4.85B in deferred revenue (+7% YoY).</div>
+    <div class="thesis-text">The bear case centers on competitive intensity, modest organic growth, and valuation premium. Despite the AI narrative, FY2026 total revenue grew only 5% — well below software peers — and the 5-year CAGR of approximately 4% reflects a business that has struggled to meaningfully accelerate top-line growth even as product mix shifts to higher-value segments. The enterprise storage market faces intensifying competition from Dell Technologies, Pure Storage, HPE, and hyperscaler-native storage solutions that could compress margins or market share over time <span class="source-ref">[4]</span>. The debt-to-equity ratio of 169% is manageable but limits financial flexibility if a downturn reduces enterprise IT spending. At 26x trailing earnings, the stock prices in continued AI momentum — any deceleration in AI win rates (which tripled from Q4&#39;s annualized run rate) could trigger multiple compression. The Inspire Impact Score of -49 (MISALIGNED) may limit allocation for faith-based investors. Dependency on the continued expansion of enterprise AI infrastructure spending creates cyclical risk — a pause in AI capex buildouts would directly impact NetApp&#39;s highest-growth segments.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI data infrastructure demand accelerating with 1,100 FY2026 AI wins (up 175% YoY) and 500 Q4 deals alone, positioning NetApp as the default enterprise data platform for AI workloads including approximately 50 AI factory and lab partnerships with specific revenue contribution <span class="source-ref">[1]</span></li>
+        
+        <li>FY2027 guidance of $7.33-7.58B revenue (8% midpoint growth) and $8.70-$9.00 EPS (9% midpoint growth) with $5.65B in remaining performance obligations (+14% YoY) providing forward visibility and supporting the current valuation premium <span class="source-ref">[1]</span></li>
+        
+        <li>Margin expansion trajectory with Q4 FY2026 operating margin of 32% (+340 bps YoY) and free cash flow of $1.87B (+40% YoY) as the business mix shifts toward higher-margin cloud services, Keystone-as-a-service (~65% growth), and all-flash products <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Intensifying competition from Dell Technologies, Pure Storage, HPE, and hyperscaler-native storage solutions (AWS S3, Azure Blob, GCP Cloud Storage) that could compress NetApp&#39;s market share and margins in both on-premises and cloud data infrastructure segments <span class="source-ref">[4]</span></li>
+        
+        <li>Modest top-line growth of 5% FY2026 revenue and ~4% 5-year CAGR despite the AI narrative raises questions about whether AI wins are additive or merely replacing legacy storage refresh cycles — a deceleration in AI win rates could expose the valuation premium at 26x trailing earnings</li>
+        
+        <li>Enterprise IT spending cyclicality risk as NetApp&#39;s AI growth thesis depends on continued corporate AI infrastructure investment — any macro-driven pause in AI capex could simultaneously reduce demand for new storage deployments and pressure Keystone/cloud subscription renewals <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): NetApp&#39;s core enterprise data management and storage infrastructure business is protected by deep customer switching costs, data gravity (moving petabytes of enterprise data is costly and risky), and the complexity of hybrid multi-cloud environments that require specialized management tools <span class="source-ref">[2]</span>. AI does not threaten NetApp&#39;s business — it dramatically amplifies demand for data storage, management, and infrastructure as AI workloads generate and consume massive data volumes. The company has positioned itself as essential AI infrastructure with 1,100 AI wins and 50 AI factory/lab partnerships in FY2026 <span class="source-ref">[1]</span>. The modest risk is that hyperscale cloud providers (AWS, Azure, GCP) could build increasingly competitive native storage solutions that reduce demand for third-party data management in cloud environments, compressing NetApp&#39;s cloud revenue growth over time. AI Opportunity (1/1): NetApp generates quantifiable AI-related revenue through 1,100 AI and data preparation customer wins in FY2026 (up 175% from 400 in FY2025), 500 AI deals in Q4 alone, approximately 50 AI factories and labs partnerships, and all-flash storage products specifically optimized for AI workloads <span class="source-ref">[1]</span>. AI is explicitly a growth engine cited in earnings guidance.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> NetApp Q4 and FY2026 Earnings Release — FY26 Revenue $6.93B (+5%), Q4 Revenue $1.95B (+12%), Non-GAAP EPS $8.13 (+12%), FCF $1.87B (+40%), 1,100 AI Wins, All-Flash $4.2B, Cloud $688M, Keystone ~65% Growth, RPO $5.65B (+14%), FY27 Guidance $7.33-7.58B Revenue, June 2026</li>
+        
+        <li><span class="src-num">2.</span> NetApp CEO George Kurian — 11-year tenure, customer-first disruption philosophy, Bloomberg/SiliconANGLE/ITP.net interviews, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> NetApp ESG Report and Sustainability — Chief Sustainability Officer Nicola Acutt hired FY2024, EcoVadis Gold medal (top 5%), renewable energy +113%, science-based targets, MSCI AA rating, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis, Yahoo Finance — NTAP Key Statistics: Forward P/E 18.72x, PEG 1.74, D/E 169%, ROE 114.82%, Profit Margin 19.19%, Stock Price $185.59, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

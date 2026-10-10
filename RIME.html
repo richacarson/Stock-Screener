@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RIME — Algorhythm Holdings, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RIME_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RIME')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RIME
+            <span class="stock-name-full">Algorhythm Holdings, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-23</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 36</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge sell">SELL</span>
+            <div class="overall-score">
+                <span class="num">31</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Algorhythm Holdings is a diversified technology holding company whose core asset is SemiCab, an AI-powered logistics platform that optimizes freight movement using ML predictions and predictive optimization to enable fully loaded round trips and reduce empty trucking miles. Formerly The Singing Machine Company (karaoke machines), the firm rebranded in September 2024 following its acquisition of SemiCab in July 2024. Q2 2026 revenue was $3.0M (+161% YoY), but the company reported a net loss of $4.15M and has flagged going concern risk. Market cap is approximately $5.9M.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>46 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.algoholdings.com" target="_blank" rel="noopener">www.algoholdings.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Algorhythm executed a radical pivot from karaoke machines (The Singing Machine) to AI-powered logistics through the SemiCab acquisition in July 2024, but the transformation is less than two years old and has not yet proven successful financially — Q2 2026 revenue of $3.0M came with a net loss of $4.15M and negative gross margins <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Revenue growth of 161% YoY is impressive but from a near-zero base. AI Deployment (2/2): SemiCab is a genuine AI-powered logistics platform shipping to enterprise customers including Procter &amp; Gamble India (contract expanded 32% in annualized value in Q2), Onida Electronics (new Master Services Agreement), Coca-Cola India, and Unilever <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The platform uses AI/ML predictions and advanced predictive optimization to orchestrate collaborative freight movement, with real-time data from API-based load tendering. These are real, paying customers using deployed AI technology. Market Share (0/2): With $8.52M in TTM revenue and a $5.9M market cap, SemiCab has negligible market share in the massive global logistics technology market against established players like project44, FourKites, and Uber Freight <span class="source-ref">[4]</span>. Product Pipeline (1/2): P&amp;G India contract expansion (+32%) and new Onida Electronics MSA demonstrate customer pipeline traction. The Apex SaaS platform targeting U.S. and European markets would significantly expand the addressable market, and the board is evaluating a potential energy infrastructure acquisition for diversification <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. However, specific launch timelines and revenue projections for new markets remain undisclosed. R&amp;D Intensity (0/1): No specific R&amp;D spending data is available for this 46-person company.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): Algorhythm Holdings describes itself as &#39;a diversified technology holding company dedicated to identifying, building, and scaling high-impact software and AI platforms&#39; — a generic investment-company description interchangeable with hundreds of holding companies <span class="source-ref">[3]</span>. SemiCab&#39;s specific mission of eliminating empty trucking miles has environmental implications but is not prominently elevated as a company-wide cause. The board&#39;s evaluation of a potential energy infrastructure acquisition further dilutes any focused purpose narrative, suggesting the company follows opportunity rather than cause. Community Impact (0/2): No community programs, charitable contributions, or social impact initiatives were identified. With 46 employees and a $5.9M market cap, the company lacks scale for meaningful community engagement. Employee Retention (0/2): No publicly available retention, tenure, or employee satisfaction data. The going concern risk and precarious financial position likely create workplace uncertainty. Insider Buying (0/2): Insider ownership is only 1.10%, reflecting minimal management equity alignment <span class="source-ref">[4]</span>. The company may issue 5,000,000 shares to settle a claim, further diluting existing shareholders. No meaningful open-market insider purchases were identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">AT RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 0%"></div>
+        </div>
+        <span class="score-num red">0</span>
+    </div>
+    <div class="score-analysis">LIQUIDITY FLOOR TRIGGERED: Average daily volume of 1,181,883 shares multiplied by the stock price of $0.3444 yields daily dollar volume of approximately $407,000, well below the $1,000,000 liquidity floor threshold <span class="source-ref">[4]</span>. Infrastructure score is set to 0. For context, the underlying financials are severely distressed: D/E of 275% reflects heavy reliance on debt financing including promissory notes of $6.4M and related party notes of $2.3M <span class="source-ref">[2]</span>. ROE of -524% and profit margin of -176% indicate massive cash burn relative to the tiny equity base of $3.28M <span class="source-ref">[4]</span>. Gross margin remains negative at -26.28% TTM — cost of sales exceeds revenue, meaning the company loses money on every dollar sold before operating expenses <span class="source-ref">[2]</span>. Cash of $4.97M plus $2.98M restricted cash provides limited runway against quarterly net losses of $4.15M. Management has flagged going concern risk. The Altman Z-Score of -7.18 indicates severe bankruptcy risk <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>2</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Algorhythm Holdings operates with a fundamentally finite mindset. The company&#39;s most notable attribute is existential flexibility — the radical pivot from karaoke machines to AI logistics — but this was driven by survival necessity rather than a Just Cause. The board&#39;s evaluation of a potential energy infrastructure acquisition suggests the company remains an opportunistic holding vehicle rather than a purpose-driven enterprise. With going concern risk, 1.1% insider ownership, and no articulated cause beyond &#39;identifying and scaling high-impact AI platforms,&#39; the company plays to survive rather than to advance a vision of a better future.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Just Cause (0/3): Algorhythm Holdings exists to &#39;identify, build, and scale high-impact software and AI platforms&#39; — this is a holding company investment thesis, not a Just Cause <span class="source-ref">[3]</span>. There is no vision of a future state that inspires sacrifice or commitment. The board&#39;s evaluation of a potential energy infrastructure acquisition confirms the company follows opportunity rather than purpose. SemiCab&#39;s mission of reducing empty trucking miles has cause-adjacent elements but is not elevated as a central, enduring purpose that shapes capital allocation decisions.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): No employee satisfaction, turnover, or cultural data is publicly available <span class="source-ref">[4]</span>. Going concern risk and negative gross margins create existential uncertainty that likely undermines psychological safety. The potential issuance of 5,000,000 shares to settle a claim — representing significant dilution for a company with 17M shares outstanding — suggests governance decisions may not prioritize existing stakeholders&#39; trust. Insider ownership of only 1.1% indicates management does not have meaningful skin in the game alongside employees and shareholders.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence was found of Algorhythm Holdings acknowledging competitors&#39; strengths or using competitive dynamics for self-improvement <span class="source-ref">[3]</span>. The company&#39;s communications focus on its own transformation narrative and revenue growth metrics without addressing how it differentiates from well-funded competitors in the logistics technology space. In a market with project44, FourKites, and Uber Freight, competitive self-awareness is critical for survival.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The transformation from The Singing Machine Company (karaoke machines since 1982) to an AI-powered logistics technology company represents a genuinely dramatic corporate reinvention <span class="source-ref">[3]</span>. The company abandoned a 40-year legacy business for an entirely different industry, technology, and customer base. However, the pivot was driven by desperation — The Singing Machine was a dying business with no viable path forward — rather than by a Just Cause, as Sinek&#39;s framework requires for the highest score. The ongoing evaluation of a potential energy infrastructure acquisition suggests continued opportunistic pivoting rather than cause-driven transformation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Gary Atkinson&#39;s decision to acquire SemiCab and pivot the entire company from consumer karaoke to enterprise AI logistics required genuine courage — abandoning a known business for an unproven technology play <span class="source-ref">[3]</span>. Leadership committed fully to the transformation rather than hedging. However, the courage was forced by circumstances (dying legacy business), and the heavy reliance on debt financing, going concern risk, and minimal insider ownership (1.1%) raise questions about whether leadership is building sustainably or gambling on survival <span class="source-ref">[2]</span><span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Algorhythm Holdings offers speculative exposure to AI-powered logistics optimization through SemiCab, which has attracted blue-chip enterprise customers including P&amp;G India (contract expanded 32% in Q2), Onida Electronics (new MSA), Coca-Cola India, and Unilever <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. Q2 2026 revenue of $3.0M (+161% YoY, +25% sequentially) demonstrates accelerating customer adoption, and gross margin improved 850 basis points sequentially, suggesting progress toward unit economics <span class="source-ref">[1]</span>. The EPS loss of $0.25 beat the estimated $0.36 loss by 30.6%, showing improving cost discipline. The Inspire Impact Score of 36 (ALIGNED) with no negative attributions makes it clean for faith-based screening, and SemiCab&#39;s mission of reducing empty trucking miles aligns with emissions reduction goals.</div>
+    <div class="thesis-text">The investment case is overwhelmed by existential risk factors. The company has a $5.9M market cap, negative gross margins of -26.28% TTM, and management has flagged going concern risk <span class="source-ref">[2]</span><span class="source-ref">[4]</span>. Cash of ~$8M against quarterly net losses of $4.15M provides only 1-2 quarters of runway. D/E of 275% with promissory notes and related party debt signals financial fragility, and the Altman Z-Score of -7.18 indicates severe bankruptcy risk <span class="source-ref">[4]</span>. The stock price has dropped 44% from $0.62 to $0.3444, and daily dollar volume of ~$407K triggers the liquidity floor — the stock is effectively uninvestable for any fund with position-sizing discipline. Insider ownership of only 1.1% suggests management is not meaningfully aligned with shareholders. The potential issuance of 5M shares to settle a claim adds dilution risk. The board&#39;s evaluation of a potential energy infrastructure acquisition raises strategic focus concerns — pivoting from karaoke to AI logistics to energy within two years suggests an opportunistic holding company rather than a focused technology builder. Revenue growth, while impressive on a percentage basis, operates on a scale ($8.5M TTM) that is immaterial in the context of the global logistics technology market.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Gross margin inflection — sequential improvement of 850 bps in Q2 2026 suggests progress toward positive unit economics; if the platform achieves positive gross margins as fixed costs are absorbed across the growing revenue base, the path to viability becomes credible <span class="source-ref">[1]</span></li>
+        
+        <li>P&amp;G India contract expansion (+32% annualized value) and new Onida Electronics MSA demonstrate enterprise customer willingness to expand SemiCab usage — additional blue-chip wins could validate the platform and attract strategic partnership or acquisition interest <span class="source-ref">[1]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Apex SaaS platform launch in U.S. and European markets would dramatically expand the addressable market beyond India-focused operations, potentially accelerating revenue growth beyond the current $12M+ annualized run rate <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Going concern risk flagged by management — cash of ~$8M against quarterly net losses of $4.15M provides only 1-2 quarters of runway, and the company relies on promissory note financing that carries severe dilution risk for existing shareholders <span class="source-ref">[2]</span><span class="source-ref">[4]</span></li>
+        
+        <li>Negative gross margins of -26.28% TTM indicate the company loses money on every dollar of revenue before operating expenses — without a clear path to positive unit economics, revenue growth accelerates cash burn rather than creating value <span class="source-ref">[4]</span></li>
+        
+        <li>Daily dollar volume of approximately $407K triggers the liquidity floor, and the $5.9M market cap with 1.1% insider ownership places RIME in uninvestable penny stock territory — the potential issuance of 5M shares to settle a claim adds further dilution risk to the 17M shares outstanding <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): Algorhythm Holdings is fundamentally an AI company — SemiCab&#39;s core product is an AI-powered logistics optimization platform, so AI is the product rather than a threat <span class="source-ref">[3]</span>. The platform uses ML predictions and optimization algorithms to reduce empty trucking miles, serving enterprise customers like P&amp;G India and Unilever. AI cannot disrupt a company whose business IS AI logistics. However, the company&#39;s extremely small scale ($5.9M market cap, 46 employees) makes it highly vulnerable to displacement by well-funded AI logistics competitors — project44, FourKites, Uber Freight, and major logistics incumbents with vastly superior data assets and engineering resources could replicate SemiCab&#39;s optimization models <span class="source-ref">[4]</span>. The going concern risk means the company may not survive long enough to capitalize on its AI capabilities. AI Opportunity (1/1): SemiCab generates revenue directly from its AI-powered platform, with Q2 2026 revenue of $3.0M (+161% YoY) from enterprise customers <span class="source-ref">[1]</span>. The P&amp;G India contract expansion (+32%) and new Onida Electronics MSA demonstrate growing AI-driven revenue from the platform.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            36
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Algorhythm Holdings Q2 FY2026 Earnings Release — Revenue $3.0M (+161% YoY, +25% Sequential), Gross Margin +850bps Sequential, EPS -$0.25 (Beat -$0.36 Estimate), P&G India +32%, New Onida MSA, GlobeNewsWire/StockTitan, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Algorhythm Holdings Q2 2026 Financial Details — Net Loss $4.15M, Cash $4.97M + $2.98M Restricted, Promissory Notes $6.4M, Related Party Notes $2.3M, Equity $3.28M, Going Concern Flagged, SEC 10-Q Filing, August 2026</li>
+        
+        <li><span class="src-num">3.</span> Algorhythm Holdings Corporate Profile — CEO Gary Atkinson, SemiCab AI Logistics Platform, Board Appointments (Kapoor, Gupta, Thorn), Energy Infrastructure Review, Mid-Year Business Recap, GlobeNewsWire/algoholdings.com, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis — RIME Key Statistics: Price $0.3444, Market Cap $5.85M, D/E 275%, ROE -524%, Profit Margin -176%, TTM Revenue $8.52M, Avg Volume 1.18M, Insider Ownership 1.1%, Altman Z -7.18, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

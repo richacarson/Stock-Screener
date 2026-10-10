@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SID — Companhia Siderurgica Nacional</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SID_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SID')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SID
+            <span class="stock-name-full">Companhia Siderurgica Nacional</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-27</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge sell">SELL</span>
+            <div class="overall-score">
+                <span class="num">35</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Materials</span>
+        <span class="sep">&middot;</span><span>Steel</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Brazil</span>
+    </div>
+    
+    <div class="profile-desc">Companhia Siderurgica Nacional (CSN) is Brazil's largest fully integrated steel producer and one of the largest in Latin America. The company operates across five segments: Steel, Mining (via CSN Mineracao), Cement, Logistics, and Energy. Founded in 1941 as a state enterprise and privatized in 1993 under controlling shareholder Benjamin Steinbruch (CEO since 2002). Q2 2026 revenue rose 5.7% YoY to R$11.3B with operating profit surging 53%, but the company swung to a deeper net loss of R$773.1M as BRL/USD exchange-rate driven financial expenses overwhelmed operating gains. Steinbruch has initiated asset sales to reduce leverage from 3.14x EBITDA.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>29,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.csn.com.br" target="_blank" rel="noopener">www.csn.com.br</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): CSN has diversified modestly into cement (acquiring LafargeHolcim Brazil assets) and logistics over the past decade, and its CSN Inova division collaborates with startups on technology exploration, but these are incremental extensions rather than transformative pivots <span class="source-ref">[3]</span>. Green hydrogen development remains early-stage with no commercial output. The company&#39;s core steel business model is essentially unchanged from decades past. AI Deployment (0/2): No AI-powered products shipping to customers or quantified operational savings from AI deployments. CSN Inova functions as a corporate venture arm but has not delivered measurable AI results <span class="source-ref">[3]</span>. Market Share (1/2): CSN remains Brazil&#39;s largest fully integrated steel producer with strong domestic positioning, but rising Chinese steel imports have pressured market share significantly — Q1 2026 steel segment revenue declined 2.8% YoY amid import pressures, and no specific share gains were reported <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Product Pipeline (0/2): Iron ore production guidance of 45-47 Mton for 2026 represents operational targets rather than new products. The planned asset sales of the steel business, logistics stake, and cement unit represent strategic retreat rather than forward pipeline <span class="source-ref">[3]</span>. R&amp;D Intensity (0/1): No R&amp;D spending data as a percentage of revenue is publicly disclosed; CSN Inova functions as a venture arm rather than a traditional R&amp;D operation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): CSN&#39;s stated purpose centers on the &#39;entrepreneurial strength of domestic capital and Brazilian competitiveness,&#39; which is a generic industrial mission lacking aspirational quality beyond financial returns <span class="source-ref">[3]</span>. Under Steinbruch&#39;s control since privatization in 1993, the company operates as a financial conglomerate without a clear higher purpose that distinguishes it from any other industrial group. Community Impact (0/2): CSN has serious community harm issues — steel slag estimated at 4+ million tons dumped just 50 meters from the Paraiba do Sul River affecting 9 million people&#39;s water supply, black dust complaints from Volta Redonda residents linked to respiratory hospitalizations, and ongoing daily fines of BRL 20,000 since 2019 for waste violations <span class="source-ref">[5]</span>. While the company invested R$1.2B in environmental programs in 2024 and earned a Sustainalytics recognition, the underlying violations outweigh stated commitments. Employee Retention (0/2): No employee tenure, turnover, or satisfaction data is publicly available for CSN&#39;s 29,000-person workforce. Insider Buying (0/2): Steinbruch is the controlling shareholder but is actively seeking to sell assets (steel business, logistics, cement) to reduce debt rather than buying shares — signaling defensive capital allocation <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. CSN&#39;s financial profile reflects severe stress across most dimensions: D/E of 307% exceeds the 300% floor (scoring 0), indicating extreme leverage with R$50.4B in gross debt at 3.14-3.36x net debt/EBITDA <span class="source-ref">[1]</span><span class="source-ref">[6]</span>. ROE of -5.34% is below the 0% floor (scoring 0), reflecting net losses eroding shareholder value. Net profit margin is approximately -5% (scoring 0), driven by massive interest expense and FX losses on BRL-denominated debt <span class="source-ref">[1]</span>. The positive signals are revenue growth — Q2 2026 revenue grew 5.7% YoY to R$11.3B (scoring 0.87) and 5-year revenue CAGR of approximately 2% provides modest positive signal (scoring 0.47 at 2x weight) <span class="source-ref">[1]</span>. Forward P/E and PEG ratio are not calculable due to negative earnings, excluding them from scoring. EBITDA margin of 23.5% shows the operating business generates cash before the debt burden consumes it. Liquidity clears the floor at $3.6M daily dollar volume (3.67M shares x ~$0.99) <span class="source-ref">[6]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>2</span> /10</span>
+    </div>
+
+    <div class="ig-quote">CSN under Benjamin Steinbruch operates as a classic finite game player. The company is controlled by a single shareholder-chairman whose 24-year tenure has prioritized conglomerate expansion through debt-funded acquisitions over purpose-driven strategy. Environmental violations and community harm suggest operational shortcuts inconsistent with infinite thinking. The current asset-sale program to reduce leverage is reactive deleveraging, not strategic transformation. The absence of a compelling Just Cause beyond industrial competitiveness leaves CSN playing to survive this cycle rather than to keep playing across generations.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Just Cause (0/3): CSN lacks a purpose that would inspire sacrifice for the company&#39;s future. The stated mission around &#39;Brazilian competitiveness&#39; and &#39;domestic capital&#39; reads as shareholder-value narrative dressed in nationalistic language <span class="source-ref">[3]</span>. Strategic decisions are guided by financial opportunism — the diversification into cement, logistics, and mining was driven by distressed asset acquisition rather than a coherent vision of a better future. Steinbruch&#39;s current plan to sell the core steel business, logistics, and cement units to reduce debt further demonstrates that no business line is sacrosanct to a larger cause — everything is a financial asset to be traded.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): CSN&#39;s organizational culture raises significant trust concerns. Persistent environmental violations — steel slag dumping near a major water source affecting 9M people and ongoing daily fines since 2019 — suggest either management indifference to operational standards or a culture where employees lack psychological safety to raise compliance issues <span class="source-ref">[5]</span>. Family-controlled governance under Steinbruch, with limited board independence, constrains organizational trust. No employee satisfaction, retention, or engagement data is publicly available to provide a counterpoint.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence that CSN views competitors through an infinite-game lens of self-improvement. The company&#39;s response to rising Chinese steel imports has focused on lobbying for trade protection and cost-cutting rather than using competitive pressure to innovate or strengthen capabilities <span class="source-ref">[1]</span>. Steinbruch&#39;s public commentary emphasizes market positioning and financial targets rather than acknowledging rivals&#39; strengths as catalysts for CSN&#39;s evolution.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): CSN has demonstrated meaningful strategic flexibility over its history, diversifying from a pure steel company into an integrated conglomerate spanning mining, cement, logistics, and energy <span class="source-ref">[3]</span>. Q1 2026 EBITDA grew 5.5% YoY driven by record cement and logistics performance even as steel struggled, validating the diversification <span class="source-ref">[1]</span>. The current asset-sale program demonstrates willingness to fundamentally reshape the company to survive. However, these moves were primarily financial engineering rather than purpose-driven pivots, and selling the core steel business is existential flexibility driven by desperation rather than vision.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Steinbruch has made bold capital allocation decisions, including the aggressive diversification strategy that transformed CSN from a single-segment steel company into a multi-sector conglomerate, and the spinoff of CSN Mineracao as a separate public entity <span class="source-ref">[3]</span>. The current decision to sell major business units (steel, logistics, cement) to deleverage requires admitting past empire-building was overleveraged — a painful but necessary acknowledgment. However, the willingness to accumulate extreme leverage (3.14x net debt/EBITDA, 307% D/E) to fund acquisitions reflects financial aggression rather than strategic courage, and unresolved environmental violations suggest reluctance to make costly operational decisions <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">CSN faces a convergence of structural challenges that make the current risk-reward profile unfavorable. Q2 2026 showed operational improvement — revenue rose 5.7% YoY to R$11.3B, gross profit surged, and operating profit increased 53% — but the company swung to a deeper net loss of R$773.1M as BRL/USD exchange-rate driven financial expenses overwhelmed operating gains <span class="source-ref">[1]</span>. The ADR trades at just $0.99 with a market cap of approximately $1.3B, reflecting deep investor skepticism about the deleveraging path. D/E of 307% and 3.14-3.36x net debt/EBITDA create severe refinancing risk in an elevated Brazilian interest rate environment <span class="source-ref">[6]</span>. Steinbruch has hired advisers to sell the steel business, logistics stake, and cement unit to reduce leverage — an unprecedented restructuring that signals the severity of the balance sheet crisis <span class="source-ref">[3]</span>. The EBITDA margin of 23.5% shows the operating businesses generate cash, but the debt burden consumes it.</div>
+    <div class="thesis-text">The path to recovery requires simultaneous deleveraging and margin improvement, which is exceptionally difficult in a weak global steel pricing environment with persistent Chinese overcapacity flooding the Brazilian market <span class="source-ref">[1]</span>. CSN&#39;s environmental liabilities represent underappreciated risk — 4+ million tons of steel slag stored 50 meters from the Paraiba do Sul River affecting 9 million people&#39;s water supply, ongoing daily fines since 2019, and black dust complaints linked to respiratory hospitalizations could escalate into material remediation costs or operational restrictions <span class="source-ref">[5]</span>. Steinbruch&#39;s controlling shareholder position means minority ADR holders at $0.99/share have minimal governance influence over capital allocation decisions. The planned asset sales could crystallize value if executed at fair prices, but fire-sale conditions or buyer disputes could further erode equity value. The Inspire Impact Score of 0 (MIXED) reflects the absence of both positive and negative faith-based attribution data, offering no directional signal for values-aligned investors.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Successful execution of planned asset sales (steel business, logistics, cement) at fair valuations, which could reduce leverage below 2.5x net debt/EBITDA and potentially unlock sum-of-the-parts value for remaining mining operations <span class="source-ref">[3]</span></li>
+        
+        <li>Iron ore production reaching upper end of 45-47 Mton 2026 guidance with sustained prices above $100/ton, providing cash flow for deleveraging independent of steel segment performance</li>
+        
+        <li>Cement and logistics segments continuing record EBITDA performance that demonstrates standalone value and attracts strategic buyers at premium valuations in the asset-sale process <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Extreme leverage of 307% D/E and 3.14x net debt/EBITDA creates acute refinancing risk, particularly if Brazilian real weakens further against the dollar (driving FX losses on dollar-denominated debt) or if Selic rate remains elevated above 13% <span class="source-ref">[1]</span><span class="source-ref">[6]</span></li>
+        
+        <li>Environmental liabilities from 4+ million tons of steel slag near the Paraiba do Sul River, ongoing daily fines, and air pollution violations could result in material remediation costs, operational shutdowns, or regulatory penalties that further strain the balance sheet <span class="source-ref">[5]</span></li>
+        
+        <li>Asset-sale program under financial duress risks fire-sale pricing — potential buyers of the steel business, logistics, and cement units know Steinbruch is selling from a position of weakness, compressing achievable valuations and leaving equity holders with diminished residual value <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): CSN&#39;s core operations — steelmaking, iron ore mining, cement production, and railroad/port logistics — are deeply physical-world businesses that AI cannot substitute <span class="source-ref">[3]</span>. Blast furnaces, open-pit mines, cement kilns, and freight rail require massive capital infrastructure, regulatory permits, and hands-on operational expertise that no software model can replicate. The company&#39;s competitive advantages stem from ore reserve ownership, integrated logistics infrastructure, and geographic positioning near Brazilian demand centers, none of which are vulnerable to AI disruption. Minor exposure exists in back-office functions where AI tools could improve efficiency for more technologically advanced competitors, but these represent marginal advantages rather than existential threats. AI Opportunity (0/1): CSN has not reported any AI-driven revenue streams. While CSN Inova explores technology partnerships, no quantified AI-related operational savings or product enhancements have been disclosed <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> CSN Q2 FY2026 Earnings — Revenue R$11.3B (+5.7% YoY), Operating Profit +53%, Net Loss R$773.1M on FX Costs, EBITDA Margin 23.5%, Globe and Mail/Quiver Quantitative, July 2026</li>
+        
+        <li><span class="src-num">2.</span> CSN Q1 FY2026 Earnings — Revenue R$10.6B (-2.8% YoY), EBITDA +5.5% YoY, Record Cement and Logistics Performance Despite Steel Weakness, April 2026</li>
+        
+        <li><span class="src-num">3.</span> CSN Asset Sales and Deleveraging — Steinbruch Selling Steel Business, Logistics, Cement to Reduce 3.14x Leverage, Bloomberg/SteelOrbis, January-August 2026</li>
+        
+        <li><span class="src-num">4.</span> CSN Leadership — Benjamin Steinbruch CEO Since 2002, Chairman Since 1995, Simply Wall St/Wikipedia, accessed August 2026</li>
+        
+        <li><span class="src-num">5.</span> CSN Environmental Controversies — Steel Slag Dumping Near Paraiba do Sul River, Black Dust Complaints, Ongoing Daily Fines Since 2019, Brazilian Media, 2024-2026</li>
+        
+        <li><span class="src-num">6.</span> Yahoo Finance, StockAnalysis — SID Key Statistics: D/E 307%, ROE -5.34%, Stock Price $0.99, Avg Volume 3.67M, Net Debt/EBITDA 3.14-3.36x, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

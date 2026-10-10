@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen EXC — Exelon Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/EXC_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('EXC')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            EXC
+            <span class="stock-name-full">Exelon Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-09</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Utilities</span>
+        <span class="sep">&middot;</span><span>Utilities - Regulated Electric</span>
+        <span class="sep">&middot;</span><span>NMS</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Exelon Corporation is the largest regulated electric distribution utility in the United States, serving more than 10 million customers through six operating subsidiaries: ComEd (Illinois), PECO (Pennsylvania), BGE (Maryland), Pepco (D.C./Maryland), DPL (Delaware), and ACE (New Jersey). Following the 2022 spin-off of its generation business as Constellation Energy, Exelon operates as a pure-play regulated utility focused on electricity and natural gas distribution and transmission. Headquartered in Chicago, Illinois, Exelon generated $25.3B in TTM revenue with a 11.0% profit margin.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>20,571 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.exeloncorp.com" target="_blank" rel="noopener">www.exeloncorp.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): The 2022 Constellation Energy spin-off was a transformative corporate restructuring that refocused Exelon as a pure-play regulated utility, but the core business model — distributing electricity to regulated service territories — has not fundamentally changed <span class="source-ref">[1]</span>. The $38B capital investment plan for 2025-2028 represents incremental grid modernization rather than product innovation. AI Deployment (1/2): Exelon is deploying AI through its Innovation Center of Excellence focused on AI/GenAI, with Customer Care Representatives leveraging AI to respond to customer inquiries, and the company hiring a Director of AI &amp; Machine Learning to drive AI/ML strategy for energy intelligence <span class="source-ref">[2]</span>. However, no specific cost savings or revenue impact has been quantified. Market Share (2/2): Exelon operates the largest regulated electric distribution platform in the U.S. with 10M+ customers across six operating subsidiaries, and the 36 GW data center demand pipeline in its service territories (doubled in H1 2025) positions it as the primary grid gateway for AI-driven load growth in the mid-Atlantic and Midwest <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Product Pipeline (1/2): Multiple pending rate cases provide specific revenue visibility — BGE filed for $156M in annual electric distribution rate increases (ROE 10.4%, decision expected Q1 2027), DPL requested $45M (ROE 10.5%), and Pepco MD decision expected August 2026 <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Regulated utilities do not maintain traditional R&amp;D budgets; Exelon&#39;s Innovation Expo and AI initiatives represent operational improvement programs rather than research spending.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): CEO Calvin Butler frames Exelon&#39;s purpose through the &#39;IMPACT&#39; values framework, emphasizing a culture of innovation and continuous improvement in the service of powering communities <span class="source-ref">[2]</span>. The mission — reliably delivering essential energy to 10M+ customers — is clear and socially important, but it does not articulate a distinctive future state beyond operational excellence. Every regulated utility claims to serve communities; the purpose does not differentiate Exelon from peers. Community Impact (1/2): As a regulated utility, Exelon is deeply embedded in community infrastructure, and Butler emphasizes local data center partnerships that require community support <span class="source-ref">[2]</span>. However, the ComEd bribery scandal — where the subsidiary arranged jobs and payments for associates of a high-level Illinois official to secure favorable legislation and $150M+ in rate increases — fundamentally undermined community trust and resulted in a $200M fine and $173M shareholder settlement <span class="source-ref">[3]</span>. Employee Retention (0/2): No publicly available data on voluntary turnover or average employee tenure across 20,571 employees. The Innovation Expo suggests employee engagement, but no quantitative evidence distinguishes retention from industry norms. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO Calvin Butler or other executives in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Dividend stock on available metrics. Exelon&#39;s Infrastructure score is anchored by strong revenue momentum and favorable valuation but constrained by high leverage and moderate profitability. Forward P/E of 13.7 is well below the 20 target (score 1.0), reflecting regulated utility valuation norms <span class="source-ref">[1]</span>. Revenue growth YoY of 9.9% nearly meets the 10% target (score 1.0), driven by approved rate increases and growing customer usage. The estimated 5-year revenue CAGR of 7% (score 0.80) reflects steady post-spinoff growth. D/E of 177.4% (score 0.53) is elevated but typical for capital-intensive regulated utilities with significant rate-base investment. ROE of 9.7% (score 0.65) falls below the 15% target, constrained by regulatory return limits. Profit margin of 11.0% (score 0.55) reflects the regulated utility model&#39;s inherent margin compression. Payout ratio of 60.3% (score 0.66) is manageable, consecutive years paid of 20+ earns full marks (score 1.0, 2x weight), but the dividend was effectively reset during the 2022 Constellation spinoff, limiting consecutive years of growth to 4 (score 0.40) and depressing the 5-year dividend growth CAGR to approximately 1.9% (score 0.32, 2x weight). Daily dollar volume of $326M provides excellent liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Exelon operates within a fundamentally finite game construct — regulated utilities earn returns set by public utility commissions, compete through rate cases rather than innovation, and optimize for regulatory outcomes and shareholder returns. While the essential nature of electricity distribution gives the company permanence, the ComEd bribery scandal revealed that Exelon&#39;s actual competitive playbook involved corrupting the regulatory process to secure favorable legislation, the antithesis of playing an infinite game with integrity. Butler&#39;s leadership post-spinoff shows signs of improvement, but the organizational culture that enabled systematic bribery from 2011-2019 casts a long shadow.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Reliably delivering electricity to 10M+ customers is an essential social function, and Butler&#39;s warnings about blackout risk by 2027 reflect genuine concern for grid reliability <span class="source-ref">[2]</span>. However, Exelon&#39;s stated purpose of powering communities is interchangeable with every regulated utility in America — it describes the franchise obligation, not a vision of a future state worth sacrificing for. The company has not articulated why its approach to energy distribution advances a cause beyond the regulatory mandate.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Exelon&#39;s Innovation Expo and Butler&#39;s emphasis on bottom-up innovation — &#39;if you&#39;re waiting for an executive to say I&#39;ve got a great idea, you&#39;re never going to get there&#39; — suggests a culture that values employee input <span class="source-ref">[2]</span>. The company employs 20,571 people with stable post-spinoff leadership. However, the ComEd bribery scheme operated for eight years (2011-2019) involving the subsidiary&#39;s CEO and multiple lobbyists, which suggests a culture where ethical violations could persist without whistleblower intervention, undermining Sinek&#39;s Circle of Safety ideal <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): As a regulated utility with monopoly service territories, Exelon does not compete with rivals in the traditional sense — it competes for regulatory outcomes, capital allocation, and data center customer relationships <span class="source-ref">[1]</span>. No evidence of management commentary acknowledging peer utilities&#39; strengths as motivation for improvement. Butler&#39;s competitive framing centers on winning data center connections and favorable rate cases.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The 2022 spin-off of Constellation Energy — separating the generation business entirely from the distribution franchise — was a significant strategic pivot that redefined Exelon from a vertically integrated utility into a pure-play regulated distributor <span class="source-ref">[1]</span>. This represented a willingness to abandon a major business line (power generation) to focus on a more predictable, regulatorily advantaged model. Butler&#39;s pivot toward positioning Exelon as the grid gateway for AI data centers represents another strategic adaptation to emerging demand patterns.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Butler demonstrated courage by publicly warning that U.S. blackouts could arrive by 2027, comparing the grid to &#39;a car with the check engine light on,&#39; even though such statements could invite regulatory scrutiny and consumer backlash over rate increases <span class="source-ref">[2]</span>. The $38B capital investment plan for 2025-2028 represents a substantial bet on grid modernization. However, the ComEd bribery scandal (2011-2019) reveals a prior pattern where leadership chose corruption over courage — bribing officials for favorable legislation rather than earning regulatory outcomes through transparent advocacy <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Exelon at $41.73 is the largest regulated electric distribution utility in the United States, positioned at the epicenter of AI-driven electricity demand growth. CEO Calvin Butler has quantified a 900% potential increase in Chicago-area data center power demand, with 36 GW of data center projects in the pipeline across Exelon&#39;s service territories — doubled from H1 2024 to H1 2025 <span class="source-ref">[2]</span>. The company reaffirmed 2026 adjusted EPS guidance of $2.81-$2.91 with 5-7% compound annual growth through 2029, supported by a $38B capital investment plan for 2025-2028 that grows rate base and earns regulated returns <span class="source-ref">[1]</span>. At 13.7x forward earnings with a 4.0% dividend yield, Exelon offers a defensive income stream backed by monopoly service territories serving 10M+ customers, with AI providing a secular growth catalyst that could push EPS growth toward the high end of guidance.</div>
+    <div class="thesis-text">The bear case centers on regulatory risk, governance scars, and capital-intensive growth requirements. The ComEd bribery scandal ($200M fine, $173M shareholder settlement, former CEO convicted) demonstrated that Exelon&#39;s relationship with regulators was built on corruption rather than trust, and the reputational damage persists in the regulatory proceedings that determine the company&#39;s earnings power <span class="source-ref">[3]</span>. D/E of 177% reflects the heavy capital structure required for rate-base growth, and negative free cash flow of -$2.7B in the trailing twelve months means the $38B capex plan requires continued debt issuance that increases leverage in a rising-rate environment. Consumer and legislative pushback on rate increases — with intervention underway in New Jersey, New York, and Maryland — could constrain the regulatory returns Exelon needs to fund grid modernization <span class="source-ref">[1]</span>. The dividend growth CAGR of just 1.9% over five years (distorted by the Constellation spinoff reset) is below inflation, and the 60% payout ratio leaves limited room for acceleration without earnings growth. Butler&#39;s own blackout warnings by 2027 expose reliability risk that could trigger regulatory penalties if grid failures materialize before capital investments are completed.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI data center demand driving generational electricity load growth — 36 GW pipeline across Exelon service territories, with 900% potential increase in Chicago-area data center demand positioning ComEd as the primary grid gateway for hyperscaler AI infrastructure buildouts <span class="source-ref">[2]</span></li>
+        
+        <li>Multiple pending rate cases providing earnings visibility — BGE $156M request (decision Q1 2027), DPL $45M request (decision Q3 2027), Pepco MD decision expected August 2026, each growing regulated rate base and supporting the 5-7% EPS growth target through 2029 <span class="source-ref">[1]</span></li>
+        
+        <li>$38B capital investment plan for 2025-2028 expanding rate base while modernizing grid infrastructure to accommodate rising demand, with management expecting EPS growth near the top end of the 5-7% CAGR guidance range <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Regulatory and legislative pushback on rate increases — consumer advocacy groups and legislators in New Jersey, New York, and Maryland are reviewing utility rate hikes, and rate case outcomes below requested ROEs could compress earnings below guidance <span class="source-ref">[1]</span></li>
+        
+        <li>ComEd bribery scandal governance overhang — the 2011-2019 corruption scheme resulted in $373M in combined fines and settlements, and the reputational damage continues to complicate regulatory relationships in Illinois, Exelon&#39;s largest service territory <span class="source-ref">[3]</span></li>
+        
+        <li>Capital structure strain from $38B capex plan — D/E of 177% and negative TTM free cash flow of -$2.7B require continued debt issuance, increasing financial risk in a rising-rate environment while the 60% payout ratio leaves limited dividend growth flexibility <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): Exelon is structurally immune to AI disruption and is arguably the single most direct beneficiary of AI growth in the utility sector. CEO Calvin Butler has quantified AI-driven power demand as a potential 900% increase in the Chicago area alone, with 25 data center projects totaling 5 GW undergoing engineering studies in ComEd&#39;s territory against just 400 MW of current data center load <span class="source-ref">[2]</span>. The company&#39;s 36 GW data center demand pipeline doubled in H1 2025, representing a generational growth opportunity for regulated distribution revenue. As a pure-play regulated utility, Exelon&#39;s monopoly service territories mean every new data center, AI training cluster, and inference server farm in its footprint must connect through Exelon&#39;s grid — AI cannot displace the physical wires and transformers that deliver electricity. Butler warned that grid strain could cause blackouts as soon as 2027, positioning the need for massive capital investment as both a risk and an opportunity to grow rate base. AI Opportunity (0/1): Exelon uses AI internally for customer service and grid management, but does not generate revenue from AI products or services — its AI benefit comes entirely through increased electricity distribution demand from data center customers <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Exelon Q1-Q2 2026 Earnings and Rate Cases — Q2 GAAP EPS $0.39, Adjusted EPS $0.43, FY2026 Guidance $2.81-$2.91, 5-7% EPS CAGR Through 2029, BGE $156M and DPL $45M Rate Filings — SEC 8-K Filings, BusinessWire, Barchart, SeekingAlpha, 2026</li>
+        
+        <li><span class="src-num">2.</span> Exelon AI and Data Center Strategy — CEO Calvin Butler 900% Chicago Data Center Demand, 36 GW Pipeline, $38B Capital Plan, Innovation Center AI/GenAI Focus, Blackout Warning by 2027 — DataCenterKnowledge, Fortune, DevX, EnkiAI, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Exelon/ComEd Bribery Scandal — $200M ComEd Fine, $173M Shareholder Settlement, CEO Anne Pramaggiore Convicted, SEC Fraud Charges, 2011-2019 Corruption Scheme — ISS Governance, Bloomberg Law, SEC Press Release, 2020-2023</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

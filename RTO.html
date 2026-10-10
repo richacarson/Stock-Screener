@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RTO — Rentokil Initial plc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RTO_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RTO')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RTO
+            <span class="stock-name-full">Rentokil Initial plc</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-19</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">53</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Specialty Business Services</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United Kingdom</span>
+    </div>
+    
+    <div class="profile-desc">Rentokil Initial plc is the world's largest pest control company, also providing hygiene and wellbeing services in over 90 countries. Following the $6.7B acquisition of Terminix in October 2022, North America pest control is the dominant revenue driver. H1 2026 revenue was $3,589M (+4.5%), with organic growth of 3.6%, operating profit up 6.6%, and margin improving 30bps to 15.5%. New CEO Mike Duffy (appointed March 2026) replaced retiring Andy Ransom. The company retired its 2027 North America 20% margin target to prioritize growth reinvestment. Free cash flow grew 12.8% to $318M in H1 2026 with net debt reduced to $3,575M (2.4x leverage).</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>63,388 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.rentokil-initial.com" target="_blank" rel="noopener">www.rentokil-initial.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): The transformative $6.7B Terminix acquisition in 2022 doubled Rentokil&#39;s scale and made it the world&#39;s largest pest control company, but this was market consolidation rather than product innovation <span class="source-ref">[1]</span>. The FY2025 pivot from a monolithic Terminix IT integration to a decentralized, AI-driven operating model represents a meaningful strategic correction. AI Deployment (1/2): Rentokil deploys multiple AI systems — PestConnect Optix uses AI/ML for 24/7 remote pest monitoring with automated detection; the Google Cloud/Gemini-powered &#39;On The Go&#39; hands-free AI assistant transforms frontline field service workflows; and AI-driven route density optimization is reducing technician drive time <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. However, no specific cost savings or revenue impact has been publicly quantified. Market Share (2/2): Undisputed global leader in pest control with ~$7.1B annual revenue, substantially larger than Rollins (Orkin). H1 2026 revenue of $3,589M reflects dominant positions in both North America ($2.2B, +4.2%) and international markets ($1.4B, +5.0%) <span class="source-ref">[1]</span>. Product Pipeline (1/2): AI-driven smart traps are scheduled for global deployment in 2026-2027, integrating real-time monitoring and non-toxic solutions <span class="source-ref">[3]</span>. PestConnect platform expansion continues but specific revenue targets are not disclosed. R&amp;D Intensity (0/1): As a service-delivery business, R&amp;D spending is modest relative to technology peers, focused on operational efficiency rather than fundamental research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Rentokil&#39;s stated purpose of &#39;Protecting People, Enhancing Lives&#39; is clear about the company&#39;s role in public health through pest control and hygiene, but generic and interchangeable with many service companies — it does not articulate a distinctive vision of a better future <span class="source-ref">[4]</span>. Community Impact (0/2): No specific charitable foundations, community investment programs, or philanthropic initiatives with dollar amounts were identified. Employee Retention (1/2): Glassdoor culture rating improved to 3.7/5 (up 7% over 12 months), with 69% of employees recommending the company <span class="source-ref">[2]</span>. The upward trend under new CEO Duffy&#39;s leadership suggests improving employee sentiment, though North America integration challenges persist. The 120-year company history and global workforce of 63,388 across 90+ countries demonstrates organizational stability. Insider Buying (0/2): New CEO Mike Duffy was appointed March 2026. No evidence of meaningful net insider buying by executives in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a dividend stock. The stock&#39;s 28% decline from $29.62 to $21.35 since mid-2026 creates a compelling forward P/E of 13.77x (forward EPS $1.55), well below the 20x target <span class="source-ref">[1]</span>. Revenue growth YoY of 6.7% and 5-year CAGR of ~15% (primarily acquisition-driven via Terminix) score well. However, multiple metrics drag: ROE of 5.97% is weak (target 15%), reflecting diluted equity from the Terminix deal; GAAP profit margin of 6.70% is well below the 20% target due to acquisition-related amortization; D/E of 111.4% exceeds the 70% target; and payout ratio of 97.6% nearly breaches the 100% floor, with trailing EPS of $0.63 barely covering the $0.64 annual dividend <span class="source-ref">[1]</span>. Dividend payment history is strong at 20+ years but consecutive growth is limited to ~4-5 years post-COVID resumption. Free cash flow of $1.05B provides comfortable dividend coverage despite the elevated payout ratio. Liquidity floor easily cleared at ~$28.3M daily trading value.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Rentokil Initial operates with a predominantly finite game mindset, though emerging signals under new CEO Mike Duffy suggest modest evolution. The $6.7B Terminix acquisition was driven by scale economics and market share dominance rather than a Just Cause, and the troubled North America integration revealed an organization prioritizing financial consolidation over culture <span class="source-ref">[1]</span>. However, the decision to retire the 2027 North America margin target to reinvest for growth, the appointment of transformation-focused CEO Duffy, and improving Glassdoor sentiment (3.7/5, up 7% in 12 months) suggest some willingness to prioritize long-term positioning over quarterly metrics <span class="source-ref">[2]</span>.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): &#39;Protecting People, Enhancing Lives&#39; is a serviceable purpose statement that connects pest control to public health, but it reads as marketing rather than a Just Cause shaping strategic decisions. The Terminix acquisition was justified on financial grounds — cost synergies, route density, market dominance — not as advancing a purpose. Leadership&#39;s strategic communications focus on margin targets, integration milestones, and market share rather than a vision of the future <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor culture rating has improved to 3.7/5 (up 7% over 12 months), with 69% of employees recommending the company <span class="source-ref">[2]</span>. New CEO Duffy brings a track record of &#39;improving customer experience, employee engagement, and financial returns&#39; and emphasis on culture transformation. The 120-year institutional history implies some cultural continuity. However, North America integration challenges persist with technician turnover concerns, and the CEO transition introduces leadership uncertainty for the 63,000+ employee organization.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Rentokil&#39;s competitive language centers on being &#39;the world&#39;s largest pest control company&#39; and achieving dominant market share — classic finite-game framing. The company positions its scale advantage over Rollins (Orkin) and other competitors as a moat rather than acknowledging rivals&#39; strengths as motivation for improvement. No evidence of management commentary referencing learning from competitors.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The Terminix acquisition transformed Rentokil from a UK-centric diversified services company into a North America-focused global pest control giant, fundamentally shifting the organization&#39;s center of gravity <span class="source-ref">[1]</span>. The FY2025 IT strategy pivot and the transition from physical trap-and-spray to AI-driven remote monitoring (PestConnect, smart traps) represent meaningful business model evolution <span class="source-ref">[3]</span>. However, these are incremental evolutions within the same industry rather than transformative reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Several courageous-adjacent decisions: abandoning the failed Terminix IT integration approach in FY2025 in favor of a decentralized AI-driven model showed willingness to admit a costly mistake <span class="source-ref">[1]</span>; retiring the 2027 North America 20% margin target to reinvest for growth demonstrates choosing long-term positioning over near-term earnings targets; and replacing retiring CEO Ransom with outsider Mike Duffy signals commitment to transformation <span class="source-ref">[2]</span>. However, these were reactive responses to underperformance rather than proactive long-term vision.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Rentokil Initial is the world&#39;s largest pest control company trading at 13.77x forward earnings (forward EPS $1.55) following a 28% stock decline, with a 2.98% dividend yield providing downside support <span class="source-ref">[1]</span>. H1 2026 showed improving fundamentals — revenue grew 4.5% to $3,589M, operating profit rose 6.6% with margin expanding 30bps to 15.5%, and free cash flow grew 12.8% to $318M while net debt declined to $3,575M (2.4x leverage) <span class="source-ref">[1]</span>. The pest control industry benefits from structural tailwinds — urbanization, climate change expanding pest habitats, rising food safety regulation, and AI infrastructure buildout (data centers) creating new commercial opportunities. PEG ratio of 0.88 (below 1.0) and $1.05B in trailing free cash flow suggest the stock is undervalued relative to its growth and cash generation profile.</div>
+    <div class="thesis-text">The bear case centers on organic growth deceleration, execution risk, and stretched dividend coverage. Organic growth of only 3.6% in H1 2026 is modest for a company trading at growth-oriented multiples, with North America commercial pest control growth slowing and residential lead flow weakening, especially termite leads <span class="source-ref">[1]</span>. The retirement of the 2027 North America 20% margin target signals management acknowledging the integration is taking longer than planned. GAAP profit margin of 6.70% and ROE of 5.97% remain depressed by acquisition-related amortization, and the payout ratio of 97.6% leaves essentially no earnings buffer — trailing EPS of $0.63 barely covers the $0.64 annual dividend, though $1.05B free cash flow provides real coverage <span class="source-ref">[1]</span>. D/E of 111% represents elevated leverage post-Terminix, and CEO Mike Duffy (appointed March 2026) is only six months into a complex transformation mandate. The Inspire Impact Score of 0 (MIXED) is neutral for faith-based investors.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>North America organic growth acceleration beyond 3.6% as Terminix integration stabilizes under CEO Duffy and AI-driven route density optimization reduces technician churn and improves service economics <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Forward P/E of 13.77x and PEG of 0.88 represent deep value if the company can sustain mid-single-digit organic growth with margin expansion — re-rating toward the pest control sector average of 25-30x would imply significant upside <span class="source-ref">[1]</span></li>
+        
+        <li>Global deployment of AI-driven smart traps (2026-2027) and Google Cloud/Gemini &#39;On The Go&#39; field assistant driving premium pricing, customer retention, and operational efficiency gains across 90+ countries <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>North America organic growth deceleration — commercial pest control growth slowed in Q2 2026 with declining retention, and residential lead flow weakened especially in termite leads, threatening the largest revenue segment (~$4B annually) <span class="source-ref">[1]</span></li>
+        
+        <li>Dividend sustainability concern — payout ratio of 97.6% with trailing EPS of $0.63 barely covering the $0.64 annual dividend; while $1.05B FCF provides real coverage, any earnings deterioration could force a dividend cut that would damage the stock <span class="source-ref">[1]</span></li>
+        
+        <li>New CEO Mike Duffy faces a complex transformation mandate — fixing North America integration, deploying AI technology, deleveraging from 111% D/E — with limited track record at the company and no clear margin improvement timeline <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Pest control is fundamentally a physical-world, route-based service — technicians must physically inspect properties, identify pest species, apply treatments, and install monitoring devices. AI cannot replace the labor-intensive, on-site delivery model generating the vast majority of Rentokil&#39;s $7.1B revenue <span class="source-ref">[1]</span>. Regulatory requirements for pesticide application, local licensing, and health/safety compliance create additional structural barriers to AI substitution. Customer relationships in commercial pest control require trust and regulatory documentation that AI cannot replicate. Analysts view AI as an operational enabler (route optimization, smart traps, predictive monitoring) rather than a disruption threat. Increased AI infrastructure buildout (data centers) may even boost demand for Rentokil&#39;s pest control services <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. AI Opportunity (1/1): PestConnect Optix generates commercial revenue through premium AI-powered remote monitoring subscriptions, the Google Cloud/Gemini &#39;On The Go&#39; AI assistant enhances field worker productivity, and AI-driven smart traps are deploying globally in 2026-2027 <span class="source-ref">[3]</span>. These represent real AI-embedded revenue and productivity gains.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Rentokil Initial H1 2026 Results — Revenue $3,589M (+4.5%), Organic Growth 3.6%, Operating Profit +6.6%, Margin 15.5% (+30bps), FCF $318M (+12.8%), Net Debt $3,575M (2.4x), 2027 NA Margin Target Retired — Investing.com, Yahoo Finance, StockTitan, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Rentokil Initial CEO Mike Duffy Appointment (March 2026), Employee Culture 3.7/5 Glassdoor (+7% Trend), AI Strategy and 'On The Go' Google Cloud/Gemini Assistant — Rentokil-Initial.com, FM Industry, Comparably, September 2026</li>
+        
+        <li><span class="src-num">3.</span> Rentokil Innovation and AI — PestConnect Optix AI Monitoring, AI-Driven Smart Traps for Global Deployment 2026-2027, Google Cloud Partnership, Route Density Optimization — Rentokil.com, Google Cloud, LinkedIn, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance, StockAnalysis — RTO Key Statistics: Forward P/E 13.77x, PEG 0.88, ROE 5.97%, D/E 111.35%, Dividend Yield 2.98%, Stock Price $21.35, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

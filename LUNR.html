@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen LUNR — Intuitive Machines, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/LUNR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('LUNR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            LUNR
+            <span class="stock-name-full">Intuitive Machines, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-09</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 37</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">70</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Aerospace & Defense</span>
+        <span class="sep">&middot;</span><span>NGM</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Intuitive Machines, Inc. is a space infrastructure and services company providing lunar access, data transmission, and infrastructure-as-a-service solutions. The company operates Nova-C and Nova-D lunar landers, the Micro Nova Hopper propulsive drone, and a lunar data network serving NASA (civil and national security), DoD, commercial, and international customers. LUNR achieved the first U.S. commercial lunar landing (IM-1, February 2024) and has won six NASA CLPS missions. Q2 CY2026 delivered record revenue of $206.2M (4x YoY), FY2026 guidance of $900M-$1B, and a record backlog of $1.8B. Founded in 2013 and headquartered in Houston, Texas.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>525 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.intuitivemachines.com" target="_blank" rel="noopener">www.intuitivemachines.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Intuitive Machines achieved the first U.S. commercial lunar landing in over 50 years with IM-1 Odysseus in February 2024, a historic milestone that validated the company&#39;s engineering capabilities and NASA partnership, though the lander tipped over and shortened the mission <span class="source-ref">[1]</span>. The January 2026 acquisition of Lanteris (contributing $166.7M in Q2 revenue) transformed the company from a lunar-only outfit into a diversified space infrastructure provider spanning orbital services, satellite communications, and national security applications <span class="source-ref">[1]</span>. AI Deployment (1/2): The company describes AI applications for &#39;command, control, communications, reconnaissance and prospecting&#39; in its autonomous lunar operations, and the lunar data network requires machine learning for signal processing and navigation <span class="source-ref">[2]</span>. However, AI revenue is not separately reported, and the autonomous capabilities are embedded in mission execution rather than sold as standalone products. Market Share (2/2): LUNR is the category leader in commercial lunar access — it has won six NASA CLPS mission awards, more than any competitor, and was the first to successfully soft-land on the Moon commercially <span class="source-ref">[1]</span>. National security revenue surged from 3% to 30% of the mix in one year, demonstrating rapid share capture in a new customer segment. Product Pipeline (2/2): Specific next-generation products include Nova-D (heavy lander for fission power systems and rovers), Micro Nova Hopper (propulsive lunar drone), and the lunar data network, with IM-5 ($68.6M base + $79.7M option) and IM-6 ($160.1M) missions awarded with defined timelines and dollar values <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): LUNR invests heavily in spacecraft development, autonomous systems, and lunar infrastructure relative to its revenue base — the company is simultaneously developing multiple lander variants, a lunar communications network, and orbital service capabilities <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Intuitive Machines articulates its purpose as &#39;beginning a new economy in cislunar space&#39; — a specific, idealistic vision that describes a future state that does not yet exist and connects the company&#39;s work to something genuinely bigger than any single product or contract <span class="source-ref">[2]</span>. The purpose is distinctive among aerospace peers and clearly shapes strategic decisions (taking on lunar landing challenges, building infrastructure for sustained exploration). However, the company is only 13 years old, and the purpose has not been validated through decades of consistent execution or survived major crises. Community Impact (0/2): No evidence of charitable giving, community programs, or distinctive social investment beyond the general societal value of advancing space exploration. The company&#39;s 525 employees and growth-stage status leave limited resources for community engagement. Employee Retention (1/2): CEO Steve Altemus is a co-founder with deep commitment to the mission, and the leadership team includes Jack Fischer (former astronaut) and other experienced aerospace leaders promoted from within <span class="source-ref">[2]</span>. The &#39;forced innovation&#39; culture — &#39;overly constrained budgets, overly constrained schedules, and a very difficult technical challenge&#39; — attracts mission-driven engineers, though no specific turnover or tenure data are available. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months. One source noted CEO compensation has increased while the company remains unprofitable.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock with several metrics unavailable or at floor values due to the company&#39;s pre-profitability growth phase <span class="source-ref">[1]</span>. D/E of 52.8% is comfortably below the 70% target (score 1.0), reflecting a manageable debt load. Revenue growth of 309.8% YoY far exceeds the 10% target (score 1.0), driven by the Lanteris acquisition ($166.7M Q2 contribution) and strong organic growth. Estimated 5-year revenue CAGR of ~55% reflects the company&#39;s rapid scaling from $86M (2022) to $490M TTM (score 1.0, 2x weight). However, ROE of -30.8% is below the 0% floor (score 0.0, 2x weight), and profit margin of -26.6% is also at floor (score 0.0), reflecting the company&#39;s pre-profitability status with forward EPS of -$0.155. Forward P/E and PEG are excluded (negative/null). Daily dollar volume of $120M provides strong liquidity <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Intuitive Machines demonstrates many hallmarks of infinite game thinking under CEO Steve Altemus — a bold Just Cause (&#39;begin a new economy in cislunar space&#39;), the courage to attempt the first commercial lunar landing knowing failure was likely, and a &#39;forced innovation&#39; philosophy that embraces impossible challenges. The company has shown existential flexibility in pivoting from a pure lunar lander company to a diversified space infrastructure provider. However, the 13-year-old company has not yet proven its cause through decades of consistent execution or survived major crises, and the transition to sustained profitability remains unproven.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): &#39;Beginning a new economy in cislunar space&#39; is a genuine Just Cause by Sinek&#39;s criteria — it is resilient (endures beyond any single mission), inclusive (invites nations, companies, and explorers to participate), service-oriented (benefits humanity&#39;s multi-planetary future), idealistic (describes a state that does not yet exist), and big (can never be fully achieved) <span class="source-ref">[2]</span>. The cause drives strategic decisions: pursuing lunar landings despite high failure risk, building infrastructure for sustained presence rather than one-off missions, and diversifying into data services and orbital capabilities. It falls short of 3/3 because it has not been validated by decades of execution — the company went public in 2023 and has had one partially successful landing mission.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Altemus&#39;s &#39;forced innovation&#39; culture attracts engineers who thrive on hard problems, and the promotion of internal leaders (Jack Fischer to operations) signals investment in people <span class="source-ref">[2]</span>. The company&#39;s rapid growth from ~100 to 525 employees suggests people are joining for the mission. However, the &#39;overly constrained budgets and schedules&#39; philosophy could create burnout and pressure that undermines psychological safety. No specific voluntary turnover, engagement survey, or average tenure data are available to assess trust levels.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Intuitive Machines operates in an ecosystem alongside SpaceX, Blue Origin, and Astrobotic, framing competition as motivation to advance space infrastructure rather than a zero-sum battle for dominance <span class="source-ref">[1]</span>. The company positions itself as complementary to NASA&#39;s broader Artemis strategy, acknowledging that multiple providers are needed for a sustainable lunar economy. Management language focuses on expanding the market rather than defeating competitors.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): LUNR has meaningfully evolved from a lunar lander company (2013-2025) to a diversified space infrastructure provider through the January 2026 Lanteris acquisition, which added satellite communications, orbital services, and national security capabilities <span class="source-ref">[1]</span>. Revenue mix shifted from nearly 100% civil to 38% civil / 32% commercial / 30% national security in one year. This represents significant adaptation, though it is still early-stage evolution rather than a transformative self-disruption of a proven business model.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Altemus and Intuitive Machines demonstrate a clear pattern of courageous strategic decisions: attempting the first commercial lunar landing (IM-1) knowing that the previous attempt (Astrobotic Peregrine) had failed catastrophically, continuing to invest in multiple spacecraft variants while still unprofitable, and acquiring Lanteris to enter national security space despite the integration risk during rapid growth <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Altemus&#39;s &#39;forced innovation&#39; philosophy — deliberately taking on &#39;insurmountable challenges&#39; with constrained resources — embodies Sinek&#39;s definition of courage as acting in service of the cause even when the cost is real and immediate.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Intuitive Machines at $13.50 with a $2.2B market cap is the leading commercial lunar infrastructure company executing a rapid scale-up — Q2 CY2026 delivered record revenue of $206.2M (4x YoY), FY2026 guidance of $900M-$1B with positive adjusted EBITDA, and a record $1.8B backlog with $920M booked in Q2 alone <span class="source-ref">[1]</span>. The company is defining the commercial lunar economy with six NASA CLPS mission awards (the most of any provider), the first U.S. commercial lunar landing (IM-1), and a rapidly diversifying revenue mix that grew national security from 3% to 30% of revenue in one year. The Lanteris acquisition transforms LUNR into a full-spectrum space infrastructure provider, and the $1.8B backlog (7+ quarters of revenue visibility) provides a strong foundation for continued hypergrowth. Management expects 25-30% of backlog to convert in 2026, 35-40% in 2027, creating a multi-year revenue ramp <span class="source-ref">[1]</span>.</div>
+    <div class="thesis-text">The bear case centers on profitability risk, execution complexity, and government contract dependency. Despite $490M TTM revenue, the company remains unprofitable with -26.6% profit margin, -30.8% ROE, and trailing EPS of -$0.95 <span class="source-ref">[1]</span>. Forward EPS of -$0.155 implies only marginal improvement, and the path to sustained profitability depends on mission execution, contract margins, and integration synergies from the Lanteris acquisition that are far from guaranteed. The IM-1 mission&#39;s partial failure (lander tipped over) raises execution risk questions as the company scales to more complex missions (IM-2, IM-3 with Micro Nova Hopper). NASA civil space represents 38% of revenue and is subject to federal budget politics — any change in Artemis program funding or CLPS contract structure could materially impact the backlog&#39;s conversion to revenue <span class="source-ref">[1]</span>. The $2.2B market cap on a company with no GAAP profits prices in significant future growth that is dependent on flawless execution of multiple simultaneous lunar missions, a successful Lanteris integration, and continued government contract wins <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Record $1.8B backlog with 25-30% converting to revenue in 2026 and 35-40% in 2027 — $920M in Q2 bookings plus $300M Q3 QTD demonstrates accelerating contract wins across civil, commercial, and national security customers <span class="source-ref">[1]</span></li>
+        
+        <li>National security space diversification — revenue mix shifted from 3% to 30% national security in one year, opening a massive addressable market beyond NASA civil contracts and reducing single-customer dependency <span class="source-ref">[1]</span></li>
+        
+        <li>IM-2 and IM-3 mission execution — successful upcoming lunar missions would validate the company&#39;s operational capabilities at scale and unlock additional CLPS awards, building on the IM-1 first-landing heritage <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Persistent unprofitability — trailing profit margin of -26.6% and forward EPS of -$0.155 mean the company remains cash-flow negative despite $490M TTM revenue, and fixed-price government contracts carry execution risk that could further compress margins <span class="source-ref">[1]</span></li>
+        
+        <li>Mission execution risk — the IM-1 lander tipped over during the first commercial lunar landing, shortening the mission and raising questions about reliability as the company scales to more complex missions with multiple landers, hoppers, and data network deployments <span class="source-ref">[1]</span></li>
+        
+        <li>Government contract dependency — NASA and DoD contracts represent ~68% of revenue, subject to federal budget appropriations, political priorities, and potential Artemis program restructuring that could delay or cancel missions in the $1.8B backlog <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Intuitive Machines&#39; core business — designing, building, and operating lunar landers, orbital vehicles, and space infrastructure — is IMMUNE to AI substitution <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The business requires physical spacecraft, propulsion systems, precision navigation, and complex mission execution in extreme environments that AI structurally cannot replace. Government contract relationships (NASA, DoD, national security) involve clearances, heritage trust, and regulatory frameworks that create additional barriers. AI actually increases demand for LUNR&#39;s services — autonomous lunar operations, data network processing, and reconnaissance require sophisticated AI, making the company an AI deployer rather than an AI victim. The only exposure is that AI could eventually improve competitor capabilities, but the company&#39;s first-mover advantage and NASA heritage provide meaningful protection. AI Opportunity (1/1): AI is embedded in the company&#39;s core operations — autonomous lunar landing, surface navigation, data processing from the lunar data network, and command/control systems all employ AI applications <span class="source-ref">[2]</span>. While not separately monetized, AI capability is a differentiator that enables mission success and underpins the company&#39;s competitive position.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            37
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Intuitive Machines Q2 CY2026 Earnings — $206.2M Record Revenue (4x YoY), $1.8B Backlog, $920M Q2 Bookings, FY2026 Guidance $900M-$1B, Lanteris $166.7M Contribution — Investor Relations, Quartr, SEC 8-K/10-Q, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Intuitive Machines Leadership and Culture — CEO Steve Altemus (co-founder), 'forced innovation' philosophy, Jack Fischer (former astronaut) operations lead, 525 employees — PMI Podcast, SatNews, Business Wire, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Intuitive Machines SEC Filings — IM-5 ($68.6M base + $79.7M option), IM-6 ($160.1M), NASA CLPS mission awards, Lanteris acquisition details — SEC 10-Q Q1/Q2 CY2026, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
