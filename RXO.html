@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RXO — RXO, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RXO_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RXO')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RXO
+            <span class="stock-name-full">RXO, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-08</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 42</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">46</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Freight & Logistics Services</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">RXO, Inc. is a tech-enabled asset-light transportation solutions provider spun off from XPO Logistics in November 2022 and headquartered in Charlotte, North Carolina. The company operates one of the largest truck brokerage platforms in North America, complemented by managed transportation and last-mile delivery services. Under CEO Drew Wilkerson, RXO is deploying agentic AI and digital bidding technology to reshape freight brokerage, having automated 500,000+ phone calls in Q2 2026 and launched AI-powered pricing and truck check-in systems. Q2 2026 revenue climbed 25% YoY to $1.77B with spot freight mix surging to 42% of truckload volume (+1,500bps YoY). Management describes the company as 'early in a multiyear recovery.' Market cap approximately $3.7B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>7,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://rxo.com" target="_blank" rel="noopener">rxo.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): RXO has executed two transformative moves in under four years: the spin-off from XPO Logistics into a standalone asset-light brokerage platform (November 2022), and the acquisition of Coyote Logistics from UPS, which significantly expanded the carrier network and shipper relationships <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. These restructurings created a focused, tech-enabled brokerage that outperformed the legacy integrated model. AI Deployment (2/2): RXO is a sector leader in AI deployment. Agentic AI automated more than 500,000 phone calls in Q2 2026, AI-driven pricing analyzes millions of real-time data points to deliver market-accurate rates, and AI-powered truck check-in technology using visual AI streamlines warehouse operations <span class="source-ref">[3]</span>. These are shipping products with quantifiable operational impact — not R&amp;D experiments. Market Share (1/2): RXO is a top-5 North American freight broker with $5.74B in LTM revenue, meaningfully positioned behind C.H. Robinson but competing effectively with technology-driven differentiation <span class="source-ref">[5]</span>. The Coyote acquisition significantly increased scale. Product Pipeline (1/2): Agentic AI and digital bidding platform represent specific next-generation products with visibility — analysts are asking whether these tools can &#39;reshape brokerage,&#39; indicating market awareness of the pipeline <span class="source-ref">[3]</span>. However, specific revenue targets and launch timelines for next-gen features are not publicly disclosed. R&amp;D Intensity (1/1): RXO brands itself as a technology company in the freight industry. The volume of AI product launches (agentic AI, visual AI check-in, AI pricing) and CEO Wilkerson&#39;s emphasis on tech investment suggest above-peer R&amp;D intensity for the logistics sector.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): RXO positions itself around using cutting-edge technology to move freight through supply chains more efficiently, reducing empty miles and environmental impact <span class="source-ref">[4]</span>. This is clear and identifies a broader purpose (efficiency, sustainability) beyond pure profit, but it doesn&#39;t articulate a vision of a future state that is truly distinctive or transformative. Interchangeable with any tech-enabled logistics company. Community Impact (1/2): RXO&#39;s Ship Net-Zero program allows shippers to offset carbon emissions through sustainability projects, and the company published an inaugural Corporate Responsibility Report following GRI and SASB frameworks <span class="source-ref">[4]</span>. These represent specific, tangible community/environmental programs beyond compliance. Employee Retention (1/2): 62% of employees would recommend RXO on Glassdoor, and CEO Drew Wilkerson was named to Charlotte Business Journal&#39;s Most Admired CEO list <span class="source-ref">[6]</span>. Culture is described as fostering innovation and collaboration, though some reviews note leadership communication gaps. Average for the industry. Insider Buying (0/2): No evidence of meaningful insider buying identified in research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics (5yr CAGR and PEG unavailable, excluded as company was spun off in 2022). D/E of 43% scores a perfect 1.0 — the asset-light model keeps leverage manageable <span class="source-ref">[5]</span>. Revenue growth YoY of 25% (Q2 2026) also scores 1.0, reflecting strong cyclical recovery driven by surging spot mix at 42% of truckload volume <span class="source-ref">[1]</span>. However, three critical metrics score zero: ROE of -6.79% is below the 0% floor (0.0 at 2x weight), Forward P/E of 71.14x is above the 60x floor (0.0), and profit margin of -1.72% is below the 0% floor (0.0) <span class="source-ref">[5]</span>. RXO remains unprofitable on a trailing basis with $100M in LTM losses on $5.74B revenue, reflecting a freight brokerage industry still recovering from a deep downturn. The infrastructure score captures the harsh reality: strong topline momentum but zero profitability proof. Liquidity floor easily cleared at approximately $68M daily dollar volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">RXO is a young company (spun off in 2022) playing an aggressive but largely finite game — racing to deploy AI technology and capture market share during a freight market recovery. CEO Wilkerson&#39;s leadership shows courageous investment in technology during an unprofitable period, and the company&#39;s willingness to transform from traditional brokerage to AI-enabled platform demonstrates some existential flexibility. However, the Just Cause is thin (efficiency and technology are means, not a cause), the organizational culture is adequate but not exceptional, and the competitive posture focuses on winning share rather than self-improvement. The company is too young to have demonstrated through-cycle consistency or multi-decade purpose alignment.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): RXO articulates a purpose around using technology to transform how freight moves through supply chains — reducing inefficiency, empty miles, and emissions <span class="source-ref">[4]</span>. This is genuine and connects to environmental impact, but it reads as a business strategy rather than a Just Cause. &#39;Using AI to make logistics more efficient&#39; is a means, not an idealistic future state. The company is too young (founded 2022 via spin-off) to have validated this purpose through crises or multi-decade consistency. Sinek would say this is a company with a good strategy, not a Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): CEO Drew Wilkerson earned recognition as Charlotte Business Journal&#39;s Most Admired CEO, suggesting leadership quality that resonates externally <span class="source-ref">[6]</span>. 62% of employees would recommend RXO on Glassdoor, with the culture described as fostering innovation and collaboration. However, some reviews note &#39;leadership communication and support&#39; gaps, and one review explicitly says &#39;Stay far away&#39; <span class="source-ref">[6]</span>. The company has adequate trust for a young, rapidly evolving logistics firm, but nothing exceptional that would constitute a Sinek Circle of Safety.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of an infinite competitive mindset. RXO&#39;s competitive positioning focuses on market share, technology differentiation, and winning versus C.H. Robinson, Uber Freight, and other brokers — classic finite competitive framing <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. No management commentary was found acknowledging specific rivals&#39; strengths as motivation for self-improvement. The narrative is about disrupting competitors with AI, not about learning from them.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): RXO&#39;s very existence represents a strategic reinvention — carved out of XPO Logistics to create a focused asset-light brokerage platform, then transformed further through the Coyote Logistics acquisition and aggressive AI deployment <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The shift from traditional phone-based brokerage to agentic AI-powered automated workflows represents meaningful business model evolution. However, these changes are incremental adaptations within freight brokerage rather than a fundamental reinvention of the company&#39;s industry or purpose. The company has not abandoned a core business in service of a greater cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Investing heavily in AI technology, completing the Coyote Logistics acquisition, and building a technology-first organizational culture while the company remains unprofitable (ROE -6.79%, $100M LTM losses) demonstrates willingness to sacrifice near-term profitability for long-term capability <span class="source-ref">[3]</span><span class="source-ref">[5]</span>. CEO Wilkerson&#39;s statement that the company is &#39;early in a multiyear recovery&#39; signals patience rather than quarter-to-quarter optimization. However, these investments are competitively necessary for survival in an AI-disrupted industry — not volunteering to sacrifice when alternatives exist.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">RXO is an AI-first freight brokerage at an inflection point — Q2 2026 revenue surged 25% YoY to $1.77B with spot mix climbing to 42% of truckload volume (+1,500bps YoY), driving the highest TL gross profit per load in four years (+11% sequential) <span class="source-ref">[1]</span>. The company&#39;s agentic AI technology (500K+ automated phone calls in Q2), AI-powered pricing, and digital bidding platform represent the most aggressive AI deployment in the freight brokerage sector, positioning RXO to capture disproportionate share as the market recovers <span class="source-ref">[3]</span>. Management&#39;s view that the company is &#39;early in a multiyear recovery&#39; suggests substantial earnings upside from normalization — the forward PE of 71x reflects trough-level earnings, not sustainable profitability <span class="source-ref">[2]</span>. The Coyote Logistics acquisition added scale, and the Inspire Impact Score of 42 (ALIGNED) with zero negative attributions makes RXO accessible to faith-based investors seeking logistics exposure <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">The bear case is significant: RXO remains unprofitable with -6.79% ROE and -1.72% profit margin on $5.74B in LTM revenue, generating $100M in losses <span class="source-ref">[5]</span>. The forward PE of 71.14x is above the 60x floor used in IOWN infrastructure scoring, reflecting trough earnings that may not recover as quickly as bulls expect. Freight brokerage is one of the sectors most directly threatened by AI disruption — the traditional information asymmetry that generates broker margins is being eroded by AI platforms that match freight to capacity more efficiently, as evidenced by C.H. Robinson&#39;s stock decline on AI disruption fears <span class="source-ref">[3]</span>. RXO&#39;s own AI deployment may not be sufficient to offset industry-wide margin compression if every broker adopts similar technology. The company has limited operating history as a standalone entity (spun off November 2022), making long-term financial predictability low. Debt of 43% D/E is manageable but represents leverage taken on for the Coyote acquisition that must be serviced through a cyclical recovery with uncertain timing. If the freight market recovery stalls — due to economic slowdown, trade policy shifts, or capacity oversupply — RXO&#39;s losses could deepen before profitability is achieved <span class="source-ref">[2]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Freight market cyclical recovery driving spot rates and volume higher — spot mix surged to 42% of TL volume in Q2 2026 (+1,500bps YoY), and management says the company is &#39;early in a multiyear recovery,&#39; suggesting substantial earnings leverage as rates normalize <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Agentic AI and digital bidding platform scaling across the carrier and shipper network — 500K+ automated phone calls in Q2 demonstrate the technology works, and broader deployment could drive cost structure below traditional competitors, creating sustainable margin advantage <span class="source-ref">[3]</span></li>
+        
+        <li>Path to profitability inflection — adjusted EPS of $0.06 in Q2 beat the $0.04 estimate, and spot rate improvements + operating leverage from AI automation could drive a rapid earnings recovery toward consensus estimates of 8.1% annual revenue growth <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>AI-driven margin compression across the freight brokerage industry — if AI eliminates the information asymmetry that generates broker spreads, all brokers (including RXO) face structurally lower margins regardless of their own AI capabilities, as C.H. Robinson&#39;s stock decline on AI disruption fears demonstrates <span class="source-ref">[3]</span></li>
+        
+        <li>Freight market recovery timing uncertainty — RXO&#39;s forward PE of 71x assumes earnings normalization that depends on cyclical recovery in trucking rates, which could stall if economic conditions deteriorate, trade volumes decline, or carrier capacity grows faster than demand <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Execution risk from rapid technological transformation — RXO is simultaneously integrating the Coyote acquisition, deploying agentic AI at scale, and building digital bidding workflows while remaining unprofitable, creating operational complexity that could overwhelm a young management team <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (4/9): Freight brokerage is one of the industries most directly exposed to AI disruption. The traditional broker value proposition — matching shipper demand with carrier capacity using information advantages and relationship networks — is precisely what AI platforms can automate more efficiently <span class="source-ref">[3]</span>. C.H. Robinson saw its stock plunge as investors priced in AI-driven margin compression, and headlines like &#39;AI Disrupts the Freight Industry&#39; signal that analysts view this as real, not theoretical. AI-native competitors (Convoy&#39;s technology, Uber Freight, digital-first brokers) are already eroding traditional information asymmetry. However, RXO&#39;s scale (top-5 broker, $5.74B revenue), established carrier networks, shipper relationships, and regulatory complexity provide some defensibility that pure technology cannot easily replicate. Physical logistics ultimately requires physical trucks and human drivers, creating a floor beneath the brokerage model. AI Opportunity (1/1): RXO is actively generating revenue from AI deployment — agentic AI automated 500K+ phone calls in Q2 2026, AI-driven pricing is deployed at scale across millions of data points, and AI-powered truck check-in technology serves warehouse customers <span class="source-ref">[3]</span>. CEO Wilkerson has made AI the centerpiece of RXO&#39;s competitive strategy, positioning the company as an AI-first broker rather than a traditional one adapting to AI.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            42
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> RXO Q2 2026 Earnings — Revenue $1.77B (+25% YoY), Adjusted EPS $0.06 (Beat $0.04 Est.), Spot Mix 42% of TL Volume (+1,500bps YoY), TL Gross Profit Per Load +11% Sequential, Pricing Growth 5-Year High, August 2026</li>
+        
+        <li><span class="src-num">2.</span> RXO Q1 2026 Earnings and Outlook — Strategic Growth Despite EPS Miss, Management: 'Early in Multiyear Recovery,' Revenue Forecast +8.1% CAGR (Next 3 Years), Investing.com, May 2026</li>
+        
+        <li><span class="src-num">3.</span> RXO AI and Technology Deployment — Agentic AI Automated 500K+ Phone Calls, AI-Powered Truck Check-In (Visual AI), AI-Driven Pricing, Digital Bidding Platform, FreightWaves/Zacks/PYMNTS, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> RXO ESG and Corporate Responsibility — Ship Net-Zero Program, Inaugural GRI/SASB Report, Safety Below Industry Benchmark, Sustainalytics Average Rating, rxo.com/about-us/esg, 2026</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis, GuruFocus — RXO Key Statistics: Forward PE 71.14x, D/E 43%, ROE -6.79%, Profit Margin -1.72%, Revenue $5.74B LTM, Stock Price $22.64, Market Cap $3.73B, accessed September 2026</li>
+        
+        <li><span class="src-num">6.</span> Glassdoor, Charlotte Business Journal — CEO Drew Wilkerson 'Most Admired CEO,' 62% Employee Recommendation Rate, Mixed Culture Reviews, 2024-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

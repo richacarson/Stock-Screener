@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CRC — California Resources Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CRC_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CRC')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CRC
+            <span class="stock-name-full">California Resources Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-01</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 47</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">53</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Energy</span>
+        <span class="sep">&middot;</span><span>Oil & Gas E&P</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">California Resources Corporation is the largest oil and gas producer in California, operating primarily in the San Joaquin Basin. Following the 2024 Aera Energy acquisition, CRC produces approximately 150–155 MBoe/d (80% oil). The company also operates Carbon TerraVault, California's first operational carbon capture and storage (CCS) project at Elk Hills, positioning itself as an energy and carbon management company aligned with California's 2045 carbon neutrality goals. Q2 2026 revenue of $1.297B with net income of $514M.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>2,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.crc.com" target="_blank" rel="noopener">www.crc.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): CRC completed the transformative Aera Energy acquisition in 2024, significantly expanding its production base and carbon management acreage, and launched Carbon TerraVault I — California&#39;s first operational CCS project, which began CO2 injection at Elk Hills in May 2026 with capacity for 1.6 million metric tons annually <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Both represent significant business model transformations for a traditional E&amp;P company. AI Deployment (0/2): No AI-powered products or quantified AI-driven efficiency gains identified in CRC&#39;s operations or public disclosures. Market Share (1/2): CRC is the largest oil and gas producer in California with dominant position in the San Joaquin Basin and the first operator of a CCS facility in the state, though it is a regional player with no national or global market share leadership <span class="source-ref">[1]</span>. Product Pipeline (1/2): Carbon TerraVault I operational, with Aera DAC Hub-Kern in development, plus pending EPA Class VI permits for 27M tonnes at Belridge and additional permits for Coles Levee, partnering with ClimeWorks and Avnos on DOE-funded projects <span class="source-ref">[2]</span>. CCS economics remain dependent on 45Q tax credits. R&amp;D Intensity (0/1): Oil and gas E&amp;P companies invest through capex rather than R&amp;D; CRC&#39;s innovation is project-based (CTV, DAC) rather than research-driven.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): CEO Francisco Leon states &#39;At CRC, we&#39;re making that difference through low carbon intensity energy production, investment, and innovation right here in the California communities we serve&#39; — clear and identifies what the company does, but the energy transition framing is common among oil companies seeking ESG credibility and does not yet differentiate through sustained execution <span class="source-ref">[3]</span>. Community Impact (1/2): CRC appointed Chris Gould as Chief Sustainability Officer, achieved a 27% GHG reduction, and is investing in Carbon TerraVault as a community-aligned initiative <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. However, CRC and subsidiaries are responsible for cleaning up 11,000+ idle wells with projected costs exceeding $1B against only $114.7M in bonds, drawing criticism from the Sierra Club and Center for Biological Diversity <span class="source-ref">[4]</span>. Employee Retention (0/2): CRC emerged from bankruptcy in 2020 and completed the Aera Energy acquisition in 2024, creating significant organizational disruption. CEO Leon (since 2023) and CFO Crespy (since Jan 2025) provide recent leadership stability, but no retention metrics are available. Insider Buying (0/2): No evidence of meaningful net insider buying found in recent filings.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Q2 2026 delivered revenue of $1.297B with net income of $514M, and TTM revenue of $3.74B grew 33% YoY following the Aera acquisition <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. D/E of 39.6% is well below the 70% target (score 1.0), and forward P/E of 12.18 provides good value (score 1.0). However, TTM ROE of -3.55% and profit margin of -3.24% score zero, likely distorted by the $792M non-cash derivative losses recognized in Q1 2026 <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. Revenue growth 5yr CAGR of approximately 4% is modest (score 0.6). Dividend metrics are a strength: payout ratio of 37.8% is below the 40% target (score 1.0), 5yr dividend growth CAGR of ~24% since 2021 scores at target (2× weight), offset by only 5 consecutive years paid (score 0.5, 2× weight) and 4 years of growth (score 0.4). Weighted sum 8.0 / max 12 = 6.67, rounds to 7. Liquidity: $50.80 × 832,655 = $42.3M passes the $1M floor <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">CRC exhibits predominantly finite-game characteristics tempered by nascent long-game investments. The company emerged from bankruptcy in 2020, acquired Aera Energy in 2024, and launched California&#39;s first CCS project in 2026 — but these moves read as strategic repositioning for regulatory survival rather than pursuit of a deeply held Just Cause. The carbon management pivot is becoming more real (CTV I is operational), but the core business remains oil extraction in an increasingly hostile regulatory environment, and the organizational disruption from bankruptcy and acquisition limits the trust foundation Sinek demands.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): CRC&#39;s energy transition narrative gains credibility with CTV I now operational and injecting CO2, but remains shallow by Sinek&#39;s standards — the company&#39;s primary business is oil extraction (80% oil, 150–155 MBoe/d), and the &#39;carbon management&#39; positioning arrived post-bankruptcy <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. CEO Leon&#39;s framing of &#39;making that difference in the California communities we serve&#39; is genuine but has not been validated by decades of consistent strategic execution. Environmental groups challenge whether CCS genuinely serves a larger cause or prolongs fossil fuel dependence <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Leadership has stabilized since the turbulent 2020–2024 period, with CEO Leon in place since 2023 and CFO Crespy since January 2025. CRC&#39;s distinction as a publicly traded energy company with a Latino CEO/CFO team demonstrates diversity commitment <span class="source-ref">[3]</span>. The 2,500-employee workforce has weathered bankruptcy and the Aera integration. However, no specific retention, turnover, or employee satisfaction data distinguishes CRC from industry norms, and the ongoing organizational complexity from integrating Aera&#39;s operations may limit cultural cohesion.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of CRC&#39;s management acknowledging competitors&#39; strengths or using competitive dynamics for self-improvement. The company&#39;s competitive language focuses on being California&#39;s largest producer and leading energy transition, emphasizing dominance rather than learning from rivals in either E&amp;P or CCS.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The Carbon TerraVault initiative represents genuine strategic evolution — CRC is leveraging geological expertise and land assets to build a carbon capture business alongside oil production, and CTV I is now operational <span class="source-ref">[2]</span>. The Aera acquisition expanded both E&amp;P and CCS capacity. However, CCS remains a small fraction of revenue, and the core business model (California oil production) has not fundamentally changed. The pivot appears driven by regulatory pressure and tax credit incentives rather than a proactive Just Cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CRC is investing in Carbon TerraVault despite environmental opposition and uncertain CCS economics, raised capex to $520–$560M, and completed the Aera acquisition to scale both production and carbon management <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Breaking ground on California&#39;s first CCS project while facing litigation from environmental groups demonstrates conviction. However, these decisions are driven by financial logic (45Q tax credits at $85/ton, production economics) rather than principled long-term bets that sacrifice near-term results.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">CRC offers deep value at 12.2x forward PE with the PEG ratio of 0.43 suggesting the market underprices growth, supported by Q2 2026 revenue of $1.297B and net income of $514M demonstrating strong cash generation from California&#39;s largest oil producer at 150–155 MBoe/d <span class="source-ref">[1]</span>. The Aera Energy acquisition expanded both production scale and CCS capacity, with Carbon TerraVault I now operational — California&#39;s first CCS facility capable of storing 1.6M metric tons CO2 annually, providing optionality on federal 45Q tax credits at $85/ton <span class="source-ref">[2]</span>. D/E of 39.6% and payout ratio of 37.8% provide balance sheet discipline, while the 3.19% dividend yield with 24% 5-year CAGR growth rate offers income with above-inflation growth. The Inspire ALIGNED score of 47 reflects strong ESG alignment across air quality, energy management, and environmental risk mitigation <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">GAAP profitability metrics are severely distorted by $792M in non-cash commodity derivative losses in Q1 2026, producing negative TTM ROE (-3.55%) and profit margin (-3.24%) that mask underlying operational strength — Q2 2026 alone generated $514M net income <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The stock trades 29% below its 52-week high of $71.98, reflecting market skepticism about oil price sustainability and California regulatory risk. CRC and subsidiaries bear cleanup obligations for 11,000+ idle wells with estimated costs exceeding $1B against only $114.7M in bonds, creating a significant unfunded environmental liability <span class="source-ref">[4]</span>. Carbon TerraVault faces active litigation from environmental groups challenging the project&#39;s environmental analysis, and CCS economics remain dependent on federal 45Q tax credits vulnerable to political risk. California&#39;s increasingly restrictive permitting for new wells and production, combined with setback requirements, could constrain CRC&#39;s ability to maintain production levels over the medium term <span class="source-ref">[4]</span><span class="source-ref">[5]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Carbon TerraVault I operational with 1.6M metric ton annual capacity, plus Aera DAC Hub-Kern and pending Class VI permits for 54M tonnes of additional storage, creating a multi-decade CCS revenue stream supported by $85/ton 45Q tax credits <span class="source-ref">[2]</span></li>
+        
+        <li>Aera Energy integration synergies and combined production of 150–155 MBoe/d providing scale advantages in California&#39;s largest E&amp;P operation, with 2026 guidance affirmed <span class="source-ref">[1]</span></li>
+        
+        <li>PEG ratio of 0.43 and 12.2x forward PE suggest the market significantly underprices CRC&#39;s growth trajectory as CCS revenue ramps alongside stable oil production <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Commodity price exposure: 80% oil production mix means a $10/bbl decline in oil prices would compress EBITDAX by $300–400M annually, threatening the 3.19% dividend and free cash flow on a $4.5B market cap <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Unfunded environmental liability: 11,000+ idle wells with projected cleanup costs exceeding $1B against only $114.7M in bonds, drawing opposition from Sierra Club and Center for Biological Diversity <span class="source-ref">[4]</span></li>
+        
+        <li>California regulatory risk: increasingly restrictive state-level permitting for new wells, setback requirements, and climate legislation could constrain production, while CCS litigation could delay Carbon TerraVault expansion <span class="source-ref">[2]</span><span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Oil and gas extraction, refining, and carbon capture are fundamentally physical operations requiring wellheads, pipelines, processing plants, and deep geological formations that AI structurally cannot substitute <span class="source-ref">[1]</span>. CRC&#39;s 150–155 MBoe/d production across California oil fields and Carbon TerraVault&#39;s subsurface CO2 injection involve geology, engineering, and infrastructure beyond AI displacement. AI data center expansion is actually increasing electricity and natural gas demand in California, potentially benefiting CRC&#39;s production. The regulatory environment (California-specific permitting, EPA Class VI requirements) adds further structural protection. AI Opportunity (0/1): No AI-driven revenue. CRC is a traditional oil and gas producer with carbon capture operations that are engineering-driven rather than AI-enabled.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            47
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Air Quality</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> California Resources Corporation Q2 2026 and Q1 2026 Earnings Results — SEC Form 8-K, GlobeNewsWire, StockTitan, 2026</li>
+        
+        <li><span class="src-num">2.</span> Carbon TerraVault I Operations, Aera DAC Hub-Kern, CCS Expansion — CRC.com, GlobeNewsWire, Inside Climate News, 2025–2026</li>
+        
+        <li><span class="src-num">3.</span> CRC Leadership, CEO Francisco Leon, CSO Chris Gould — Hispanic Executive, CRC.com, Equilar</li>
+        
+        <li><span class="src-num">4.</span> CRC ESG Ratings, Idle Wells Environmental Liability — Yahoo Finance Sustainability, Inside Climate News, Sierra Club, December 2024</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance / StockAnalysis — CRC Key Statistics and Financial Data, accessed October 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

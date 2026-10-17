@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FNV — Franco-Nevada Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FNV_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FNV')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FNV
+            <span class="stock-name-full">Franco-Nevada Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-28</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">73</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Basic Materials</span>
+        <span class="sep">&middot;</span><span>Gold</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>Canada</span>
+    </div>
+    
+    <div class="profile-desc">Franco-Nevada is the world's largest gold-focused royalty and streaming company, holding a diversified portfolio of over 400 mineral and energy assets that entitle it to a share of production or revenue without operating mines itself. The capital-light model delivered record H1 2026 revenue of $1,231.6M (+67% YoY) with Q2 revenue of $580.9M (+57% YoY) on 132,405 gold-equivalent ounces sold, and record H1 net income of $822.6M (+80%) [1]. The company is debt-free with $4.3B of available capital and trades at a market cap of approximately $52B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>38 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.franco-nevada.com" target="_blank" rel="noopener">www.franco-nevada.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Franco-Nevada pioneered the modern gold royalty/streaming model and has successfully expanded its portfolio through disciplined deal-making, including the $250M i-80 Gold net smelter return royalty and $100M Orezone Gold stream in 2026 <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The Cobre Panama mine restart (after resolution of legal and political disputes) demonstrates strategic persistence. These represent successful portfolio expansion and business resilience. AI Deployment (0/2): No AI deployment evident. Franco-Nevada operates with just 38 employees as a financial/investment entity — there is no proprietary technology or AI-powered product. Market Share (2/2): Franco-Nevada is the world&#39;s largest gold-focused royalty and streaming company by market cap (~$52B), with the most diversified portfolio (400+ interests across gold, silver, PGMs, oil &amp; gas) and consistent AAA MSCI ESG rating <span class="source-ref">[3]</span>. Category leader and franchise business. Pipeline (1/2): $30.5B record subsea opportunity pipeline — sorry, record deal opportunity pipeline with active acquisitions including i-80 Gold and Orezone deals closing in H1 2026 <span class="source-ref">[2]</span>. Strong deal flow but specific future acquisition targets are not publicly disclosed. R&amp;D Intensity (0/1): Not applicable — Franco-Nevada is a royalty company with no R&amp;D function. The business model is financial, not technological <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Franco-Nevada&#39;s purpose centers on giving investors the most capital-efficient, lower-risk exposure to gold and disciplined capital returns. The mission is clear and coherently executed — 19 consecutive annual dividend increases validate commitment — but it is fundamentally financial rather than transcendent, serving investor interests rather than articulating a vision of a better world <span class="source-ref">[4]</span>. Community Impact (1/2): Franco-Nevada supports the World Gold Council and its Responsible Gold Mining Principles, publishes an annual Asset Handbook and Sustainability Report, and maintains an AAA MSCI ESG rating and &#39;Prime&#39; ISS ESG rating <span class="source-ref">[3]</span>. Impact is primarily indirect — as a royalty holder it finances rather than operates mines, limiting direct social footprint. Employee Retention (2/2): A team of just 38 employees managing a $52B portfolio implies extraordinarily high retention and specialization — this is one of the leanest teams in the sector with decades of cumulative mining finance expertise <span class="source-ref">[2]</span>. CEO Paul Brink succeeded founder David Harquail with smooth leadership continuity. Insider Buying (0/2): No evidence of meaningful net insider buying by executives was identified in research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock. D/E of effectively 0% (debt-free with $280.8M cash and $4.3B available capital) scores maximum on balance sheet safety <span class="source-ref">[4]</span>. ROE of 19.04% exceeds the 15% target, reflecting efficient deployment of the royalty model&#39;s high-margin cash flows <span class="source-ref">[4]</span>. Q2 2026 revenue grew 57% YoY and H1 revenue surged 67% YoY, well above the 10% target <span class="source-ref">[1]</span>. 5-year revenue CAGR of 14.09% exceeds the target <span class="source-ref">[4]</span>. Profit margin of 65.67% reflects the capital-light royalty model&#39;s exceptional economics <span class="source-ref">[4]</span>. Forward P/E of 28.38 is the primary drag, scoring 0.79 against the 20x target as the stock has re-rated significantly from $211 to $271 <span class="source-ref">[4]</span>. Estimated forward PEG of ~1.9 based on normalized long-term growth expectations scores 0.55 with double weight. Liquidity clears the floor easily at approximately $246M daily trading value.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>7</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Franco-Nevada behaves like a patient, multi-decade capital allocator: it underwrites royalties expecting to hold them for the life of the mine, has repeatedly walked away from overpriced deals to protect discipline, and absorbed the multi-year Cobre Panama shutdown without abandoning the asset or issuing debt. The mindset is strongly long-term, anchored by 19 consecutive years of dividend increases and counter-cyclical capital deployment. The Just Cause is fundamentally financial (superior risk-adjusted gold exposure) rather than a transcendent purpose, which holds it at the top of MIXED rather than INFINITE.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Franco-Nevada&#39;s cause — give investors diversified, lower-risk exposure to precious metals while being a supportive capital partner to miners — is coherent, durable, and has been validated by 19 years of consistent execution since the 2007 IPO <span class="source-ref">[2]</span><span class="source-ref">[4]</span>. The founding vision of a gold royalty franchise with no debt, no mine operations, and disciplined capital allocation has survived leadership transitions (Harquail to Brink) and the Cobre Panama crisis. However, the cause is financial rather than aspirational — it inspires discipline and patient capital allocation more than devotion to a transcendent purpose.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): One of the leanest teams in the sector — 38 people managing a $52B portfolio — implying extraordinarily high trust, low bureaucracy, and strong retention <span class="source-ref">[2]</span>. CEO Paul Brink succeeded founder David Harquail with a smooth transition, and incoming Chair Tom Albanese provides experienced governance continuity. The small team size inherently creates a high-trust environment where each member carries significant responsibility. However, the very small team limits the evidence base for organizational trust assessment.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Franco-Nevada competes with credible rivals — Wheaton Precious Metals and Royal Gold — and differentiates on underwriting discipline and portfolio diversification rather than outbidding them or pursuing predatory deal terms <span class="source-ref">[2]</span>. Management frames competitive dynamics as sharpening deal selection quality rather than a zero-sum war. The company&#39;s willingness to pass on overpriced deals (maintaining capital discipline) even when competitors are acquiring demonstrates infinite competitive mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Franco-Nevada has diversified from pure gold royalties into silver, PGMs, oil &amp; gas, and other minerals, building a ~400-asset portfolio across commodities and geographies that provides real optionality <span class="source-ref">[2]</span>. The company adapted through the Cobre Panama disruption without altering its fundamental strategy — maintaining patience and capital discipline while peers might have written off the asset. However, the core business model (royalties and streams) has remained unchanged since the 2007 IPO — this is portfolio evolution, not business model reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Counter-cyclical courage is Franco-Nevada&#39;s defining characteristic. The company holds capital and passes on richly-priced deals rather than chasing volume in hot markets — a costly discipline when competitors are winning headlines with large acquisitions <span class="source-ref">[2]</span>. Franco-Nevada stayed the course on Cobre Panama through a prolonged, politically-charged shutdown that removed 20-25% of expected GEO production, maintaining its position without issuing debt or cutting the dividend <span class="source-ref">[1]</span>. The 19 consecutive annual dividend increases through commodity price cycles demonstrate unwavering commitment to long-term shareholder returns over short-term financial engineering.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Franco-Nevada is the blue-chip gold royalty franchise: a capital-light, ~400-asset portfolio that converts record gold and silver prices into industry-leading margins (65.7% net profit margin) with zero debt and $4.3B of available capital <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. H1 2026 delivered record results — revenue of $1,231.6M (+67% YoY), net income of $822.6M (+80%), and Q2 adjusted EBITDA of $529.7M (+45%) at a 23.2% subsea... 91% margin <span class="source-ref">[1]</span>. The phased restart of Cobre Panama offers a large, discrete catalyst worth 150,000-175,000 GEOs per year if fully resumed. The model is maximally resilient to AI disruption and benefits indirectly from AI-driven copper and electrification demand. The 19th consecutive annual dividend increase (latest +16% to $0.44/quarter) validates the compounder thesis <span class="source-ref">[4]</span>.</div>
+    <div class="thesis-text">The rating is HOLD, not BUY, on valuation: at $271.77 and a forward P/E of 28.38x, Franco-Nevada has re-rated substantially from the ~$211 level earlier this year <span class="source-ref">[4]</span>. Much of the gold price upside is already embedded, and a pullback in gold from elevated levels would compress growth optics rapidly. The 0.65% dividend yield provides minimal downside cushion at these prices. The portfolio is diversified but remains gold-price- and Cobre-Panama-outcome-dependent — political/permitting risk in Panama is outside management&#39;s control <span class="source-ref">[1]</span>. The estimated PEG of ~1.9 suggests the stock is fairly valued rather than cheap relative to normalized growth expectations. Franco-Nevada is a high-quality compounder to own on pullbacks rather than chase at all-time-high prices.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Phased restart of Cobre Panama progressing toward full production, with potential to add 150,000-175,000 GEOs/year — the single largest production catalyst in the portfolio <span class="source-ref">[1]</span></li>
+        
+        <li>Sustained record gold and silver prices flowing through the capital-light model at 65%+ net margins, with H1 2026 already delivering record results <span class="source-ref">[1]</span></li>
+        
+        <li>Accretive deployment of $4.3B available capital into new royalties and streams (i-80 Gold $250M royalty, Orezone $100M stream closed H1 2026) without issuing debt or equity <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Gold-price dependence: record revenue and earnings are driven by elevated gold prices — a correction from current levels would sharply reduce growth and could trigger multiple compression from the 28.4x forward PE <span class="source-ref">[4]</span></li>
+        
+        <li>Cobre Panama execution and political risk: a delayed or partial restart, renewed Panamanian government opposition, or environmental challenges removes a major expected production catalyst <span class="source-ref">[1]</span></li>
+        
+        <li>Valuation: forward P/E of 28.38x and estimated PEG of ~1.9 leave limited margin of safety versus the stock&#39;s $271.77 price — the stock has appreciated from ~$211 earlier in 2026 <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (9/9): Franco-Nevada&#39;s cash flows come from legal royalty and streaming contracts on physical gold, silver, and copper production — there is no business line AI can substitute or compress, and no analyst flags AI as a risk to the royalty model <span class="source-ref">[2]</span>. The company earns revenue from physical-world mining operations governed by long-duration legal agreements. If anything, AI is a mild tailwind: the data-center buildout lifts demand for copper and electrification metals, and Franco-Nevada carries meaningful copper exposure through Cobre Panama and other assets <span class="source-ref">[1]</span>. The royalty model adds an additional layer of insulation — even if AI automates mining operations, Franco-Nevada&#39;s contractual right to a share of production remains untouched. AI Opportunity (0/1): The company generates no quantifiable AI revenue. With 38 employees and a purely financial business model, there is no AI product or service to sell. Net: maximally resilient to AI disruption.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Franco-Nevada Q2 2026 Earnings — Revenue $580.9M (+57% YoY), H1 Revenue $1,231.6M (+67%), H1 Net Income $822.6M (+80%), 132,405 GEOs Q2, Cobre Panama Restart — StockTitan, Investing.com, Simply Wall St, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Franco-Nevada Strategic Expansion and Leadership — i-80 Gold $250M Royalty, Orezone $100M Stream, CEO Paul Brink, Chair Tom Albanese, 400+ Asset Portfolio — Yahoo Finance, Franco-Nevada IR, 2026</li>
+        
+        <li><span class="src-num">3.</span> Franco-Nevada ESG — AAA MSCI Rating, Prime ISS ESG, Strong Sustainalytics Management, Responsible Gold Mining Principles — Yahoo Finance, Sustainalytics, Franco-Nevada.com, accessed August 2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance, StockAnalysis, GuruFocus — FNV Key Statistics: Forward P/E 28.38x, D/E 0%, ROE 19.04%, Profit Margin 65.67%, Dividend Yield 0.65%, Stock Price $271.77, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

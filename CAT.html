@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CAT — Caterpillar Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CAT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CAT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CAT
+            <span class="stock-name-full">Caterpillar Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-27</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">71</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Farm & Heavy Construction Machinery</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Caterpillar is the world's largest manufacturer of construction and mining equipment, off-highway diesel and natural gas engines, industrial gas turbines, and diesel-electric locomotives. The company operates through three primary segments: Construction Industries, Resource Industries, and Energy & Transportation. Under CEO Joe Creed (Chairman since April 2026), CAT is experiencing a historic growth cycle driven by AI data center power generation demand, U.S. infrastructure investment, and global reindustrialization. Q2 2026 revenue hit a record $20.5B (+24% YoY) with backlog soaring 92% to $72.1B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>115,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.caterpillar.com" target="_blank" rel="noopener">www.caterpillar.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Caterpillar has executed a major business model expansion into data center power generation — the Energy &amp; Transportation segment&#39;s power generation revenue surged 48% in Q2 2026, driven by large gensets and gas turbines for AI data centers, opening a transformative new revenue stream for a 100-year-old industrial company <span class="source-ref">[1]</span>. The company also commercially deployed autonomous mining trucks (Cat 793 autonomous) generating measurable productivity gains for mining customers. AI Deployment (2/2): Cat MineStar Command autonomous haulage system operates commercial mining fleets across multiple continents, while Cat Digital&#39;s predictive analytics platform uses machine learning to monitor over 1.6M connected assets, generating AI-driven maintenance recommendations that reduce unplanned downtime <span class="source-ref">[3]</span>. Market Share (2/2): Caterpillar holds the #1 global market share in construction equipment, mining trucks, and reciprocating engines — construction segment revenue grew 35% in Q2 with North America up 50%, demonstrating dominant competitive positioning in its core categories <span class="source-ref">[1]</span>. Product Pipeline (1/2): Three core megatrends drive CAT&#39;s pipeline — autonomy (expanding beyond mining to construction), electrification (battery-electric medium equipment), and alternative fuels (hydrogen-ready engines) — but specific next-gen product launch dates with revenue visibility are not publicly detailed beyond general R&amp;D roadmaps <span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Caterpillar&#39;s R&amp;D spending is in line with heavy industrial machinery peers at approximately 3-4% of revenue, with targeted investment in autonomy, digital capabilities, and power generation technology.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Caterpillar&#39;s stated purpose — &#39;We make sustainable progress possible and drive positive change on every continent&#39; — is clear and identifies the company&#39;s role in global infrastructure development, but it reads as interchangeable with other large industrial firms and does not articulate a deeply distinctive or bold future state <span class="source-ref">[3]</span>. Community Impact (1/2): The Caterpillar Foundation has donated over $830M since inception, focused on poverty alleviation, environmental stewardship, and workforce development programs in communities where CAT operates, representing meaningful but standard corporate philanthropy for a Fortune 50 company <span class="source-ref">[7]</span>. Employee Retention (1/2): Average tenure data is not publicly available; Glassdoor reviews show a 4.0+ overall rating but recent reviews cite a shift toward a &#39;culture of surveillance&#39; and chaotic urgency under new leadership, suggesting mixed retention signals despite competitive industrial compensation <span class="source-ref">[3]</span>. Insider Buying (0/2): Significant net insider selling in 2026 — over $87M in the last 90 days, with CFO Bonfield ($14.4M), Group President De Lange ($31.9M combined), and multiple other executives disposing of shares ahead of retirement and leadership transitions <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. Caterpillar demonstrates exceptional profitability with ROE of 56.97% (well above 15% target) and strong revenue momentum — TTM revenue of $74.7B reflects 18% YoY growth and a 10.5% 5-year CAGR, both exceeding targets <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. The 27% payout ratio, 33 consecutive years of dividend growth, 93 years of continuous payments, and 7.95% 5-year dividend growth CAGR all score maximum on dividend metrics <span class="source-ref">[6]</span>. The primary drags are the elevated D/E of 233% (driven by Cat Financial&#39;s $45.1B lending portfolio, scoring 0.29) and profit margin of 14.51% (below the 20% target, scoring 0.73) <span class="source-ref">[4]</span>. Forward P/E of 29.32x is above the 20x target but below the 60 floor (scoring 0.77). Liquidity easily clears the floor at approximately $1.85B in daily dollar volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Caterpillar is a century-old institution that has endured two World Wars, the Great Depression, and multiple commodity cycles by maintaining focus on building the world&#39;s infrastructure. The recent pivot to data center power generation demonstrates adaptive capability, and the orderly CEO succession from Umpleby to Creed reflects institutional continuity. However, the company&#39;s competitive language often emphasizes market share dominance, recent cultural concerns on Glassdoor suggest trust erosion, and heavy insider selling signals some finite-game behavior among leadership.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Caterpillar&#39;s century-long commitment to building the world&#39;s infrastructure constitutes a genuine, partially lived cause — the company has operated through two World Wars, the Great Depression, multiple commodity cycles, and industry disruptions, consistently returning to its core purpose of enabling construction, mining, and energy development <span class="source-ref">[1]</span>. The recent pivot to data center power demonstrates the cause adapting to new forms of infrastructure demand. However, the Just Cause is more institutional than inspirational — it reflects what CAT does rather than articulating a bold future state that does not yet exist.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Caterpillar maintains a stable workforce of approximately 115,000 employees with competitive industrial compensation, and the CEO succession from Jim Umpleby to Joe Creed was orderly and planned, reflecting institutional maturity <span class="source-ref">[3]</span>. However, recent Glassdoor reviews describe a cultural shift toward increased surveillance and chaotic urgency without clear prioritization under new leadership, and the CFO transition (Bonfield retiring October 2026, Epley appointed May 2026) adds organizational flux during peak growth demands.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Management acknowledges competitive dynamics with Komatsu, John Deere, and Cummins constructively, focusing earnings call language on operational execution, customer value creation, and market opportunity rather than competitive warfare <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. CEO Creed&#39;s commentary emphasizes CAT&#39;s own improvement trajectory and customer partnerships rather than market share capture from rivals, consistent with an infinite competitive mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Caterpillar&#39;s expansion from traditional construction and mining equipment into data center power generation represents significant strategic adaptation — a 100-year-old heavy equipment company recognizing that AI infrastructure is the next frontier for its turbine and engine technology, driving 48% power generation revenue growth <span class="source-ref">[1]</span>. The autonomous mining pivot also demonstrates willingness to evolve core products. However, these are adjacent-market expansions leveraging existing capabilities rather than transformative business model reinventions that required abandoning profitable legacy lines.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Joe Creed, a 29-year company veteran who became Chairman in April 2026, invested heavily in autonomous mining and data center power generation capabilities years before the AI boom validated these bets <span class="source-ref">[3]</span>. The company maintained R&amp;D spending through the 2020 downturn and committed capital to electrification despite uncertain near-term returns. However, Caterpillar has been criticized for slow movement on electrification relative to European peers, and heavy share buybacks alongside $87M+ in insider selling suggest some prioritization of near-term shareholder returns over long-term capability building <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Caterpillar at $850 is the dominant global franchise in construction and mining equipment riding the most powerful capex super-cycle in decades — record Q2 2026 revenue of $20.5B (+24% YoY), record backlog of $72.1B (+92% YoY), and a guidance raise to mid-to-high-teens growth reflect demand driven by AI data center construction, U.S. infrastructure investment, and global reindustrialization <span class="source-ref">[1]</span>. The Energy &amp; Transportation segment&#39;s power generation revenue surged 48% as hyperscalers deploy CAT turbines and gensets at scale, with orders extending into 2030. ROE of 56.97%, a 27% payout ratio supporting a 33-year dividend growth streak at 7.95% CAGR, and $74.7B in TTM revenue demonstrate a capital-efficient franchise returning cash while investing in autonomous and AI-powered equipment platforms <span class="source-ref">[4]</span><span class="source-ref">[6]</span>.</div>
+    <div class="thesis-text">The primary risk is cyclicality meeting premium valuation — at 29.3x forward earnings, CAT prices in sustained mid-teens growth, but the construction equipment cycle has historically peaked after 2-3 years of strong demand, and a global slowdown or tariff escalation could compress both volumes and margins simultaneously <span class="source-ref">[4]</span>. The 233% debt-to-equity ratio, driven by Cat Financial&#39;s $45.1B lending portfolio, introduces leverage risk if credit conditions tighten or equipment residual values decline. Insider selling of $87M+ in the last 90 days across multiple C-suite executives suggests leadership may view the stock as fully valued near all-time highs <span class="source-ref">[5]</span>. The 0.78% dividend yield offers minimal income protection in a correction, and Glassdoor-reported cultural challenges under new leadership could affect operational execution during the most demanding growth period in CAT&#39;s history.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Record $72.1B backlog with 59% expected delivery within 12 months provides revenue visibility through 2027 and de-risks near-term estimates, supporting the raised mid-to-high-teens revenue growth guidance for FY2026 <span class="source-ref">[1]</span></li>
+        
+        <li>Data center power generation demand accelerating — 48% Q2 growth with orders extending into 2030 as hyperscalers deploy billions in AI infrastructure requiring CAT turbines, gensets, and backup power systems at global scale <span class="source-ref">[1]</span></li>
+        
+        <li>Autonomous equipment commercialization expanding from mining to construction applications, with Cat MineStar Command driving productivity gains that justify premium pricing and create recurring software and services revenue streams <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Construction equipment cycle risk — CAT&#39;s 24% Q2 revenue growth reflects peak-cycle conditions, and historical patterns suggest demand normalization within 12-18 months, particularly if interest rates remain elevated or global trade tensions escalate tariff costs on equipment <span class="source-ref">[1]</span></li>
+        
+        <li>Cat Financial&#39;s $45.1B in debt creates leverage risk if credit conditions tighten or construction loan defaults increase, with D/E of 233% significantly above the 70% infrastructure scoring target <span class="source-ref">[4]</span></li>
+        
+        <li>Concentrated insider selling of $87M+ across multiple C-suite executives in Q2 2026 signals potential valuation concern at all-time highs, with CFO retirement and leadership transition adding execution risk during peak demand <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Caterpillar&#39;s business is structurally immune to AI disruption — excavators, mining trucks, turbines, and bulldozers operate in the physical world where AI cannot substitute for heavy machinery <span class="source-ref">[1]</span>. More critically, AI actively increases demand for CAT&#39;s products: data center power generation revenue surged 48% in Q2 2026 as hyperscalers require gas turbines, gensets, and backup power infrastructure that only established manufacturers like Caterpillar can supply at scale <span class="source-ref">[1]</span>. The construction of new data centers, chip fabs, and energy infrastructure further drives equipment demand. Analysts have identified CAT as a primary beneficiary of the AI-driven capital expenditure super-cycle rather than a disruption target. AI Opportunity (1/1): Caterpillar generates measurable AI-related revenue through autonomous mining operations (Cat MineStar Command), AI-powered fleet management and predictive maintenance analytics across 1.6M connected assets, and data center power generation equipment that contributed significantly to the record $72.1B backlog <span class="source-ref">[1]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            49
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Air Quality</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Caterpillar Q2 FY2026 Earnings Release — Record Revenue $20.5B (+24% YoY), Backlog $72.1B (+92%), Power Gen +48%, Construction +35%, Guidance Raised to Mid-to-High-Teens Growth, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Caterpillar Q1 FY2026 Earnings Release — Revenue $17.4B (+22% YoY), EPS $5.54 (+30%), Guidance Raised to Low-to-Mid-Teens Growth, April 2026</li>
+        
+        <li><span class="src-num">3.</span> Caterpillar CEO/Leadership and Innovation Strategy — Joe Creed Chairman/CEO (29-year veteran), Autonomy/Electrification/Alternative Fuels Megatrends, Cat Digital 1.6M Connected Assets, CXOTalk/Built In/Glassdoor, 2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance, StockAnalysis — CAT Key Statistics: Forward P/E 29.32x, ROE 56.97%, D/E 233%, Profit Margin 14.51%, Stock Price ~$850, accessed August 2026</li>
+        
+        <li><span class="src-num">5.</span> Caterpillar Insider Trading Activity — Net $87M+ Insider Selling in 90 Days, CFO Bonfield $14.4M, GP De Lange $31.9M, Multiple Executives, TipRanks, May-August 2026</li>
+        
+        <li><span class="src-num">6.</span> Caterpillar Dividend History — 33 Consecutive Years of Growth, 93 Years Continuous Payment, 7.95% 5-Year CAGR, Yield 0.78%, Payout Ratio 27%, StockAnalysis/Simply Wall St, accessed August 2026</li>
+        
+        <li><span class="src-num">7.</span> Caterpillar ESG Profile — Caterpillar Foundation $830M+ Donations, MSCI ESG Index History, Climate Lobbying Disclosure Concerns, Sustainability Report 2025</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

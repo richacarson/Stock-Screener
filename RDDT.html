@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen RDDT — Reddit, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/RDDT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('RDDT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            RDDT
+            <span class="stock-name-full">Reddit, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-26</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -88</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">64</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Communication Services</span>
+        <span class="sep">&middot;</span><span>Internet Content & Information</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Reddit, Inc. operates a digital community platform organized around interest-based communities where users share content, hold discussions, and exchange goods and services across roughly 100,000 active communities. Founded in 2005 and headquartered in San Francisco, Reddit monetizes through advertising and, increasingly, data-licensing agreements with AI companies (including Google and OpenAI) for training and retrieval access to its user-generated content. The company delivered its eighth consecutive quarter of 60%+ revenue growth in Q2 2026, with CEO Steve Huffman positioning Reddit as 'the most human place on the internet' as a strategic differentiator in the AI content era.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>2,555 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://redditinc.com" target="_blank" rel="noopener">redditinc.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): Reddit executed a genuine business-model transformation, pivoting from a pure advertising model to a dual ad-plus-data-licensing model after the 2023 API monetization controversy, now generating meaningful recurring revenue from AI companies licensing its content ($60M+ annual Google deal, plus OpenAI licensing) while sustaining eight consecutive quarters of 60%+ revenue growth <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. AI Deployment (2/2): Reddit ships AI-powered features to users (Reddit Answers conversational search) and reports quantified results from automated advertising tools — Active Advertisers grew over 70% YoY &#39;supported by broader adoption of automated tools,&#39; and U.S. ARPU grew 51% YoY to $11.85 <span class="source-ref">[1]</span>. Market Share (2/2): Reddit&#39;s ~100,000-community structure and decades of accumulated human discussion make it a uniquely valuable, difficult-to-replicate data source, evidenced by AI labs paying specifically for licensed access rather than simply scraping competitors&#39; data <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Product Pipeline (1/2): Q3 2026 guidance of $860M-$870M revenue (47-49% YoY growth) and a stated target of 100M daily U.S. users provide near-term visibility, though Reddit does not publicly disclose named next-generation product launches with specific dates <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): With only 2,555 employees generating a ~$3.2B annualized revenue run-rate and a 43% adjusted EBITDA margin, Reddit&#39;s per-employee technology investment is well above typical internet-media peers.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Reddit&#39;s mission — bringing &#39;community, belonging, and empowerment&#39; through authentic human conversation — is specific and increasingly differentiated in the AI era; CEO Steve Huffman has repeatedly and publicly staked strategy on it (&#39;Where the rest of the internet seems to be powered by or written by or summarised by AI, Reddit is distinctly human&#39;) and has been willing to risk a $60M Google licensing relationship to protect it <span class="source-ref">[2]</span>. Community Impact (0/2): No evidence of charitable giving, foundation activity, or community investment programs was found. Employee Retention (0/2): No specific tenure or voluntary-turnover data was identified for Reddit&#39;s workforce. Insider Buying (0/2): No evidence of net insider buying by CEO Huffman or other executives was found in available data.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Mechanically scored at the maximum on all available metrics (weighted sum 8.0 / max weight 8.0). Debt-to-equity of 0.64% is effectively debt-free, scoring the 1.0 cap. Return on equity of 30.71% and profit margin of 31.35% both clear their targets comfortably, reflecting Reddit&#39;s Q2 2026 net income of $253M on $805M revenue <span class="source-ref">[1]</span>. Revenue growth YoY of 61.1% far exceeds the 10% target. Forward P/E of 16.77x is inexpensive relative to the growth rate, and the forward PEG ratio of 0.99 (2x weight, target ≤1.0) captures this efficiently — Reddit trades at roughly 1x its growth rate, an unusually favorable combination for a company still growing revenue above 60% YoY. Liquidity clears the floor by a wide margin: 5,969,509 avg daily volume × $162.45 ≈ $969.5M.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Reddit is a young public company (IPO 2024) navigating an existential test in real time: AI systems threaten to intermediate its traffic even as they create a new licensing revenue stream from the same content. Huffman&#39;s consistent public commitment to Reddit&#39;s &#39;human&#39; differentiation, and the company&#39;s willingness to risk revenue relationships (Google) and pursue costly litigation (Perplexity) to protect community-generated content, show real infinite-game instincts, but the company has not yet been tested through a full economic cycle or leadership transition.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Reddit&#39;s mission around community, belonging, and authentic human conversation is genuine and increasingly central to strategy — Huffman&#39;s public stance that &#39;people don&#39;t want a summary of Reddit; they want Reddit&#39; reflects a cause actively shaping decisions such as API monetization and AI-scraping litigation <span class="source-ref">[2]</span>. It has not yet been tested across a multi-decade cycle or leadership transition, and Reddit is only two years into public-company life.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Following the disruptive 2023 API pricing controversy that triggered thousands of subreddit protests, Huffman worked to rebuild trust with the volunteer moderator community through new tools and communication channels — a real repair effort, though it followed a significant trust breach rather than reflecting sustained high trust <span class="source-ref">[2]</span>. No specific internal employee retention or culture data was identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Reddit&#39;s public posture toward Google is adversarial and protective (&#39;the range of outcomes is wide&#39;) rather than framed as learning from a worthy competitor&#39;s strengths; the company&#39;s rhetoric centers on defending its data and community from extraction rather than self-improvement through competitive pressure <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Reddit evolved its business model from pure advertising to a dual ad-and-data-licensing structure in direct response to the AI era, opening a meaningful new revenue stream ($60M+ Google deal, OpenAI licensing) <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This is a real business-model evolution but an incremental extension of the existing platform rather than a full reinvention into a new market.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Reddit pursued costly litigation against Perplexity and SerpApi over unauthorized AI data scraping rather than simply monetizing all access, and Huffman has signaled willingness to walk away from the lucrative Google licensing relationship if it doesn&#39;t serve Reddit&#39;s interests — both decisions prioritize long-term data control over near-term revenue certainty <span class="source-ref">[2]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Reddit delivered its eighth consecutive quarter of 60%+ revenue growth in Q2 2026, with revenue of $805M beating estimates of $730M, net income more than doubling to $253M, and adjusted EBITDA margin expanding to 43% <span class="source-ref">[1]</span>. U.S. ARPU grew 51% YoY to $11.85 and Active Advertisers grew over 70% YoY on broader adoption of automated ad tools, while Q3 guidance of $860M-$870M implies continued 47-49% growth <span class="source-ref">[1]</span>. The balance sheet is essentially debt-free (0.64% D/E) with $2.8B in cash, and the forward PEG of 0.99 suggests the stock is not pricing in the full growth trajectory. A new, high-margin data-licensing revenue stream from AI companies (Google, OpenAI) provides monetization optionality beyond advertising that did not exist before 2024 <span class="source-ref">[2]</span>.</div>
+    <div class="thesis-text">The bear case centers on AI-driven search disintermediation and thin evidence on culture. Reddit&#39;s own CEO has acknowledged organic search traffic has been hurt by Google&#39;s AI Overviews, and the sustainability of the $60M+ Google licensing relationship is explicitly in question by Huffman&#39;s own comments — if that revenue line erodes or AI search continues to reduce top-of-funnel discovery, growth could decelerate faster than the current 47-49% guided range <span class="source-ref">[2]</span>. Reddit also faces securities fraud litigation tied to its 2024 IPO prospectus (motions to dismiss pending as of February 2026) and ongoing content-moderation and data-privacy regulatory pressure, including a prior UK data privacy fine <span class="source-ref">[3]</span>. Inspiration scored weak (3/10) due to a lack of disclosed community-investment, retention, or insider-buying evidence, and the Inspire Impact Score of -88 (MISALIGNED, reflecting sexually explicit content, exploitation, and abortion-activism attributions) will exclude the stock for many faith-based allocators regardless of financial performance.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Continued 60%+ revenue growth streak (eight consecutive quarters) with Q3 2026 guidance of 47-49% YoY growth and 45% adjusted EBITDA margin could sustain premium multiple expansion if execution continues <span class="source-ref">[1]</span></li>
+        
+        <li>Expansion of AI data-licensing deals beyond the existing Google and OpenAI agreements would validate a durable, high-margin monetization pillar distinct from advertising cyclicality <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Progress toward the stated 100M daily U.S. active user target, combined with 70%+ YoY growth in active advertisers, would demonstrate the platform can keep growing its addressable ad market <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Reddit&#39;s own CEO has flagged that Google&#39;s AI Overviews are already reducing organic search traffic, and the $60M+ Google licensing relationship itself is explicitly under review — erosion of either channel would directly pressure the growth thesis <span class="source-ref">[2]</span></li>
+        
+        <li>Federal securities fraud class action tied to Reddit&#39;s 2024 IPO prospectus remains active, with a motion to dismiss the amended complaint pending as of February 2026, creating legal and reputational overhang <span class="source-ref">[3]</span></li>
+        
+        <li>AI copyright litigation against Perplexity and SerpApi, while currently favorable to Reddit, could set precedent either way on how much control platforms retain over user-generated content licensed to AI companies <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): Reddit faces genuine AI substitution risk on the discovery side — Huffman has publicly expressed frustration with Google&#39;s AI Overviews, and Reddit&#39;s organic search traffic has taken a hit as users get summarized answers without visiting the site, prompting Huffman to say Reddit must &#39;look at every aspect&#39; of its $60M Google licensing relationship <span class="source-ref">[2]</span>. Reddit is actively defending its moat through litigation (a federal judge denied motions to dismiss Reddit&#39;s copyright claims against Perplexity and SerpApi for unauthorized scraping) and through its &#39;distinctly human&#39; brand positioning, but the outcome of AI-driven search disintermediation remains uncertain <span class="source-ref">[3]</span>. AI Opportunity (1/1): Reddit generates quantifiable, growing revenue from AI data-licensing deals (the ~$60M annual Google agreement plus OpenAI licensing), a business line that did not exist three years ago and is now a distinct monetization pillar alongside advertising <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -88
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Abortion Activism</span>
+            
+            <span class="attr-tag negative">Exploitation</span>
+            
+            <span class="attr-tag negative">Sexually Explicit</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Reddit Q2 2026 Earnings — revenue $805M (+61% YoY), net income $253M, adjusted EBITDA margin 43%, U.S. ARPU +51% to $11.85, Q3 guidance $860M-$870M — CNBC, Motley Fool, Seeking Alpha, July-August 2026</li>
+        
+        <li><span class="src-num">2.</span> Reddit AI Strategy and Google Relationship — Steve Huffman 'most human place on the internet' positioning, AI Overviews traffic impact, $60M Google licensing deal under review — Fast Company, Engadget, Webpronews, 2026</li>
+        
+        <li><span class="src-num">3.</span> Reddit Litigation — Securities fraud class action re: 2024 IPO prospectus (motion to dismiss pending Feb 2026); Perplexity/SerpApi AI scraping copyright case (motions to dismiss denied) — Kessler Topaz, Seeking Alpha, 2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — RDDT key statistics: Forward P/E 16.77x, PEG 0.99, ROE 30.71%, D/E 0.64%, Profit Margin 31.35%, Stock Price $162.45, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

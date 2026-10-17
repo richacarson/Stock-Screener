@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen BCS — Barclays PLC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/BCS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('BCS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            BCS
+            <span class="stock-name-full">Barclays PLC</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">54</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Banks - Diversified</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United Kingdom</span>
+    </div>
+    
+    <div class="profile-desc">Barclays PLC is a 333-year-old British universal bank operating across five segments: Barclays UK, UK Corporate Bank, Private Bank & Wealth Management, Investment Bank, and US Consumer Bank. The company provides retail banking, investment banking, wealth management, and credit card services globally. CEO C.S. Venkatakrishnan leads the bank, which reported Q2 2026 profit of GBP 3.25B (+31% YoY), raised full-year 2026 income guidance to GBP 31.5B, and is returning GBP 15B+ to shareholders through 2028. The Investment Bank accounts for 48% of group revenue with income of GBP 3.96B in Q2 alone. ADR listed on NYSE with market cap of approximately $85B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>93,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://home.barclays" target="_blank" rel="noopener">home.barclays</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Barclays delivered strong Q2 2026 results with income of GBP 8.34B (+16% YoY) and profit before tax of GBP 3.25B (+31%), driven by the Investment Bank hitting a GBP 4B income milestone with 16% ROTE <span class="source-ref">[1]</span>. The Tesco Bank acquisition strengthened UK retail, and restructuring into five operating divisions improved focus. However, these are incremental improvements to the traditional universal banking model — no product innovation or market pivot in the last 5 years. AI Deployment (1/2): Barclays deployed Microsoft 365 Copilot across its global workforce, launched BarxBot for FX trading, uses GenAI to reduce call handling times, developed 250+ AI-enabled tools, and promoted Antoinette O&#39;Neill to group CIO overseeing AI strategy <span class="source-ref">[3]</span>. CEO Venkatakrishnan describes AI as &#39;a core part of running the business.&#39; However, no specific cost savings or AI revenue have been quantified publicly. Market Share (1/2): Barclays is a top-5 UK retail bank and a meaningful global investment bank, but does not dominate any single category — JPMorgan, Goldman Sachs, and HSBC hold stronger positions in their respective markets <span class="source-ref">[1]</span>. Product Pipeline (0/2): No specific next-generation banking products with launch dates are publicly disclosed. The 2026-2028 strategic plan focuses on financial targets (&gt;14% ROTE by 2028, &gt;GBP 15B shareholder returns) rather than product innovation <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Technology spending is in line with but not above global banking peers; JPMorgan&#39;s $17B+ annual technology budget significantly exceeds Barclays&#39; investment.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Barclays&#39; purpose is &#39;Creating opportunities to rise&#39; — described as being &#39;a company of opportunity makers working together to help people rise — customers, clients, colleagues and society&#39; <span class="source-ref">[4]</span>. The five values (Respect, Integrity, Service, Excellence, Stewardship) provide a framework. This connects banking to social mobility but remains broadly interchangeable with other major bank missions and does not articulate a distinctive vision of a better future. Community Impact (1/2): Barclays is a founding funder of the Just Transition Finance Lab at LSE, a signatory to the Equator Principles since 2003, and maintained ESG commitments including its Net Zero ambition while American banking peers retreated <span class="source-ref">[5]</span>. The BlueTrack methodology for financed emissions demonstrates institutional commitment. However, specific charitable program dollar amounts were not identified. Employee Retention (1/2): Glassdoor shows 78% of employees recommend Barclays with 3.9/5 ratings for work-life balance, above average for large global banks <span class="source-ref">[3]</span>. CEO Venkatakrishnan&#39;s emphasis on integrity as the paramount leadership quality sets a constructive tone. Some reviews cite political promotion practices, but overall sentiment is positive for a 93,000-person organization. Insider Buying (1/2): Chairman Nigel Higgins purchased shares following strong Q2 results, and additional insider acquisitions were reported in mid-2026 <span class="source-ref">[4]</span>. These are modest transactions relative to market cap but represent net insider buying by board members.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Dividend stock, excluding D/E (not applicable for banks — Barclays maintains a CET1 ratio of 14.3%, well above regulatory minimums <span class="source-ref">[1]</span>). Barclays&#39; forward P/E of 7.11x scores 1.0, reflecting the deep discount at which UK banks trade versus U.S. peers despite delivering strong returns <span class="source-ref">[4]</span>. Profit margin of 27.87% scores 1.0, demonstrating efficient earnings conversion <span class="source-ref">[1]</span>. Revenue growth YoY of 15.6% scores 1.0, driven by Q2 investment bank income growth of 20% and raised full-year guidance to GBP 31.5B <span class="source-ref">[1]</span>. The 5-year revenue CAGR of ~8% scores 0.87. ROE of 10.09% scores 0.67, below the 15% target but trending toward management&#39;s &gt;14% ROTE target by 2028 <span class="source-ref">[1]</span>. Payout ratio of 17.91% scores 1.0, reflecting conservative distribution with room for growth. Consecutive years of dividend payments (5, interrupted by regulatory-mandated COVID suspension) scores 0.5 at 2x weight. Consecutive years of dividend growth (4) scores 0.4. 5-year dividend growth CAGR is excluded (null — interrupted by COVID). Dividend yield of 2.67% qualifies for Dividend sleeve. Liquidity is robust at approximately $104M daily trading value.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Barclays has survived 333 years, which itself demonstrates institutional endurance, but the modern institution operates with a primarily finite mindset — optimizing for RoTE targets, capital return programs, cost-to-income ratios, and quarterly performance metrics. CEO Venkatakrishnan&#39;s integrity-first leadership and maintained ESG commitment show some long-term thinking, but strategic communication overwhelmingly emphasizes financial metrics rather than a vision of a better future. The GBP 15B+ shareholder return program through 2028 is admirable capital discipline but finite-game framing.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Barclays&#39; purpose of &#39;Creating opportunities to rise&#39; connects banking to social mobility and describes a better future beyond just financial returns <span class="source-ref">[4]</span>. The 333-year heritage provides institutional weight. However, strategic communication is dominated by RoTE targets, cost-to-income ratios, and shareholder return programs — finite language that reveals the operating mindset <span class="source-ref">[1]</span>. Sinek would note that longevity does not equal a Just Cause — Barclays has endured but not because of an articulated purpose.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor shows 78% of employees recommend Barclays with 3.9/5 culture ratings, above average for large global banks <span class="source-ref">[3]</span>. CEO Venkatakrishnan&#39;s emphasis that &#39;values are not abstract; they are the foundation of trust&#39; sets a constructive tone. Stable executive team and deliberate succession planning signal organizational maturity. However, a 93,000-person organization inevitably has inconsistent culture, and some reviews cite political promotion practices and internal friction.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Barclays&#39; competitive narrative centers on closing the profitability gap with JPMorgan in investment banking and defending UK market share against digital challengers — finite competitive framing focused on benchmarking metrics rather than learning <span class="source-ref">[1]</span>. Management discusses RoTE relative to peers and income targets rather than acknowledging what Barclays can learn from JPMorgan&#39;s technology investment or Revolut&#39;s customer acquisition model.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Over 333 years, Barclays adapted from a goldsmith&#39;s shop to a global universal bank — remarkable institutional evolution navigating the South Sea Bubble, two world wars, the 2008 financial crisis (declining UK government bailout), and COVID <span class="source-ref">[4]</span>. The restructuring from three to five operating divisions, the Tesco Bank acquisition, and the pivot from the Jes Staley-era investment banking focus demonstrate incremental strategic adaptation. However, no single transformative pivot defines the modern era.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Barclays maintained and expanded ESG commitments (Net Zero ambition, BlueTrack methodology, Just Transition Finance Lab) while American banking peers retreated from sustainability pledges — a courageous stance that cost real business, including being banned from the Texas municipal bond market <span class="source-ref">[5]</span><span class="source-ref">[6]</span>. CEO Venkatakrishnan&#39;s emphasis on integrity and the decision to pursue a balanced five-division model rather than over-concentrating in investment banking show thoughtful long-term positioning. However, these are sound management decisions rather than costly long-term bets that sacrifice short-term results.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Barclays trades at 7.11x forward earnings with a PEG of 0.89 — a deep discount to U.S. bank peers — while delivering accelerating fundamentals: Q2 2026 profit rose 31% to GBP 3.25B, the Investment Bank hit a GBP 4B quarterly income milestone with 16% ROTE, and management raised 2026 income guidance to GBP 31.5B <span class="source-ref">[1]</span>. EPS of $2.59 trailing and $3.24 forward implies 25% earnings growth, and the dividend yield of 2.67% with a 17.9% payout ratio provides substantial room for dividend increases <span class="source-ref">[4]</span>. Capital return is substantial: GBP 15B+ planned through 2028 including nearly doubled dividends and GBP 1B+ buybacks, representing approximately 6% total yield at current prices. The cost-to-income ratio improved from 59% to 54%, demonstrating operating leverage, and the CET1 ratio of 14.3% provides a strong capital cushion <span class="source-ref">[1]</span>. All five operating divisions are contributing, with the US Consumer Bank surging 38% in Q2.</div>
+    <div class="thesis-text">The bear case centers on the structural UK banking discount, regulatory risk, and competitive pressures. UK banks may remain trapped at single-digit P/E multiples regardless of operational improvement — Barclays&#39; valuation has compressed from 8.55x to 7.11x forward earnings even as fundamentals accelerated, suggesting the market views the discount as structural rather than cyclical <span class="source-ref">[4]</span>. Credit quality bears watching as UK consumer stress could accelerate impairment charges. The Bank of England rate trajectory creates NII uncertainty — faster-than-expected rate cuts could compress the GBP 13.7B NII guidance. Texas banned Barclays from its municipal bond market over ESG commitments, illustrating the political risks of maintaining sustainability pledges <span class="source-ref">[6]</span>. AI-native fintech competitors (Revolut at $45B+ valuation, Monzo) threaten the consumer banking franchise with superior digital experiences and lower cost structures. The Inspire Impact Score of -49 (MISALIGNED) due to LGBT Activism attribution limits allocation for faith-based investors, and fossil fuel lending has drawn climate activist pressure despite the Net Zero commitment <span class="source-ref">[5]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>GBP 15B+ shareholder return program through 2028, with GBP 1B+ buyback execution and dividend nearly doubled, providing approximately 6% total yield at 7.11x forward earnings — among the most attractive return profiles in global banking <span class="source-ref">[1]</span></li>
+        
+        <li>Investment bank momentum — GBP 4B quarterly income milestone with 16% ROTE and 20% YoY growth, positioned to benefit from continued market volatility, European capital markets activity, and strategic client share gains <span class="source-ref">[1]</span></li>
+        
+        <li>Cost-to-income ratio improvement trajectory from 59% to 54%, targeting low-50s by 2028 — each percentage point represents approximately GBP 315M in pre-tax profit at the GBP 31.5B income level <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Structural UK banking valuation discount — Barclays may remain at single-digit forward P/E regardless of operational execution, with the stock having declined from $26.83 to $23.06 even as earnings grew 31%, limiting re-rating potential <span class="source-ref">[4]</span></li>
+        
+        <li>NII sensitivity to Bank of England rate decisions — faster-than-expected rate cuts could compress the GBP 13.7B NII guidance, and the structural hedge roll benefit has a finite duration before becoming a headwind <span class="source-ref">[1]</span></li>
+        
+        <li>Political-regulatory crossfire from ESG positioning — Texas municipal bond ban demonstrates that maintaining sustainability commitments creates real business costs, while climate activists still pressure Barclays over fossil fuel lending <span class="source-ref">[5]</span><span class="source-ref">[6]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): Barclays&#39; core banking operations are protected by heavy regulation (PRA, FCA, Federal Reserve), Basel capital requirements, and relationship-based business models that AI cannot replicate <span class="source-ref">[1]</span>. Investment banking intermediation, M&amp;A advisory, and capital markets require human judgment, regulatory compliance, and trust-based client relationships. The CET1 ratio of 14.3% and GBP 31.5B income base represent structural moats. However, consumer banking (credit cards, payments, personal lending) faces real fintech disruption from AI-native competitors like Revolut and Monzo, and the investment bank&#39;s trading functions face algorithmic competition <span class="source-ref">[3]</span>. The Texas ban from the municipal bond market over ESG commitments illustrates regulatory-political risk that AI cannot address <span class="source-ref">[6]</span>. AI Opportunity (1/1): Barclays is deploying AI operationally across 93,000+ employees — Microsoft Copilot, BarxBot for FX, GenAI for call handling, 250+ AI tools, and Antoinette O&#39;Neill appointed group CIO overseeing AI strategy <span class="source-ref">[3]</span>. CEO Venkatakrishnan aims for GBP 2B in efficiency savings by 2026, with AI as a key enabler. Operational AI deployment across the global workforce represents meaningful cost reduction contributing to the improved 54% cost-to-income ratio <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Barclays Q2 2026 / Half Year 2026 Results — GBP 8.34B Income (+16%), GBP 3.25B PBT (+31%), 16.1% RoTE, Investment Bank GBP 3.96B (+20%), Guidance Raised to GBP 31.5B — Pulse2, ii.co.uk, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Barclays FY2025 Annual Results — Full Year Income, EPS Growth, Capital Returns Program — February 2026</li>
+        
+        <li><span class="src-num">3.</span> Barclays AI Strategy — Microsoft Copilot Deployment, BarxBot FX, 250+ AI Tools, Antoinette O'Neill CIO Appointment, GBP 2B Efficiency Target — Bloomberg, American Banker, AI News, 2025-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance / StockAnalysis — BCS Key Statistics: Forward P/E 7.11x, PEG 0.89, ROE 10.09%, Dividend Yield 2.67%, Chairman Insider Buying — accessed October 2026</li>
+        
+        <li><span class="src-num">5.</span> Barclays ESG and Sustainability — Net Zero Ambition, BlueTrack Methodology, Just Transition Finance Lab at LSE, FY2025 20-F ESG Disclosures — home.barclays, SEC EDGAR, 2025-2026</li>
+        
+        <li><span class="src-num">6.</span> Texas Attorney General — Barclays Banned from Texas Municipal Bond Market Over ESG Commitments — BNN Bloomberg, GRIP, January 2024</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

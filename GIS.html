@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen GIS — General Mills, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/GIS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('GIS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            GIS
+            <span class="stock-name-full">General Mills, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-09</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">52</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Consumer Defensive</span>
+        <span class="sep">&middot;</span><span>Packaged Foods</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">General Mills, Inc. manufactures and markets branded consumer foods including cereals (Cheerios, Wheaties), snacks (Nature Valley, Annie's), meals (Betty Crocker, Old El Paso), baking (Pillsbury), and pet food (Blue Buffalo). The company generated FY2026 (ended May 2026) net sales of $18.43B, down 5% YoY, with an $88M net loss driven by non-cash goodwill impairment charges and the Brazil divestiture. Adjusted diluted EPS fell 16% for the year, though Q4 showed recovery with adjusted EPS up 27% YoY. CEO Jeff Harmening leads from Minneapolis headquarters.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>33,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.generalmills.com" target="_blank" rel="noopener">www.generalmills.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): General Mills&#39; most significant strategic moves in the last five years have been portfolio reshaping — divesting the North American yogurt business and the Brazil operations — rather than product innovation <span class="source-ref">[1]</span>. The Blue Buffalo pet food acquisition (2018) was a meaningful category entry but is now eight years old and volumes have plateaued. No breakthrough product launches or transformative pivots in the recent period. AI Deployment (1/2): General Mills is deploying AI internally for eCommerce and marketing optimization, including a GPT-4-powered business intelligence assistant developed through a Nestlé joint venture, and AI tools for misinformation detection in marketing campaigns <span class="source-ref">[3]</span>. However, no specific cost savings or revenue impact has been quantified. Market Share (1/2): Strong brand portfolio with #1 or #2 positions in U.S. cereal (Cheerios), snack bars (Nature Valley), and super-premium pet food (Blue Buffalo), but organic sales declined 2% in FY2026 indicating market share erosion in core categories <span class="source-ref">[1]</span>. Product Pipeline (0/2): No next-generation products have been announced with specific timelines. Innovation is incremental — flavor extensions, packaging changes, and reformulations rather than new category creation. R&amp;D Intensity (0/1): CPG industry R&amp;D spending is structurally low, and General Mills is at or below industry average with no evidence of above-peer investment.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): General Mills&#39; purpose — &#39;making food the world loves&#39; — is clear and identifies what the company does and for whom, but doesn&#39;t articulate a deeper purpose that differentiates from peers or inspires beyond the obvious <span class="source-ref">[3]</span>. Every packaged food company could make a similar claim, and the mission hasn&#39;t shaped strategic decisions in a way that sacrifices short-term performance for long-term purpose. Community Impact (1/2): General Mills Foundation supports community food access programs, and the company&#39;s regenerative agriculture initiative covers over one million acres, though a shareholder dispute over pesticide disclosure and the company&#39;s resistance to pesticide tracking suggests tension between stated ESG goals and operational practice <span class="source-ref">[4]</span>. Employee Retention (1/2): Glassdoor rating of 4.0/5 with 81% CEO approval for Jeff Harmening across 3,881 reviews, above the manufacturing industry average of 3.5 <span class="source-ref">[3]</span>. Reviewers praise work-life balance and culture but cite limited upward mobility and slow decision-making. Average for a large CPG employer but not exceptional. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO or executives in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Dividend stock. General Mills&#39; infrastructure reflects a mature dividend payer with declining profitability but attractive valuation <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Forward P/E of 11.7 is well below the 20 target (score 1.0, 1x weight). D/E of approximately 138% scores 0.70 (1x weight). ROE of approximately -1% (GAAP, reflecting impairment charges) scores 0.0 (1x weight). Revenue growth YoY of -5% scores 0.50 (1x weight). 5-year revenue CAGR of approximately 0.4% scores 0.36 (1x weight). Profit margin of -0.5% (GAAP) scores 0.0 (1x weight). Payout ratio of 76% scores 0.40 (1x weight). Consecutive years paid of 127 scores 1.0 (2x weight). Consecutive years growth of 5 scores 0.50 (1x weight). 5-year dividend growth CAGR of approximately 3.7% scores 0.62 (2x weight). Weighted sum 6.70 / max 12.0 = 5.58, rounded to 6. Daily dollar volume of $317M provides excellent liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">General Mills shows elements of both finite and infinite thinking. The company&#39;s 158-year history of continuous dividend payments and commitment to core food brands demonstrates institutional endurance, and the Glassdoor-rated culture suggests reasonable organizational health <span class="source-ref">[3]</span>. However, recent strategic decisions — divesting yogurt, exiting Brazil, taking $2.1B in impairment charges — are driven by financial optimization rather than purpose. The FY2027 guidance projecting continued revenue and earnings declines suggests a company playing defense rather than building for the future. Sinek would credit the long institutional history but question whether current leadership is playing to endure or playing not to lose.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): &#39;Making food the world loves&#39; has been consistent over decades but reads as marketing rather than a Just Cause in Sinek&#39;s framework — it describes what the company does, not a vision of a better future that inspires sacrifice <span class="source-ref">[1]</span>. Strategic decisions in FY2026 (divesting yogurt, exiting Brazil, $3B cost savings program) are driven by financial optimization and portfolio restructuring, not by advancing a purpose. The mission doesn&#39;t shape behavior the way a true Just Cause would.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor rating of 4.0/5 with 81% CEO approval and above-industry-average employee satisfaction suggests an adequate trust environment <span class="source-ref">[3]</span>. Reviewers describe &#39;agile adaptive culture&#39; and &#39;good and stable&#39; management, though others cite &#39;heavy status quo,&#39; limited upward mobility, and slow decision-making. CEO Jeff Harmening has provided stable leadership, and the company avoids the kind of mass layoffs that destroy trust. Average for a large CPG employer but not exceptional.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of an infinite competitive mindset in management commentary. General Mills competes with Kellogg&#39;s, Nestlé, and private-label brands in a commodity-adjacent industry, but no public statements from leadership reference learning from competitors&#39; strengths or framing competition as motivation for self-improvement rather than market share battles.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): The Blue Buffalo acquisition (2018) represented a meaningful strategic pivot into pet food, expanding General Mills beyond human food for the first time in its 158-year history. The yogurt business divestiture and Brazil exit show willingness to shed underperforming assets <span class="source-ref">[1]</span>. However, these are portfolio optimization moves — incremental and financially driven rather than transformative reinventions in service of a larger cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): General Mills maintained its dividend through FY2026 despite an $88M net loss and $2.1B Q4 operating loss from impairment charges, demonstrating commitment to long-term shareholder returns over short-term capital preservation <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The $3B cost savings program targeting FY2030 represents long-term planning. However, the impairment charges themselves suggest past acquisition decisions (including Blue Buffalo) destroyed value, and the FY2027 guidance of continued revenue and EPS declines reflects a company managing decline rather than making bold forward bets.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">General Mills at $32.59 with a forward P/E of 11.7x and 7.5% dividend yield is a classic value/income opportunity in a defensive sector at a historically depressed valuation. The company&#39;s 127-year consecutive dividend payment record and portfolio of #1/#2 brands (Cheerios, Nature Valley, Blue Buffalo, Pillsbury) provide durable cash flow generation even through revenue headwinds <span class="source-ref">[1]</span>. Q4 FY2026 showed signs of stabilization with organic sales flat and adjusted EPS up 27% YoY, and the $3B cost savings program targeting FY2030 (with $750M in FY2027) should restore margins over time <span class="source-ref">[2]</span>. The 7.5% yield provides substantial income while investors wait for the turnaround to materialize.</div>
+    <div class="thesis-text">The bear case is structural and accelerating. FY2026 net sales fell 5% to $18.43B with organic sales declining 2%, and FY2027 guidance projects continued deterioration with organic sales of -1.5% to +0.5% and adjusted EPS of $3.00-$3.20, implying further double-digit EPS decline from FY2026&#39;s already-depressed levels <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The $88M GAAP net loss driven by goodwill impairment charges raises fundamental questions about the value of past acquisitions, including Blue Buffalo. The 76% forward payout ratio on declining earnings puts dividend sustainability at risk — if FY2027 EPS comes in at $3.00, the $2.44 annual dividend would require an 81% payout ratio. Core cereal and packaged food categories face secular headwinds from consumers shifting to fresh, less-processed alternatives and private-label expansion. D/E of 138% limits financial flexibility during a period when the company needs to invest in growth while servicing an elevated payout.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Forward P/E of 11.7x and 7.5% dividend yield at historically depressed valuation may attract value and income investors — 127 consecutive years of dividend payments provides institutional credibility <span class="source-ref">[1]</span></li>
+        
+        <li>$3B cost savings target by FY2030 with $750M expected in FY2027 should restore adjusted operating margins through supply chain optimization, procurement savings, and organizational efficiency <span class="source-ref">[2]</span></li>
+        
+        <li>Blue Buffalo pet food and snacking categories (Nature Valley, Annie&#39;s) provide higher-growth portfolio offset to declining cereal volumes, with pet food representing a structurally growing addressable market</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>FY2027 guidance of -1.5% to +0.5% organic sales and $3.00-$3.20 adjusted EPS signals continued deterioration — if EPS hits $3.00, the $2.44 dividend would require an 81% payout ratio, approaching unsustainability <span class="source-ref">[2]</span></li>
+        
+        <li>GAAP net loss of $88M in FY2026 driven by $2.1B in goodwill/intangible impairment charges raises questions about acquisition value destruction and management&#39;s capital allocation track record <span class="source-ref">[1]</span></li>
+        
+        <li>Secular decline in core cereal and packaged food categories as consumers shift to fresh, less-processed alternatives and private-label brands gain share, compressing volumes and pricing power across the portfolio</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): General Mills&#39; core business — manufacturing and distributing physical packaged food products through grocery retail channels — is structurally immune to AI disruption <span class="source-ref">[1]</span>. AI cannot replace the production of Cheerios, the distribution of pet food, or the brand loyalty that drives consumer purchase decisions at the shelf. Supply chain, manufacturing, and retail distribution require physical-world operations that AI enhances rather than displaces. The company&#39;s agricultural sourcing, factory operations, and distribution network have no AI substitution risk. AI Opportunity (0/1): While General Mills is experimenting with AI internally for marketing and eCommerce optimization (including a GPT-4-powered BI assistant), no AI-related revenue streams exist, and the internal cost savings have not been quantified <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> General Mills FY2026 Full-Year Results — Net Sales $18.43B (-5% YoY), Organic Sales -2%, Adjusted EPS -16%, Q4 Operating Loss $2.1B From Impairments — Quartr, StockAnalysis, July 2026</li>
+        
+        <li><span class="src-num">2.</span> General Mills FY2027 Outlook — Organic Sales -1.5% to +0.5%, Adjusted EPS $3.00-$3.20, $3B Cost Savings Target by FY2030 — NASDAQ, OpenCapital, July 2026</li>
+        
+        <li><span class="src-num">3.</span> General Mills Culture and AI — CEO Jeff Harmening 81% Glassdoor Approval (4.0/5), AI Playbook for Digital Transformation, GPT-4 BI Assistant — TCB Magazine, Glassdoor, 2026</li>
+        
+        <li><span class="src-num">4.</span> General Mills ESG — Sustainalytics Moderate Controversy Level (2.0), Regenerative Agriculture Program, Pesticide Disclosure Shareholder Dispute — Yahoo Finance, SEC Proxy, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen MLAB — Mesa Laboratories, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/MLAB_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('MLAB')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            MLAB
+            <span class="stock-name-full">Mesa Laboratories, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-13</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 29</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">48</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Scientific & Technical Instruments</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Mesa Laboratories, Inc. designs and manufactures quality assurance instruments, including biological indicators for sterilization monitoring, calibration solutions for healthcare and industrial applications, and biopharmaceutical development tools. Headquartered in Lakewood, Colorado, Mesa operates globally with a focus on life sciences quality and safety. FY2026 (ending March 2026) revenue was $249.1M with 3.4% organic growth, adjusted operating income up 11.9%, and AOI margin of 25.5%. New CEO Dr. Siddhartha Kadia succeeded Gary Owens in April 2026. The company acquired German sterilization indicators business GKE in October 2023.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>600 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://mesalabs.com" target="_blank" rel="noopener">mesalabs.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Mesa Labs expanded its sterilization monitoring portfolio through the October 2023 acquisition of GKE, a German biological indicators business, and implemented &#39;The Mesa Way&#39; operational business system under CEO Owens&#39; 9-year tenure <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. FY2026 adjusted operating income grew 11.9% with 200 bps of margin expansion to 25.5%, demonstrating operational improvement <span class="source-ref">[1]</span>. However, the Biopharmaceutical Development segment saw organic revenues decline 29.9% in Q4 FY2026 due to commercial execution challenges and export-control shipping delays <span class="source-ref">[1]</span>. AI Deployment (0/2): No AI strategy, AI-powered products, or AI-driven operational improvements have been disclosed by management <span class="source-ref">[2]</span>. Market Share (1/2): Mesa Labs holds meaningful niche positions in biological indicators for sterilization monitoring, calibration solutions, and continuous monitoring systems for healthcare and pharmaceutical environments — specialized categories with limited competition <span class="source-ref">[1]</span>. The GKE acquisition strengthened European market presence <span class="source-ref">[3]</span>. Pipeline (0/2): No next-generation products with specific timelines have been announced. Growth strategy is acquisition-driven rather than organic product development. R&amp;D Intensity (0/1): R&amp;D spending is not prominently disclosed and does not appear to be above industry average for scientific instruments.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Mesa Labs&#39; purpose centers on ensuring quality and safety in healthcare, life sciences, and pharmaceutical applications — their instruments verify sterilization effectiveness, calibrate medical equipment, and monitor critical environments <span class="source-ref">[1]</span>. This connects to a clear and genuine purpose (patient safety and product quality) that goes beyond generic shareholder value, but is not distinctively articulated compared to peer companies in the quality assurance space. Community Impact (0/2): Mesa published its second annual Responsible Business Program brochure in March 2024, covering environmental stewardship, social responsibility, and corporate governance <span class="source-ref">[3]</span>. However, no specific charitable programs, community investment dollar amounts, or distinctive philanthropic initiatives were identified. Employee Retention (0/2): CEO Gary Owens served for 9 years (2017-2026), providing strong leadership continuity. The orderly CEO transition to Dr. Siddhartha Kadia in April 2026 was well-planned with the board crediting Owens with building &#39;The Mesa Way&#39; culture <span class="source-ref">[2]</span>. However, no company-wide employee retention data or tenure statistics are publicly available. Insider Buying (0/2): No insider buying activity was identified in the research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available growth-stock metrics. D/E of 85.5% is modestly above the 70% target, scoring 0.93, reflecting acquisition-related debt that the company is actively paying down (net leverage ratio fell to 2.11x in FY2026) <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. ROE of 2.66% is well below the 15% target, scoring 0.18 at 2x weight, dragged by low GAAP profit margin <span class="source-ref">[4]</span>. Revenue growth YoY of 1.0% scores 0.70, reflecting sluggish top-line organic growth in FY2026 <span class="source-ref">[4]</span>. 5-year revenue CAGR of approximately 8% (from ~$157M to $249M) scores 0.87 at 2x weight, reflecting acquisition-driven expansion <span class="source-ref">[1]</span>. Forward P/E of 12.47 comfortably below the 20 target, scoring 1.0 — a significant bright spot indicating earnings expected to normalize <span class="source-ref">[4]</span>. Profit margin of 1.9% is well below the 20% target, scoring 0.10, reflecting GAAP accounting for acquisition amortization <span class="source-ref">[4]</span>. Forward PEG estimated at ~1.25 scores 0.88 at 2x weight. Liquidity clears the floor at $18.1M daily trading value.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Mesa Laboratories demonstrates a mixed infinite game profile anchored by genuine purpose in quality assurance for healthcare and life sciences, and reasonable leadership continuity under Gary Owens&#39; 9-year tenure. The &#39;Mesa Way&#39; business system suggests organizational intentionality beyond quarterly results. However, the company has not articulated a transformative Just Cause, and its growth strategy is acquisition-dependent rather than organically innovative. The orderly CEO transition to Dr. Kadia, a proven life sciences executive, is encouraging for long-term continuity but too early to assess.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Mesa Labs&#39; purpose — ensuring quality and safety in healthcare, pharmaceutical, and life sciences applications — connects genuinely to a cause larger than profit. Their instruments help protect patients by verifying sterilization effectiveness and monitoring critical environments <span class="source-ref">[1]</span>. The &#39;Mesa Way&#39; business system developed under CEO Owens suggests the purpose is somewhat lived in the organization, not just stated. However, the cause has not been validated through decades of crisis-tested consistency, and the company&#39;s strategic decisions (acquisitions, segment management) are not clearly traced back to a transcendent purpose.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): CEO Gary Owens served for 9 years (2017-2026), providing strong leadership continuity and stability <span class="source-ref">[2]</span>. The board has enhanced governance with a Lead Independent Director (Shiraz Ladiwala, 2022) and added experienced directors (Mark Capone, former Myriad Genetics CEO, 2024). The orderly CEO transition to Dr. Kadia was well-planned. ESG brochures cite social responsibility programs. However, no employee satisfaction data, tenure statistics, or cultural practices are publicly available, and shareholder feedback flagged a need for stronger DEI commitments <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of an infinite competitive mindset. Mesa Labs&#39; public communications do not reference competitors&#39; strengths or discuss competitive learning. The company&#39;s growth strategy is acquisition-driven (buying competitors like GKE) rather than improving through competitive awareness. The competitive language is about market position and portfolio expansion, not self-improvement driven by rival excellence.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Mesa Labs has evolved from a narrow instruments manufacturer to a broader quality assurance platform through strategic acquisitions, including GKE (sterilization indicators, 2023) and earlier additions to the calibration and monitoring portfolios <span class="source-ref">[3]</span>. This demonstrates incremental strategic adaptation and willingness to enter adjacent markets. However, no transformative pivot has occurred — the company has expanded within its existing domain rather than fundamentally reinventing itself.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Owens invested in building &#39;The Mesa Way&#39; operational system during his 9-year tenure, a long-term organizational capability investment <span class="source-ref">[2]</span>. The $249M company also made the strategic decision to prioritize debt paydown ($39.6M free cash flow applied to reducing leverage to 2.11x) over growth spending, demonstrating discipline <span class="source-ref">[1]</span>. However, no examples of bold, costly decisions that explicitly sacrificed near-term earnings for future capability were identified.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Mesa Laboratories offers exposure to regulated quality assurance instruments for healthcare and life sciences with a $249M revenue base and improving profitability — FY2026 adjusted operating income grew 11.9% to a 25.5% AOI margin, up 200 bps despite FX headwinds <span class="source-ref">[1]</span>. At a forward P/E of 12.47, the stock trades at an attractive valuation relative to specialty instruments peers, suggesting significant earnings normalization ahead. Free cash flow of $39.6M is being deployed to reduce leverage (net ratio now 2.11x), and the new CEO Dr. Siddhartha Kadia brings deep life sciences platform experience from leading Calibre Scientific and the $2B Life Technologies life sciences division <span class="source-ref">[2]</span>. The niche market positions in biological indicators and calibration solutions benefit from regulatory requirements that mandate physical testing.</div>
+    <div class="thesis-text">The bear case centers on organic growth challenges, margin weakness, and transition risk. GAAP profit margin of 1.9% and ROE of 2.7% reflect heavy acquisition-related amortization that suppresses reported earnings, and the Biopharmaceutical Development segment posted a 29.9% organic revenue decline in Q4 FY2026 due to commercial execution failures and export-control disruptions <span class="source-ref">[1]</span>. Core organic revenue growth was only 1.2% in FY2026, and management&#39;s guidance for return to positive core organic growth in Q1 FY2027 is aspirational rather than demonstrated <span class="source-ref">[1]</span>. The CEO transition from Owens to Kadia, while orderly, introduces execution risk during a period of operational challenge. D/E of 85% reflects a leveraged balance sheet from acquisition-driven growth, and further acquisitions may be constrained until leverage drops further <span class="source-ref">[4]</span>. The $717M market cap places Mesa in the small-cap category with limited institutional coverage and liquidity constraints compared to larger scientific instruments players like Danaher and Thermo Fisher.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>New CEO Dr. Siddhartha Kadia&#39;s proven platform-building experience (Calibre Scientific, Life Technologies) could accelerate organic growth and operational improvement under The Mesa Way system <span class="source-ref">[2]</span></li>
+        
+        <li>Forward P/E of 12.47 implies significant earnings normalization — if GAAP margins recover toward adjusted operating margins of 25.5%, GAAP EPS could increase severalfold from current depressed levels <span class="source-ref">[1]</span><span class="source-ref">[4]</span></li>
+        
+        <li>Continued deleveraging toward sub-2x net leverage could unlock capital for accretive acquisitions in adjacent quality assurance categories, extending the platform strategy <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Biopharmaceutical Development segment organic revenue decline of 29.9% in Q4 FY2026 signals structural commercial execution challenges and potential market share loss in peptide systems to larger competitors <span class="source-ref">[1]</span></li>
+        
+        <li>Core organic revenue growth of only 1.2% in FY2026 suggests limited pricing power and end-market demand softness, raising questions about the quality of acquisition-driven revenue growth <span class="source-ref">[1]</span></li>
+        
+        <li>CEO transition risk — while orderly, the April 2026 change introduces uncertainty about strategic direction, potential portfolio reshuffling, and culture continuity during a challenging operational period <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Mesa Labs&#39; core products — biological indicators, sterilization monitoring systems, calibration solutions, and continuous environmental monitoring — are physical instruments used in heavily regulated quality assurance processes <span class="source-ref">[1]</span>. Healthcare facilities, pharmaceutical manufacturers, and laboratories are required by FDA, EPA, and international regulatory bodies to use physical testing instruments to verify sterilization effectiveness and calibrate equipment. AI cannot replace the physical chemical and biological processes that biological indicators measure, nor the regulatory mandates that require their use. The regulatory moat provides strong protection. Modest risk exists in that AI could improve competing monitoring technologies or enable predictive analytics that supplement (though not replace) traditional testing methods. AI Opportunity (0/1): Mesa Labs generates no revenue from AI products or services. The company&#39;s product portfolio is entirely physical instruments and consumables with no disclosed AI or digital analytics component <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            29
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Mesa Laboratories FY2026 Results (Year Ended March 31, 2026) — Revenue $249.1M (+3.4% organic, +1.2% core organic), AOI +11.9%, AOI Margin 25.5% (+200 bps), FCF $39.6M, Net Leverage 2.11x, BPD Q4 Organic Revenue -29.9%, Barchart and SEC 10-K, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Mesa Laboratories Leadership — CEO Transition from Gary Owens (2017-2026) to Dr. Siddhartha Kadia (April 2026), Board Additions (Ladiwala 2022, Capone 2024); BioSpace, StockTitan, accessed October 2026</li>
+        
+        <li><span class="src-num">3.</span> Mesa Laboratories ESG — Second Annual Responsible Business Program Brochure March 2024, GKE Acquisition October 2023, ESG Governance Enhancements; GlobeNewsWire, TipRanks, accessed October 2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — MLAB Key Statistics: Stock Price $128.07, Forward P/E 12.47, P/E 150.67, ROE 2.66%, D/E 85.5%, Profit Margin 1.9%, Avg Volume 141K, accessed October 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

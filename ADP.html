@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen ADP — Automatic Data Processing, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/ADP_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('ADP')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            ADP
+            <span class="stock-name-full">Automatic Data Processing, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-27</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 51</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">62</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Staffing & Employment Services</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Automatic Data Processing is the world's largest payroll and human capital management (HCM) provider, processing payroll for approximately 1 in 6 U.S. workers across more than 1.1 million clients in 140+ countries. The company operates through Employer Services (payroll, tax, HR, benefits administration) and Professional Employer Organization (PEO) segments, generating $21.95B in FY2026 revenue (+7% YoY). ADP's 51-year consecutive dividend growth streak earns Dividend King status. CEO Maria Black, who took the helm in 2023, is accelerating ADP's AI transformation through ADP Assist (12M conversations in FY2026) and the Lyric HCM cloud-native platform (+94% YoY client growth). Retirement Services exceeded $1B in annual revenue for the first time.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>67,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.adp.com" target="_blank" rel="noopener">www.adp.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): ADP launched Lyric HCM, a cloud-native next-generation HCM platform that grew live clients 94% YoY in FY2026, representing a significant platform rewrite that modernizes ADP&#39;s enterprise offering and opens upmarket revenue potential <span class="source-ref">[1]</span>. ADP Assist reached nearly all 1.1 million clients with 12 million conversations during FY2026, and the Zone service automation platform expanded to 48% of ADP&#39;s service workforce by year-end <span class="source-ref">[1]</span>. AI Deployment (2/2): ADP Assist is one of the largest enterprise AI deployments globally — 1.1 million clients using an AI assistant for payroll anomaly detection, compliance queries, and analytics requests, with 12 million measured conversations in FY2026 <span class="source-ref">[1]</span>. This is a shipping product with quantified adoption across the entire client base, not a pilot. Market Share (2/2): ADP is the undisputed category leader in payroll processing and HCM, processing payroll for roughly 1 in 6 U.S. workers. Employer Services bookings rose 6% to over $2.2 billion in FY2026, and the 92.1% client retention rate demonstrates dominant switching-cost moats <span class="source-ref">[1]</span>. Pipeline (1/2): FY2027 guidance details 5-6% revenue growth with continued Lyric HCM expansion and ADP Assist feature rollouts, but ADP does not publicly name specific next-gen products with launch timelines beyond the current platform iteration <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): R&amp;D spending of $1.405 billion in FY2026 represents approximately 6.4% of revenue, below the top quartile for enterprise software peers like Workday (~25%) and Paylocity (~15%) <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): ADP&#39;s core value &#39;Each Person Counts&#39; and articulated purpose of &#39;designing a better way to work through cutting-edge products, premium services, and exceptional experiences&#39; is clear and identifies what the company does and for whom, but does not articulate a transformative future state — it describes a competent services philosophy rather than a vision that inspires sacrifice <span class="source-ref">[3]</span>. Community Impact (1/2): ADP holds an MSCI AAA ESG rating (highest possible) and Sustainalytics Low Controversy Level, reflecting responsible corporate citizenship <span class="source-ref">[3]</span>. However, no specific dollar amounts for charitable giving or distinctive community investment programs beyond standard corporate philanthropy were identified. Employee Retention (0/2): ADP employs 67,000 associates globally but does not disclose voluntary turnover rates or average employee tenure. Glassdoor reviews show mixed sentiment, with some citing positive culture and others raising concerns about management practices — insufficient evidence for a positive score. Insider Buying (0/2): CEO Maria Black acquired 49 shares at $223.94 on July 1, 2026 (~$11K), which is negligible relative to her total holdings of 75,101 shares. Historically, ADP executives have been significant net sellers — over $55M in cumulative insider sales from CEO, former CEO Rodriguez, and multiple VPs with no meaningful offsetting purchases <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on all 10 dividend-weighted metrics. ADP demonstrates exceptional profitability with ROE of 72.24% (capped at 1.0, well above 15% target) and profit margin of 20.11% (score 1.0, just above 20% target) <span class="source-ref">[5]</span>. The 51-year consecutive dividend growth streak scores maximum on consecutive years paid (2x weight, score 1.0) and consecutive years growth (1x weight, score 1.0), while the 12.2% 5-year dividend growth CAGR far exceeds the 6% target (2x weight, score 1.0) <span class="source-ref">[5]</span>. Revenue growth YoY of 7% (score 0.90) and 5-year CAGR of approximately 8% (score 0.87) are slightly below the 10% targets, reflecting ADP&#39;s steady non-cyclical growth profile. D/E of 91% scores 0.91 and Forward P/E of 22.96 scores 0.93, both near targets. The primary drag is the 62.16% payout ratio (score 0.63 vs 40% target), elevated by ADP&#39;s commitment to accelerating dividend growth. Weighted sum: 11.23 / max 12 = 9.36, rounds to 9. Liquidity check: 2.26M shares x $281.39 = $636M daily — easily clears the $1M floor <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">ADP is a 75-year-old institution that has demonstrated remarkable staying power through multiple technology transitions — from paper-based payroll processing to mainframes to cloud to AI-powered HCM. The company plays to keep playing rather than to win any single quarter, evidenced by consistent reinvestment in platform modernization (Lyric HCM, ADP Assist) and a 51-year dividend growth streak that signals long-term orientation. However, ADP lacks a transformative Just Cause — the company exists to process payroll accurately rather than to advance a vision of a better future. Leadership under Maria Black is steady but untested through crisis, and the $2.1B share repurchase program and incremental growth approach suggest pragmatic financial management over bold reinvention.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): ADP&#39;s core value &#39;Each Person Counts&#39; and its mission around &#39;designing a better way to work&#39; is a genuine purpose statement but reads more as a services philosophy than a vision of a future state that doesn&#39;t yet exist <span class="source-ref">[3]</span>. The company exists to process payroll accurately and help businesses manage their workforce — this is a competent service description, not a cause that inspires sacrifice. The 75-year track record proves the company can endure, and the purpose has shaped decisions through seven CEO transitions, but leadership frames success in terms of bookings growth and margin expansion rather than transforming the future of work.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): ADP employs 67,000 associates under the &#39;Each Person Counts&#39; value system, and the company&#39;s remarkable leadership stability (only seven CEOs in 75+ years, with Maria Black rising through the ranks over decades) suggests organizational continuity and internal trust <span class="source-ref">[3]</span>. The 92.1% client retention rate implies frontline employees are empowered enough to deliver consistently high service <span class="source-ref">[1]</span>. However, mixed Glassdoor reviews indicate uneven cultural experiences across business units, and no specific evidence of exceptional employee empowerment, low voluntary turnover, or trust-building cultural practices was identified.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): ADP&#39;s competitive posture focuses on improving its own platform capabilities rather than attacking competitors. Management&#39;s discussion of AI-native competitors like Deel, Rippling, and Gloat frames them as validation that HCM needs AI solutions — which ADP is building — rather than existential threats to be destroyed <span class="source-ref">[2]</span>. The company&#39;s response to competitive pressure has been to accelerate Lyric HCM development and ADP Assist deployment rather than predatory pricing or acquisition warfare, and partnership/open API strategies reflect a coexistence rather than domination mindset.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): ADP has evolved incrementally from paper-based payroll bureau services in 1949 to mainframe processing, to client-server systems, to cloud-based SaaS, and now to AI-powered HCM with Lyric and ADP Assist <span class="source-ref">[1]</span>. Each transition adapted the delivery model while keeping the core payroll/HR business intact — steady evolution, not transformative reinvention. ADP has never abandoned a profitable core business in service of a new vision. The Lyric HCM platform rewrite and Zone automation platform (48% of service workforce) are the most ambitious strategic moves in recent years but remain within the HCM category.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): ADP&#39;s $1.405B annual R&amp;D investment and commitment to Lyric HCM (a complete platform rewrite) and ADP Assist AI deployment demonstrate willingness to invest in long-term capability — particularly as AI automation could cannibalize existing high-touch service revenue <span class="source-ref">[1]</span>. The company resisted Bill Ackman&#39;s 2017 activist proxy fight, choosing to stay the course on its long-term strategy. However, $2.1B in FY2026 share repurchases alongside only 5-6% guided revenue growth suggests financial engineering alongside, not in place of, operational investment. No evidence of ADP walking away from profitable but misaligned business lines.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">ADP at 22.96x forward earnings is a Dividend King compounder delivering consistent execution — FY2026 closed with $21.95B revenue (+7%), adjusted EPS growth of 11%, Q4 adjusted EBIT margin expanding 140bps, and Employer Services bookings of $2.2B (+6%) <span class="source-ref">[1]</span>. The 92.1% client retention rate across 1.1 million clients creates a recurring revenue fortress with massive switching costs, while ADP Assist&#39;s AI deployment to nearly all clients (12M conversations) and Lyric HCM&#39;s 94% YoY client growth demonstrate successful transition from legacy payroll processor to AI-powered HCM platform <span class="source-ref">[1]</span>. The 51-year consecutive dividend growth streak (current yield 2.42%, 12.2% 5-year CAGR) provides reliable compounding income backed by $4.85B in levered free cash flow. Retirement Services crossing $1B in annual revenue for the first time opens an adjacent growth vector. FY2027 guidance of 5-6% revenue growth and 9-11% EPS growth with 70-90bps margin expansion supports sustainable low-double-digit earnings compounding.</div>
+    <div class="thesis-text">The bear case centers on decelerating growth and emerging AI disruption. Revenue growth of 7% in FY2026 and guided 5-6% for FY2027 may not justify the 22.96x forward P/E when AI-native HCM competitors (Deel, Rippling, Gloat) offer modern architectures targeting ADP&#39;s mid-market base with aggressive pricing <span class="source-ref">[2]</span>. The stock&#39;s -7.4% YTD decline reflects market anxiety that AI could compress HCM software pricing over time — a concern validated by Mairs &amp; Power&#39;s investor letter noting AI fears impacted ADP&#39;s performance. R&amp;D intensity of 6.4% of revenue ($1.405B) is significantly below enterprise software peers (Workday ~25%, Paylocity ~15%), raising questions about whether ADP is investing enough to maintain technology leadership <span class="source-ref">[2]</span>. The 62.16% payout ratio, while well-covered by $4.85B FCF, limits reinvestment flexibility versus growth-oriented competitors. Significant net insider selling — over $55M from CEO Maria Black, former CEO Rodriguez, and multiple VPs — is a notable negative signal about near-term upside from those with deepest operational visibility <span class="source-ref">[4]</span>. Maria Black&#39;s CEO tenure since 2023 has not yet been tested through a recession or competitive disruption.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>ADP Assist AI platform reaching all 1.1M clients with 12M conversations creates upsell opportunities and pricing power as AI features drive measurable client ROI — Lyric HCM&#39;s 94% YoY client growth demonstrates accelerating enterprise adoption of the next-gen platform <span class="source-ref">[1]</span></li>
+        
+        <li>Retirement Services exceeding $1B annual revenue for the first time opens a large TAM expansion as ADP cross-sells financial wellness and retirement products to its existing payroll client base <span class="source-ref">[1]</span></li>
+        
+        <li>FY2027 guided EBIT margin expansion of 70-90bps driven by AI-powered service automation (Zone platform at 48% of service workforce) should accelerate earnings growth beyond the 9-11% EPS guidance if efficiency gains exceed expectations <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>AI-native HCM competitors (Deel, Rippling, Gloat) backed by billions in venture capital are targeting ADP&#39;s mid-market segment with modern cloud-native architectures and aggressive pricing — if these startups gain meaningful share, ADP&#39;s 7% revenue growth could decelerate further toward the low-single-digits <span class="source-ref">[2]</span></li>
+        
+        <li>R&amp;D intensity of 6.4% of revenue ($1.405B) is significantly below enterprise software peers, creating risk that ADP&#39;s AI capabilities fall behind despite current ADP Assist adoption metrics — the company may be winning the deployment race today while losing the innovation race for tomorrow <span class="source-ref">[2]</span></li>
+        
+        <li>Macro sensitivity to U.S. employment levels — ADP&#39;s revenue is tied to pays-per-control (number of employees on client payrolls), and a recession-driven employment contraction would directly reduce per-client revenue while simultaneously pressuring new bookings and retention <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): ADP&#39;s core payroll and compliance business is protected by deep regulatory moats — payroll must be &#39;100% accurate 100% of the time&#39; across thousands of jurisdictions with constantly changing tax codes, labor laws, and reporting requirements <span class="source-ref">[2]</span>. The 92.1% client retention rate and massive switching costs (migrating payroll systems is operationally risky for enterprises) create structural defense. However, AI-native startups like Deel (global payroll), Rippling (unified HR platform), and Gloat (talent marketplaces) have raised significant venture capital and represent genuine long-term competitive threats to ADP&#39;s mid-market positioning <span class="source-ref">[2]</span>. Mairs &amp; Power noted AI fears negatively impacted ADP performance, and the stock&#39;s -7.4% YTD decline reflects market skepticism about AI pricing pressure on HCM software. Management argues AI increases HCM complexity and demand — plausible but unproven over a full cycle. AI Opportunity (1/1): ADP generates meaningful AI-embedded revenue through ADP Assist (deployed to all 1.1M clients, 12M conversations), Lyric HCM AI features (94% client growth), and the $1.405B annual R&amp;D investment heavily directed at AI-powered products <span class="source-ref">[1]</span>. The company&#39;s proprietary dataset from processing payroll for 1 in 6 U.S. workers is a unique AI training advantage.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            51
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> ADP FY2026 Full-Year and Q4 Earnings Release — Revenue $21.95B (+7%), EPS $10.94 (+11%), Q4 EBIT Margin +140bps, Employer Services Bookings $2.2B, Retention 92.1%, ADP Assist 12M Conversations, Lyric HCM +94% Clients, Retirement Services >$1B, July 2026</li>
+        
+        <li><span class="src-num">2.</span> ADP AI Strategy and Competitive Landscape — AI Disruption Risk Analysis, Deel/Rippling/Gloat Competition, $1.405B R&D Spend, CEO Maria Black 'Defining Moment' Commentary, Innovation Day AI Features, Yahoo Finance/Klover.ai/StockTitan, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> ADP ESG Profile and Corporate Values — 'Each Person Counts,' MSCI AAA Rating, Sustainalytics Low Controversy, Community Programs, KnowESG/CSRHub, 2026</li>
+        
+        <li><span class="src-num">4.</span> ADP Insider Trading — Maria Black 49-share Purchase ($11K) July 2026, Net Insider Selling >$55M (Black, Rodriguez, VPs), Fintel/SEC Form 4 Filings, 2025-2026</li>
+        
+        <li><span class="src-num">5.</span> StockAnalysis.com, Yahoo Finance, GuruFocus — ADP Key Statistics: Forward P/E 22.96x, ROE 72.24%, D/E 91%, Profit Margin 20.11%, Dividend Yield 2.42%, 51yr Dividend Growth, Stock Price $281.39, accessed August 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

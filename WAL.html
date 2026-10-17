@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen WAL — Western Alliance Bancorporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/WAL_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('WAL')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            WAL
+            <span class="stock-name-full">Western Alliance Bancorporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-22</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 43</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">58</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Banks - Regional</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Western Alliance Bancorporation operates as the bank holding company for Western Alliance Bank, providing commercial banking products and services primarily in Arizona, California, and Nevada. The company specializes in commercial real estate, corporate and business banking, and operates an Innovation Banking division serving technology and life science companies. CEO Kenneth Vecchione leads a franchise that grew deposits to $82B (up 15% YoY) and HFI loans to $60.9B. Q2 2026 net income reached $268.8M with revenue of $995.7M (+17.7% YoY).</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>3,769 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.westernalliancebancorporation.com" target="_blank" rel="noopener">www.westernalliancebancorporation.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): WAL executed a transformative expansion from a regional Arizona bank to a national commercial banking franchise through strategic acquisitions (Bridge Bank in 2015 for tech/innovation banking) and organic growth, surviving the March 2023 regional banking crisis that killed SVB, Signature, and First Republic while growing deposits from the trough to $82B <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Revenue grew from ~$2.5B (2022) to $3.5B (2025), a 40% increase in three years. AI Deployment (0/2): WAL published thought leadership on AI in banking (&#39;AI Is Driving Change, but the Hard Decisions Are Still Human&#39;) and views technology investment as the &#39;most significant strategic initiative,&#39; but has not shipped specific AI products or reported quantifiable AI-driven savings <span class="source-ref">[3]</span>. Market Share (1/2): Meaningful player in specialized commercial banking with a differentiated Innovation Banking division, $82B in deposits, and strong deposit growth of 15.1% YoY, but not a category leader nationally <span class="source-ref">[1]</span>. Product Pipeline (1/2): Brand unification under Western Alliance Bank, new CFO Vishal Idnani (Jan 2026), Innovation Banking expansion, and stated technology investment priorities — general strategic direction but no specific product launches with timelines <span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Technology investment is the &#39;most significant strategic initiative&#39; for WAL, above average for regional banks, reflecting commitment to digital capabilities and operational efficiency <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): WAL promotes a client-focused approach &#39;marked by agility, responsiveness and sizable expertise,&#39; positioning itself as a different kind of bank for entrepreneurial and innovation-oriented commercial clients <span class="source-ref">[3]</span>. The Innovation Banking division connects the company&#39;s work to enabling technology entrepreneurship. Clear purpose that identifies the company&#39;s differentiated role but doesn&#39;t articulate a vision beyond excellent client service. Community Impact (1/2): WAL&#39;s Corporate Responsibility Report highlights community investment and ESG strategy aligned with the company&#39;s longstanding values; the company has formalized environmental and social goals as part of its governance framework <span class="source-ref">[4]</span>. General corporate philanthropy without specific dollar amounts for distinctive programs. Employee Retention (1/2): CEO Vecchione has provided multi-year leadership stability. CFO Dale Gibbons transitioned to chief banking officer rather than departing, suggesting organizational loyalty and internal mobility <span class="source-ref">[3]</span>. Leadership team has deep banking industry roots. However, internal reviews note inconsistent management culture across groups and uneven culture shifts following 2023 sector stress. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO Vecchione or other executives identified in public filings.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics excluding D/E (null for banks). Forward P/E of 6.97x is exceptional — well below the 20x target, scoring 1.0, reflecting significant earnings growth at an attractive valuation <span class="source-ref">[5]</span>. Profit margin of 28.2% exceeds the 20% target (score 1.0) <span class="source-ref">[5]</span>. Revenue growth YoY of 13.6% surpasses the 10% target <span class="source-ref">[1]</span>. Estimated 5yr revenue CAGR of ~12% scores 1.0 based on growth from ~$2.0B (2021) to $3.5B TTM <span class="source-ref">[1]</span>. ROE of 13.0% scores 0.87, slightly below the 15% target but solid for a regional bank <span class="source-ref">[5]</span>. Payout ratio of 18.5% is excellent (score 1.0), reflecting significant earnings retention for growth. Consecutive years paid of 8 scores 0.8 at 2x weight. Consecutive years dividend growth of 7 scores 0.7. 5yr dividend growth CAGR of ~7% exceeds the 6% target (score 1.0 at 2x weight). Liquidity clears the floor at $82M average daily dollar volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">WAL operates with a largely finite orientation — a commercially successful bank focused on growth metrics (deposits, loans, revenue) rather than a purpose-driven institution built to endure across economic cycles. The company survived the 2023 banking crisis through skillful crisis management, demonstrating resilience, and has evolved from a regional Arizona franchise to a national commercial banking platform. However, the competitive language centers on growth rates and market positioning rather than enduring purpose, and the recent brand unification suggests the company is still defining its long-term identity.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): WAL&#39;s articulated purpose — client-focused banking &#39;marked by agility, responsiveness and sizable expertise&#39; — describes a competitive approach rather than a vision of a better future <span class="source-ref">[3]</span>. The Innovation Banking division connects the franchise to enabling entrepreneurship, which approaches a cause, but Sinek would note this is a strategy for winning (capturing tech deposits) rather than a Just Cause worth sacrificing for. The company does not reference a transformative purpose in strategic communications.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Stable senior leadership with CEO Vecchione providing multi-year continuity and CFO Gibbons transitioning internally rather than departing <span class="source-ref">[3]</span>. Leadership team has deep industry experience. The bank&#39;s 3,769 employees operate in a specialized commercial banking environment that requires relationship-based trust. However, internal reviews note that &#39;experiences with line and middle management vary by group, with reports of inconsistency, mixed messages, and pockets of favoritism,&#39; and culture shifts following the 2023 sector stress appear &#39;uneven across teams&#39; <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): WAL&#39;s competitive language focuses on outperforming peers through deposit growth rates (15.1% YoY), loan growth (9% YoY), and revenue acceleration <span class="source-ref">[1]</span>. The company positions itself competitively against other regional banks rather than acknowledging rivals&#39; strengths as motivation for self-improvement. No evidence of worthy rival thinking in management commentary.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): WAL has evolved meaningfully from a small Arizona-based bank to a multi-state national commercial banking franchise through organic growth and strategic acquisitions (Bridge Bank in 2015) <span class="source-ref">[3]</span>. The brand unification under one name and the development of specialized divisions (Innovation Banking, commercial real estate, corporate banking) represent meaningful strategic adaptation. However, these are incremental extensions of the banking model rather than transformative reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): WAL demonstrated courage during the March 2023 regional banking crisis, when the stock plunged 60%+ amid deposit flight fears following SVB&#39;s collapse. Management stabilized deposits, communicated transparently with markets, and rebuilt the franchise to $82B in deposits by mid-2026 — outperforming most regional bank peers <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The decision to invest in growth through the crisis rather than retrench required conviction. However, this was survival courage rather than proactive long-term sacrifice.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">WAL offers exceptional value at 6.97x forward earnings with 14% EPS growth, the lowest forward P/E among regional banks of its quality tier <span class="source-ref">[5]</span>. Q2 2026 revenue grew 17.7% YoY to $995.7M with net income of $268.8M (+13%), driven by 18% net interest income growth to $766M and deposit growth of 15.1% YoY to $82B <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The 18.5% payout ratio leaves substantial earnings retention for organic growth while supporting a 2.14% dividend yield that has grown for 7 consecutive years at a 7% 5yr CAGR. The Innovation Banking division creates differentiated exposure to technology and life science companies, and the brand unification positions WAL for national recognition beyond its Arizona/California/Nevada base. Inspire Impact Score of 43 (ALIGNED) adds ESG appeal.</div>
+    <div class="thesis-text">The bear case centers on credit cycle risk, residual confidence overhang, and concentrated geographic exposure. WAL&#39;s rapid loan growth (HFI loans up 9% YoY to $60.9B) during an uncertain economic environment creates credit quality risk if a recession materializes — the bank&#39;s CRE exposure and technology lending could face elevated losses <span class="source-ref">[1]</span>. The March 2023 regional banking near-death experience remains a psychological overhang — the stock trades at 6.97x forward earnings partly because the market assigns a permanent discount to banks that faced deposit runs <span class="source-ref">[2]</span>. ROE of 13.0% trails the 15% target, reflecting the capital build required to reassure depositors and regulators post-crisis. Internal culture challenges with &#39;inconsistent management&#39; and &#39;uneven&#39; post-crisis culture shifts could hamper execution as the bank scales nationally <span class="source-ref">[3]</span>. The dividend has only been paid for 8 years with relatively modest history compared to bank peers. Concentration in Arizona, California, and Nevada leaves the franchise exposed to regional economic weakness.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Forward P/E of 6.97x represents significant valuation compression that could re-rate toward peer multiples of 10-12x as the 2023 banking crisis overhang fades and Q2 2026 results demonstrate sustained deposit stability and earnings growth <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Deposit growth momentum at 15.1% YoY to $82B, combined with net interest income growth of 18% YoY, positions WAL to benefit from any further interest rate normalization and continued market share gains from disrupted competitors <span class="source-ref">[1]</span></li>
+        
+        <li>Innovation Banking division provides differentiated exposure to technology and AI company deposit flows, with potential for meaningful revenue acceleration as AI startup and enterprise activity grows <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Credit cycle deterioration could disproportionately impact WAL&#39;s commercial real estate and technology lending books — rapid loan growth of 9% YoY during economic uncertainty increases exposure to potential credit losses if recession materializes <span class="source-ref">[1]</span></li>
+        
+        <li>Permanent valuation discount from the March 2023 regional banking crisis may persist, with the market continuing to apply a &#39;near-failure&#39; penalty that limits multiple expansion even as fundamentals improve <span class="source-ref">[2]</span></li>
+        
+        <li>Internal culture inconsistencies — &#39;experiences with line and middle management vary by group, with mixed messages and pockets of favoritism&#39; — could undermine execution as WAL attempts to scale from a regional franchise to a nationally recognized bank brand <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): WAL&#39;s core business — commercial banking, deposit-taking, and relationship-based lending — is protected by heavy regulation, switching costs, and deep client relationships that AI cannot easily replicate <span class="source-ref">[3]</span>. The Innovation Banking division creates particularly sticky relationships with tech companies. Physical branch infrastructure and regulatory capital requirements create structural barriers. However, AI-powered fintech threatens margin compression in underwriting, payment processing, and routine commercial banking functions. The 2023 banking stress demonstrated that deposits can move quickly in a digital age, and AI-enabled competitors could accelerate this dynamic. AI Opportunity (1/1): WAL&#39;s Innovation Banking division serves technology and life science companies, positioning the bank to capture deposits, lending, and advisory fees from AI companies and AI-adjacent startups <span class="source-ref">[3]</span>. Technology investment as the &#39;most significant strategic initiative&#39; suggests WAL is building capabilities to compete in an AI-influenced banking landscape.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            43
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Systemic Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Western Alliance Bancorporation Q2 2026 Results — Revenue $995.7M (+17.7% YoY), Net Income $268.8M (+13%), EPS $2.36 (+14%), NII +18% YoY to $766M, Deposits $82B (+15.1%), HFI Loans $60.9B (+9%) — Morningstar, Alphastreet, SEC 8-K, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Western Alliance Q1 2026 Results — Net Revenue $1.0B, Adjusted EPS +24% YoY, NII +18% YoY to $766M, Deposits $82.7B — Investing.com, StockTitan, April 2026</li>
+        
+        <li><span class="src-num">3.</span> Western Alliance Leadership & Strategy — CEO Kenneth Vecchione, CFO Vishal Idnani (Jan 2026), Innovation Banking Division, Technology as 'Most Significant Strategic Initiative,' AI Thought Leadership, Culture Reviews — WAL Corporate, Built In, Comparably, Banking Dive, 2026</li>
+        
+        <li><span class="src-num">4.</span> Western Alliance ESG — Corporate Responsibility Report, Community Investment Strategy, ESG-Aligned Values Framework, Evolving Regulatory Landscape — CSRHub, WAL Corporate, SEC 10-K, 2022-2026</li>
+        
+        <li><span class="src-num">5.</span> Yahoo Finance — WAL Key Statistics: P/E 8.88x, Forward P/E 6.97x, PEG 1.47, ROE 13.0%, Profit Margin 28.2%, Dividend Yield 2.14%, Stock Price $78.65, Avg Volume 1.05M, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

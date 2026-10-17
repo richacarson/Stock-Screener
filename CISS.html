@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CISS — C3is Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CISS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CISS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CISS
+            <span class="stock-name-full">C3is Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-08-31</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge sell">SELL</span>
+            <div class="overall-score">
+                <span class="num">30</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Marine Shipping</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>Greece</span>
+    </div>
+    
+    <div class="profile-desc">C3is Inc. provides international seaborne transportation services, owning and operating drybulk carriers and tankers that transport iron ore, coal, grains, crude oil, and petroleum products. Founded in 2021 as a spinoff from Imperial Petroleum and headquartered in Athens, Greece, the company has expanded to six vessels including three Handysize drybulk carriers, one Aframax tanker, and two MR product tankers. C3is reported H1 2026 voyage revenues of $35.6M (up 83% YoY) with net income of $13.2M, driven by daily TCE rates of $40,260 in Q2 (up 144.5% YoY). Market cap is approximately $1.6M with zero bank debt and $27M cash. The company executed a 1:7 reverse stock split in April 2026 and a 1:40 reverse split in August 2026.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://c3is.pro" target="_blank" rel="noopener">c3is.pro</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): C3is has grown from a single-vessel spinoff in 2022 to a six-vessel fleet by mid-2026, including diversification from pure dry bulk into product tankers with two MR tanker acquisitions delivering in 2026 <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. H1 2026 voyage revenues jumped 83% YoY to $35.6M with Q2 daily TCE rates surging 144.5% to $40,260 <span class="source-ref">[1]</span>. However, this represents asset accumulation in a favorable market cycle rather than transformative innovation — the business model of owning and chartering vessels is unchanged. AI Deployment (0/2): No evidence of AI deployment in operations. C3is operates a traditional Greek shipping company managed externally by Stealth Maritime Corporation with standard fleet management <span class="source-ref">[2]</span>. Market Share (0/2): C3is operates a nano-cap fleet of six vessels in a highly fragmented global shipping market with thousands of competitors. Market cap of approximately $1.6M makes this effectively invisible in the industry <span class="source-ref">[3]</span>. Product Pipeline (1/2): Two MR product tankers were delivered in 2026, diversifying the fleet into the tanker segment. Management projects continued fleet expansion but has not disclosed specific further acquisition targets with timelines <span class="source-ref">[1]</span>. R&amp;D Intensity (0/1): Not applicable to traditional maritime shipping — vessel operations are standardized across the industry with no R&amp;D function.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): C3is describes itself as providing seaborne transportation services to global charterers — a purely functional description interchangeable with any shipping peer and articulating no deeper purpose beyond transporting cargo <span class="source-ref">[2]</span>. Community Impact (0/2): No evidence of charitable programs, foundation activity, or community investment was identified in SEC filings or company communications <span class="source-ref">[4]</span>. Employee Retention (0/2): As a Greek-domiciled shipping company managed externally by Stealth Maritime Corporation with no disclosed employee count, no retention data or employee sentiment information is publicly available. Insider Buying (0/2): No evidence of meaningful net insider buying was identified; the company has conducted multiple dilutive equity offerings and two reverse stock splits within four months, suggesting capital management challenges rather than insider conviction <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">AT RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 0%"></div>
+        </div>
+        <span class="score-num red">0</span>
+    </div>
+    <div class="score-analysis">LIQUIDITY FLOOR TRIGGERED: Average daily volume of approximately 91,000 shares at $1.68 per share yields daily dollar volume of approximately $153,000, far below the $1,000,000 liquidity threshold required for IOWN investability <span class="source-ref">[3]</span>. Infrastructure score is mechanically set to 0 regardless of other metrics. On underlying fundamentals, C3is shows strengths including a zero-debt balance sheet ($7,853 in debt against $27.26M cash), strong H1 2026 revenue growth of 83% YoY to $35.6M, and Q2 net income of $10.0M <span class="source-ref">[1]</span>. However, ROE of 12.58% trails the 15% target, and two reverse stock splits (1:7 April 2026, 1:40 August 2026) signal chronic NASDAQ listing compliance issues and severe shareholder dilution. The stock has declined over 97% over 52 weeks despite strong operational performance <span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>2</span> /10</span>
+    </div>
+
+    <div class="ig-quote">C3is is a young company (founded 2021) operating as a financial vehicle for vessel ownership, managed externally by Stealth Maritime Corporation. There is no visible Just Cause, cultural identity, or long-term vision beyond growing the fleet and generating charter revenue. The zero-debt discipline and fleet diversification into tankers show some strategic competence, but repeated reverse splits, dilutive offerings, and external management signal a company playing to survive this quarter rather than to keep playing indefinitely.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Just Cause (0/3): C3is has no articulated Just Cause or purpose beyond owning and operating vessels for charter revenue <span class="source-ref">[2]</span>. The company&#39;s website and public materials focus entirely on fleet composition, charter rates, and financial performance. There is no vision of a better future — this is a purely financial enterprise playing a finite game of asset accumulation and cyclical rate optimization.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): No employee data is available as C3is is managed externally by Stealth Maritime Corporation SA <span class="source-ref">[4]</span>. The lack of disclosed employees, organizational culture, or management structure makes it impossible to assess trust. CEO Dr. Andriotis holds dual roles at Stealth Maritime and StealthGas, raising questions about management focus and potential conflicts of interest with minority shareholders.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of competitive awareness or learning from rivals in C3is&#39;s public communications <span class="source-ref">[4]</span>. The company operates in a commodity shipping market where competition is purely on rates and vessel availability, with no differentiation strategy or acknowledgment of worthy competitors from management.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): C3is has shown strategic flexibility by diversifying from pure dry bulk carriers to include tanker operations, acquiring an Aframax crude oil tanker in 2023 and two MR product tankers in 2026, creating a balanced fleet positioned for multiple commodity cycles <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. However, the diversification was driven by market opportunism and asset pricing rather than a Just Cause, and the core business model of vessel ownership and chartering remains unchanged.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The decision to fund fleet expansion entirely without bank debt while building a $27M cash balance demonstrates exceptional financial discipline for a nano-cap shipping company in an industry where debt-funded fleet expansion is the norm <span class="source-ref">[1]</span>. CEO Andriotis has chosen balance sheet strength over growth speed. However, two reverse stock splits within four months and a 97%+ stock price decline suggest this discipline has not translated into shareholder value preservation.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">C3is delivered exceptional H1 2026 results with voyage revenues of $35.6M (up 83% YoY), Q2 net income of $10.0M (versus a $5.3M loss a year earlier), and Q2 daily TCE rates of $40,260 (up 144.5% YoY) <span class="source-ref">[1]</span>. The company maintains a pristine balance sheet with zero bank debt, $27.26M cash (up 82% in Q1), and has funded all fleet expansion from operating cash flow. The fleet expanded from four to six vessels with two MR product tanker deliveries in 2026, increasing capacity and sector diversification. Adjusted H1 2026 net income of $15.3M and adjusted EBITDA of $18.7M reflect strong operating leverage in an elevated charter rate environment.</div>
+    <div class="thesis-text">The bear case is overwhelming. The stock has declined over 97% over 52 weeks, with a market cap of approximately $1.6M making this effectively untradeable for any institutional or rules-based portfolio <span class="source-ref">[3]</span>. Average daily dollar volume of approximately $153K catastrophically fails the IOWN $1M liquidity floor. Two reverse stock splits within four months (1:7 April, 1:40 August 2026) signal chronic NASDAQ listing compliance failure and devastating shareholder dilution — the number of shares outstanding has been compressed by a cumulative factor of 280x <span class="source-ref">[3]</span>. External management by Stealth Maritime Corporation creates conflicts of interest and limited governance oversight for minority shareholders <span class="source-ref">[4]</span>. Revenue is highly cyclical and dependent on volatile charter rates that can decline 50-70% from cycle peaks. Greek shipping nano-caps have a historically poor track record of rewarding minority shareholders, and the extreme discount to book value likely reflects rational skepticism about governance and capital allocation priorities.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>H1 2026 revenue of $35.6M (up 83% YoY) with Q2 daily TCE of $40,260 (up 144.5%) demonstrates significant fleet earning power if tanker rates remain elevated through FY2027 <span class="source-ref">[1]</span></li>
+        
+        <li>Six-vessel fleet now fully deployed across dry bulk and tanker segments, providing dual-market exposure and approximately 50% capacity increase versus year-ago fleet <span class="source-ref">[1]</span></li>
+        
+        <li>Cash balance of $27.26M against zero bank debt provides acquisition optionality and eliminates near-term solvency risk despite nano-cap status <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Catastrophic illiquidity with daily dollar volume of approximately $153,000 and market cap of $1.6M — the stock is uninvestable for any institutional or rules-based portfolio and position entry or exit would move the price significantly <span class="source-ref">[3]</span></li>
+        
+        <li>Two reverse stock splits within four months (1:7 April, 1:40 August 2026) compressing shares by 280x cumulative factor signal persistent NASDAQ minimum bid price non-compliance and ongoing dilution destruction <span class="source-ref">[3]</span></li>
+        
+        <li>Maritime shipping is deeply cyclical with charter rates capable of declining 50-70% from cycle peaks, and C3is has no competitive moat beyond vessel ownership to protect earnings through a downturn <span class="source-ref">[2]</span><span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Maritime shipping is structurally immune to AI disruption — the physical movement of bulk commodities and petroleum products across oceans requires vessels, crews, port infrastructure, and compliance with international maritime regulations (IMO, SOLAS) that AI cannot replace or circumvent <span class="source-ref">[2]</span>. AI may improve route optimization and fuel efficiency at the margin, but these are tools that benefit incumbents rather than displace them. AI-driven economic growth actually increases demand for shipping as data centers and manufacturing facilities require raw materials moved by sea. No analyst has flagged AI as a risk factor for dry bulk or tanker shipping. AI Opportunity (0/1): C3is generates no revenue from AI products or services and has not disclosed any AI-related technology investments or operational improvements <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> C3is Inc. Q2 and H1 2026 Earnings Release — Q2 Revenue $24.0M, H1 Revenue $35.6M (83% YoY), Q2 Net Income $10.0M, H1 Net Income $13.2M, Daily TCE $40,260 (144.5% YoY), Adjusted EBITDA $18.7M (H1), August 2026</li>
+        
+        <li><span class="src-num">2.</span> C3is Inc. SEC 20-F FY2025 and Company Profile — Fleet composition (3 Handysize, 1 Aframax, 2 MR tankers), management by Stealth Maritime Corporation, Athens HQ, zero bank debt policy</li>
+        
+        <li><span class="src-num">3.</span> StockAnalysis, Investing.com, Yahoo Finance — CISS Key Statistics: Stock Price $1.68, Market Cap $1.6M, Shares Outstanding 1.55M, Avg Volume ~91K, D/E 0.0%, ROE 12.58%, Profit Margin 16.09%, accessed August 2026</li>
+        
+        <li><span class="src-num">4.</span> SEC Filings — C3is Inc. Form F-1, prospectus filings, reverse stock split disclosures (1:7 April 2026, 1:40 August 2026), equity offering documentation, 2025-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

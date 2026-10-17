@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CPRT — Copart, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CPRT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CPRT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CPRT
+            <span class="stock-name-full">Copart, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-09</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 32</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">56</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Specialty Business Services</span>
+        <span class="sep">&middot;</span><span>NMS</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Copart, Inc. operates the world's largest online vehicle auction platform, connecting sellers (primarily insurance companies, fleet operators, and dealers) with a global buyer base for salvage, total-loss, and used vehicles. The company manages the entire remarketing process — towing, storage, titling, and auctioning — across over 200 locations in 11 countries. FY2026 (ended July 31, 2026) revenue was approximately $4.7B (up 0.4% YoY), with net income of $1.48B and a 33.4% net profit margin. Copart announced the all-cash acquisition of ACV Auctions to expand into the used-vehicle market. Founded in 1982 by Willis Johnson, the company is led by returning CEO A. Jayson Adair, who succeeded Jeffrey Liaw effective August 2026.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>10,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.copart.com" target="_blank" rel="noopener">www.copart.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Copart&#39;s transformation of the auto auction industry from physical salvage yards to the world&#39;s largest online vehicle marketplace was industry-defining, though this core transformation occurred more than five years ago. More recently, the planned all-cash acquisition of ACV Auctions represents a significant strategic expansion from salvage/total-loss into the used-vehicle market, opening a new revenue stream adjacent to the core business <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. AI Deployment (1/2): Copart is developing AI-enabled image recognition for vehicle damage assessment and Title Express for automated title processing, which are shipping as part of its platform. However, specific revenue attribution or quantified efficiency gains from these AI tools have not been publicly disclosed beyond general statements about improving operational capacity <span class="source-ref">[5]</span>. Market Share (2/2): Copart is the dominant player in online salvage vehicle auctions with no close competitor — IAA (now part of RB Global) is the only meaningful rival, and Copart maintains market share leadership through its unmatched land bank of 200+ locations across 11 countries <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. International revenue grew 14.1% YoY in Q3 FY2026, demonstrating continued global expansion <span class="source-ref">[1]</span>. Product Pipeline (1/2): The ACV Auctions acquisition broadens the company&#39;s addressable market from salvage into used vehicles, and AI-enabled image recognition and Title Express represent named technology initiatives with clear operational applications, though specific launch timelines and revenue projections are limited <span class="source-ref">[3]</span><span class="source-ref">[5]</span>. R&amp;D Intensity (1/1): Copart invests meaningfully in technology relative to specialty services industry peers, with proprietary VB3 auction platform development, AI capabilities, and Title Express reflecting above-average technology spend for the sector.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Copart&#39;s stated purpose connects its business to environmental sustainability through vehicle recycling and salvage, with its ESG reports claiming operations enabled avoidance of more than 12 million metric tons of CO2e in the prior fiscal year <span class="source-ref">[4]</span>. This is specific — it quantifies environmental impact — and differentiates Copart from peers by framing vehicle remarketing as an environmental service. However, the sustainability messaging reads more as ESG reporting than as a deeply held purpose that drives strategic decisions. Community Impact (0/2): No evidence of charitable giving, foundation activity, or community investment initiatives with quantified impact was identified beyond the environmental externalities that are a natural byproduct of the salvage business model <span class="source-ref">[4]</span>. Employee Retention (0/2): Glassdoor rating of 3.2-3.3/5 based on approximately 1,500 reviews, with only 42% of reviewers recommending the company and Comparably culture score of 2.7/5 (grade D), indicates below-average employee sentiment <span class="source-ref">[5]</span>. Reviews cite favoritism, micromanagement, and lack of career growth paths. These metrics suggest meaningful retention challenges. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months. Founder Jayson Adair&#39;s return as CEO demonstrates commitment but involves standard executive compensation arrangements.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock. Copart&#39;s financial fortress is its standout characteristic. D/E of approximately 1% scores 1.0 — the company is virtually debt-free (1x weight) <span class="source-ref">[5]</span>. ROE of approximately 17.5% scores 1.0, exceeding the 15% target (2x weight) <span class="source-ref">[5]</span>. Revenue growth 5yr CAGR of approximately 14% scores 1.0, reflecting consistent compounding from ~$2.8B in FY2021 to $4.7B in FY2026 (2x weight). Forward P/E of 17.83 scores 1.0, below the 20 target (1x weight) <span class="source-ref">[5]</span>. Profit margin of 33.4% scores 1.0, well above the 20% target (1x weight). However, FY2026 revenue growth of only 0.4% YoY scores 0.68, significantly below the 10% target, reflecting a period of volume softness and market normalization after the pandemic (1x weight) <span class="source-ref">[1]</span>. PEG ratio of 3.61 (5yr expected) scores 0.0 — above the 3.0 floor — indicating premium valuation relative to long-term growth expectations (2x weight) <span class="source-ref">[5]</span>. Weighted sum: 7.68/10 = 76.8%, rounds to 8. Liquidity: $27.48 x 10.72M = $295M daily dollar volume <span class="source-ref">[5]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Copart demonstrates a mixed orientation with some infinite-game characteristics. The founder&#39;s return as CEO, the transformative shift from physical to online auctions, and the strategic acquisition of ACV Auctions show a company willing to evolve. However, the culture metrics (Glassdoor 3.2/5, 42% recommendation rate, Comparably D grade) suggest an organization where trust and purpose are not deeply embedded, and the company&#39;s competitive language focuses on market dominance and cost efficiency rather than continuous improvement. The environmental sustainability messaging through vehicle recycling provides a purpose framework, but it reads more as ESG reporting than as a lived organizational cause.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Copart connects its business to environmental sustainability, claiming operations avoided more than 12 million metric tons of CO2e through vehicle recycling and parts salvage <span class="source-ref">[4]</span>. This provides a purpose that goes beyond pure profit — vehicle remarketing genuinely reduces environmental waste. However, the sustainability framing reads more as an ESG reporting overlay than as a deeply held cause that drives strategic decisions and inspires sacrifice. The core purpose is efficiently remarketing vehicles for insurance companies, which is a valuable but commercially-defined mission.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Employee sentiment data signals a low-trust environment. Glassdoor rating of 3.2-3.3/5 with only 42% recommending the company and Comparably culture score of 2.7/5 (grade D) place Copart below industry averages <span class="source-ref">[5]</span>. Reviews consistently cite favoritism, micromanagement, risk-averse middle management, and lack of career growth paths. While general managers are given high autonomy, the broader workforce describes a culture where advancement depends more on relationships than performance. These patterns suggest limited psychological safety and organizational trust.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): The planned acquisition of ACV Auctions — a competitor in the digital vehicle auction space — signals a company that respects and learns from rivals&#39; strengths rather than seeking to destroy them <span class="source-ref">[3]</span>. Rather than building an in-house used-vehicle platform to compete with ACV, Copart chose to acquire the capability, acknowledging that ACV had built something worth incorporating. The company&#39;s competitive response to industry changes has focused on expanding its own platform and buyer liquidity rather than attacking competitors.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Copart transformed the auto auction industry from physical salvage yards to the world&#39;s largest online vehicle marketplace — a genuine strategic transformation that required abandoning established physical auction processes and investing heavily in digital infrastructure <span class="source-ref">[5]</span>. The company evolved from a regional salvage yard operator (founded 1982 in California) to a global digital platform across 11 countries. While this transformation is significant, it occurred incrementally over decades rather than as a single dramatic pivot, and the company has remained within the vehicle remarketing category throughout.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Founder A. Jayson Adair&#39;s return as CEO (effective August 2026, replacing Jeffrey Liaw after less than two years) demonstrates personal commitment to the company&#39;s long-term trajectory <span class="source-ref">[5]</span>. The all-cash acquisition of ACV Auctions at a premium, investing during a period of revenue stagnation (0.4% FY2026 growth), shows willingness to prioritize long-term capability over short-term earnings optimization <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. Copart&#39;s consistent investment in land acquisition and technology infrastructure, while competitors underinvested, reflects countercyclical capital allocation discipline.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Copart at $27.48 with a $25.5B market cap is the world&#39;s dominant online vehicle auction platform with a financial profile that few specialty services companies can match — virtually zero debt (D/E ~1%), 33.4% net profit margin, 17.5% ROE, and forward P/E of 17.83 <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. The company&#39;s unmatched physical infrastructure moat of 200+ locations across 11 countries, combined with deep insurance carrier relationships and network effects in buyer liquidity, creates exceptional competitive positioning that has resisted all challenger attempts. The planned all-cash ACV Auctions acquisition expands the addressable market from salvage into used vehicles, potentially reigniting growth after a soft FY2026 (0.4% revenue growth) <span class="source-ref">[3]</span>. International revenue grew 14.1% in Q3 FY2026, demonstrating continued expansion outside the mature U.S. market <span class="source-ref">[1]</span>. Average selling prices rose 4.6% despite declining unit volumes, demonstrating pricing power even in a challenging environment.</div>
+    <div class="thesis-text">The bear case centers on growth stagnation and premium valuation. FY2026 revenue grew just 0.4% to $4.7B with net income declining 4.4% and EPS falling 2.5% to $1.55 — a sharp deceleration from the 14% five-year revenue CAGR <span class="source-ref">[1]</span>. The PEG ratio of 3.61 (5yr expected) signals that the stock is priced for growth significantly above what the market expects, and Q4 FY2026 EPS of $0.35 missed consensus estimates of $0.39 as gross margin compressed and operating costs rose <span class="source-ref">[1]</span>. The CEO transition — Jayson Adair returning as CEO after Jeffrey Liaw&#39;s departure following less than two years — raises succession planning concerns and suggests potential strategic disagreement at the top <span class="source-ref">[5]</span>. Employee sentiment is a persistent weakness: Glassdoor 3.2/5 with only 42% recommending and Comparably culture score of 2.7/5 (grade D) suggest an organization where purpose and trust are not deeply embedded <span class="source-ref">[5]</span>. Long-term, improving vehicle safety technologies (ADAS, collision avoidance) could structurally reduce accident frequency and shrink the salvage vehicle supply pool that is Copart&#39;s core business, while AI-powered inspection and pricing tools could reduce the value of Copart&#39;s platform intermediation.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>ACV Auctions acquisition expands total addressable market from salvage/total-loss into the broader used-vehicle remarketing segment, potentially reigniting growth after FY2026&#39;s 0.4% revenue increase <span class="source-ref">[3]</span></li>
+        
+        <li>International expansion — revenue up 14.1% YoY in Q3 FY2026 with operations across 11 countries, driven by increasing adoption of online auction platforms in markets where physical auctions still dominate <span class="source-ref">[1]</span></li>
+        
+        <li>Founder-CEO Jayson Adair&#39;s return signals renewed strategic focus and hands-on execution leadership from the architect of Copart&#39;s digital transformation and global expansion <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Revenue growth stagnation — FY2026 revenue grew only 0.4% with declining unit volumes and EPS contraction of 2.5%, and the PEG ratio of 3.61 prices in growth that recent performance cannot support <span class="source-ref">[1]</span><span class="source-ref">[5]</span></li>
+        
+        <li>Structural decline in salvage supply — improving vehicle safety technologies (ADAS, autonomous driving features, collision avoidance systems) could reduce accident frequency over time, shrinking the pool of total-loss and salvage vehicles that is Copart&#39;s core supply source <span class="source-ref">[5]</span></li>
+        
+        <li>Weak organizational culture — Glassdoor 3.2/5, 42% recommendation rate, Comparably culture score 2.7/5 (grade D), and recurring employee complaints about favoritism, micromanagement, and lack of career growth create long-term talent retention and execution risk <span class="source-ref">[5]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Copart&#39;s core business has meaningful defensive moats against AI disruption. The physical infrastructure — over 200 locations across 11 countries for towing, storing, and managing salvage vehicles — represents assets that AI cannot replicate or replace <span class="source-ref">[1]</span><span class="source-ref">[5]</span>. Regulatory requirements (title processing, environmental compliance, vehicle disposal regulations), deep switching costs for insurance carrier customers, and the proprietary land bank create structural barriers. The online auction platform benefits from network effects that would be difficult for an AI-powered alternative to replicate quickly. However, two AI-related risks exist at the margin: (1) improving vehicle safety technologies (ADAS, autonomous driving) could reduce accident frequency over time, shrinking the pool of salvage vehicles that is Copart&#39;s core supply <span class="source-ref">[5]</span>; (2) AI-powered competitor platforms could eventually challenge Copart&#39;s digital marketplace efficiency. Analysts have not flagged AI as a near-term disruption risk to Copart&#39;s business model, and the physical infrastructure moat provides strong protection. AI Opportunity (0/1): Copart is developing AI-enabled image recognition and Title Express for operational improvement, but these are internal efficiency tools rather than products generating AI-specific revenue. The company does not sell AI products or services to customers.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            32
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Copart FY2026 Q4 and Full-Year Results — Full-Year Revenue $4.7B (+0.4%), Net Income $1.48B (-4.4%), Q4 EPS $0.35 (missed $0.39 consensus), Q3 Revenue $1.24B (+2.1%), Average Selling Prices +4.6%, International Revenue +14.1%, SEC Form 8-K, September 2026</li>
+        
+        <li><span class="src-num">2.</span> Copart Financial Metrics — Stock Price $27.48, Forward P/E 17.83, PEG 3.61, D/E ~1%, ROE 17.5%, Profit Margin 33.4%, Yahoo Finance / VCP Scanner / Value Research, accessed October 2026</li>
+        
+        <li><span class="src-num">3.</span> Copart ACV Auctions Acquisition — Planned All-Cash Acquisition Expanding into Used-Vehicle Market, Company Announcement, 2026</li>
+        
+        <li><span class="src-num">4.</span> Copart ESG Report 2024 — Operations Enabled Avoidance of 12M+ Metric Tons CO2e, Environmental Sustainability Through Vehicle Recycling, Copart.com</li>
+        
+        <li><span class="src-num">5.</span> Copart Leadership and Culture — Founder A. Jayson Adair Returning as CEO (August 2026), Jeffrey Liaw Departing, Glassdoor 3.2/5 (42% Recommend), Comparably Culture 2.7/5 (Grade D), Company Filings / Glassdoor / Comparably, 2025-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

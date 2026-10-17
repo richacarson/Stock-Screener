@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen ALM — Almonty Industries Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/ALM_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('ALM')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            ALM
+            <span class="stock-name-full">Almonty Industries Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-17</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 0</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">57</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Basic Materials</span>
+        <span class="sep">&middot;</span><span>Other Industrial Metals & Mining</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Almonty Industries is the leading Western-world producer of tungsten concentrate, operating the Panasqueira mine in Portugal (136 years of production history) and the newly commissioned Sangdong mine in South Korea — one of the largest and highest-grade tungsten deposits globally. The company listed on NASDAQ in July 2025 and has experienced explosive revenue growth (+498% YoY in Q2 2026) driven by Sangdong commissioning and record tungsten prices ($3,075/MTU vs. $453/MTU prior year). Q2 2026 net income of C$181.8M included significant non-cash fair value adjustments. Market cap is approximately $2.8B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>341 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://almonty.com" target="_blank" rel="noopener">almonty.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Almonty&#39;s primary achievement is bringing the Sangdong tungsten mine in South Korea from development to commercial production (commissioning ceremony March 2026), a significant execution milestone that transformed the company from a single-mine operator in Portugal into a multi-continental producer with Q2 2026 revenue surging 498% YoY <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. CEO Lewis Black developed proprietary blending techniques and water treatment technology at Panasqueira, transferring this to Sangdong. This qualifies as &#39;one significant launch that opened a new revenue stream.&#39; AI Deployment (0/2): No AI-powered products or quantified AI-driven operational savings. Traditional mining operations. Market Share (1/2): Almonty is positioning to supply up to 40% of non-China tungsten globally once Sangdong reaches full capacity, making it the largest Western tungsten producer at a time when China controls ~80% of global supply <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. Current production is still ramping. Pipeline (0/2): Mining companies do not have traditional product pipelines. Growth strategy centers on mine development and Sangdong ramp-up rather than next-generation products with named launch timelines. R&amp;D Intensity (0/1): Mining companies operate below average R&amp;D intensity; spending is concentrated on mine development and operations rather than research.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Almonty&#39;s vision — to &#39;establish a fully integrated, Western-based tungsten platform spanning North America, Europe and Asia to anchor Western supply chains for national security and defense&#39; — is specific, thoughtful, and connects mining to a larger geopolitical purpose <span class="source-ref">[3]</span>. CEO Lewis Black&#39;s &#39;Hard Work&#39; newsletter and public commentary consistently frame Almonty&#39;s work as essential to Western industrial independence from Chinese mineral dominance, elevating the mission beyond profit extraction. This purpose genuinely differentiates from peers and shapes strategic decisions. Community Impact (1/2): Almonty installed a 2.52 MW solar facility at Panasqueira (21.5% of mine consumption), Sangdong uses 100% renewable grid energy, and the company champions women in mining and signed an MOU with Seoul National University for mining talent development <span class="source-ref">[4]</span>. Third-party carbon footprint analysis conducted at Sangdong. Employee Retention (0/2): 341 employees across Portugal and South Korea. CFO Brian Fox departed suddenly (effective immediately) in 2026, replaced by Jorge Beristain. No specific retention or tenure data available. Insider Buying (0/2): Massive net insider selling — Lewis Black and Daniel D&#39;Amato sold $227.6M in shares over 90 days per the prior screen, with only a $1.5M purchase by CEO Black offsetting. Share buyback program launched August 2026, but net direction is overwhelmingly selling.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available Growth metrics (5yr Revenue CAGR and Forward PEG excluded due to data unavailability). The available metrics are exceptionally strong: ROE of 38.2% (score 1.0, 2x weight) reflects the profitability inflection from Sangdong commissioning and surging tungsten prices <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Revenue growth YoY of 497.7% (score 1.0, 1x) is extraordinary. Forward P/E of 8.26 (score 1.0, 1x) is deep value territory. Profit margin of 125.2% (score 1.0, 1x) is inflated by non-cash fair value adjustments on convertible notes and foreign exchange gains — operating mining margins are sustainably in the 40-60% range based on Q2 mining income of C$26.1M on C$43.0M revenue <span class="source-ref">[1]</span>. D/E of 147.4% (score 0.66, 1x) reflects the $800M convertible notes issuance in 2026, partially offset by C$1.2B cash position. Daily dollar volume of $64.6M (6.6M shares x $9.83) provides strong liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Almonty under CEO Lewis Black demonstrates a genuine long-term vision for building Western tungsten supply chain independence, persisting through years of depressed tungsten prices and Chinese market dominance to reach the Sangdong commissioning inflection. However, the massive insider selling ($227.6M net over 90 days), sudden CFO departure, lawsuit against a competitor, and the company&#39;s relatively short track record during a commodity supercycle raise questions about whether leadership is building to endure or monetizing a cyclical peak.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Almonty&#39;s vision — anchoring the Western tungsten supply chain for national security — is genuine, distinctive, and connects mining to something bigger than profit. The cause is inclusive (benefits Western democracies), service-oriented (critical mineral supply security), and timely (China controls ~80% of global tungsten) <span class="source-ref">[3]</span>. Lewis Black consistently articulates this purpose in shareholder letters, interviews, and his &#39;Hard Work&#39; newsletter. However, the cause has not been tested through a multi-decade track record or leadership transition.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): CEO Lewis Black has been at the helm since founding, providing leadership continuity, and the company&#39;s commitments to women in mining and the Seoul National University MOU suggest organizational values beyond extraction <span class="source-ref">[4]</span>. However, the sudden CFO departure (Brian Fox, effective immediately) replaced by Jorge Beristain, combined with a CDO appointment in January 2026, signals executive turnover at a critical growth phase. No employee satisfaction, turnover, or cultural data is publicly available for this 341-person company.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Almonty initiated legal proceedings against Pure Tungsten Inc. in the Ontario Superior Court for alleged &#39;false and misleading statements&#39; about Almonty and the Sangdong Mine, demonstrating a combative competitive posture focused on reputation defense rather than learning from rivals <span class="source-ref">[4]</span>. While the broader strategic narrative frames Western tungsten production as complementary to allied nations&#39; interests, the lawsuit is direct evidence of finite competitive behavior.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (0/2): Almonty has not made a transformative strategic pivot. The company has been focused on tungsten mining since its founding, and the Sangdong development was a linear extension of the existing strategy into a larger deposit. The NASDAQ listing (July 2025) and $800M convertible notes expanded the capital base but did not change the business model. The company has not been tested by a situation requiring fundamental reinvention.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Lewis Black invested years developing the Sangdong mine when tungsten prices were depressed and Chinese competition made Western mining uneconomic, a genuine bet on long-term strategic value <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Securing $800M in convertible notes and completing commissioning in March 2026 required real persistence. However, these decisions were vindicated by surging tungsten prices and geopolitical tailwinds, making it difficult to distinguish strategic courage from good timing. The massive insider selling ($227.6M net) undermines the narrative of long-term commitment.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Almonty is the Western world&#39;s largest tungsten producer at an inflection point — Sangdong mine commissioning (March 2026), record tungsten prices ($3,075/MTU, up from $453/MTU a year earlier), and bipartisan geopolitical support for critical mineral independence from China. Q2 2026 revenue of C$43.0M (+498% YoY) with mining income of C$26.1M and EBITDA of C$17.6M demonstrates the operational leverage as Sangdong ramps to full capacity <span class="source-ref">[1]</span>. Q1 2026 revenue of C$25.4M (+221% YoY) with positive operating cash flow of $9.7M confirms the trajectory <span class="source-ref">[2]</span>. The company holds C$1.2B in cash following the oversubscribed $800M convertible notes offering, providing a war chest for vertical integration. Forward P/E of 8.26 is deep value for a company positioned at the intersection of critical minerals, national security, and semiconductor supply chains <span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case centers on commodity cyclicality, governance concerns, and valuation distortions. Tungsten prices are at record highs driven partly by tariffs and geopolitical tensions — any normalization in China trade relations or demand softening would compress margins toward breakeven <span class="source-ref">[1]</span>. The 46% stock decline from $18.28 to $9.83 since August 2026 already reflects some market skepticism. The profit margin of 125.2% is severely distorted by non-cash fair value adjustments — sustainable mining margins are 40-60%, and the GAAP net income of C$181.8M on C$43M revenue cannot recur <span class="source-ref">[1]</span>. D/E of 147.4% reflects the $800M convertible notes offering that represents significant dilution risk if converted. Massive insider selling ($227.6M net over 90 days by CEO Black and co-founder D&#39;Amato) directly contradicts the long-term commitment narrative. The sudden CFO departure and lawsuit against competitor Pure Tungsten raise governance red flags <span class="source-ref">[4]</span>. The company has operated primarily during a commodity supercycle and has not been tested by a tungsten price collapse.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Sangdong mine ramp to full production capacity through H2 2026-2027, with potential to supply up to 40% of non-China global tungsten and drive revenue toward C$200M+ annualized <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Sustained tungsten price strength driven by Western reshoring policies, defense spending increases, and semiconductor manufacturing expansion requiring tungsten tooling and components <span class="source-ref">[3]</span></li>
+        
+        <li>Deep value re-rating at 8.26x forward earnings — if Sangdong execution continues and tungsten prices hold, the current valuation implies the market prices in significant operational or commodity risk that may not materialize</li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Tungsten price cyclicality — current record prices of $3,075/MTU are partially driven by tariffs and geopolitical tensions; normalization of China trade relations could collapse margins from 60%+ toward breakeven, as the stock&#39;s 46% decline since August already signals <span class="source-ref">[1]</span></li>
+        
+        <li>Governance concerns — massive insider selling of $227.6M net over 90 days, sudden CFO departure (effective immediately), and lawsuit against competitor Pure Tungsten create a pattern inconsistent with long-term stewardship <span class="source-ref">[4]</span></li>
+        
+        <li>GAAP financial distortions — 125.2% profit margin and C$181.8M net income on C$43M Q2 revenue are inflated by non-cash fair value adjustments on convertible notes; sustainable mining margins are 40-60%, making current multiples potentially misleading <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Tungsten mining is a physical-world operation that AI structurally cannot displace. Extracting, processing, and shipping tungsten concentrate requires mines, processing plants, and logistics infrastructure that no software can substitute <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. AI actually increases demand for tungsten, which is a critical material in semiconductor manufacturing equipment, electrical contacts, and hardened tooling used in chip fabrication. CEO Lewis Black has specifically noted tungsten&#39;s &#39;pivotal role in the AI era&#39; given its use in chip production hardware. The geopolitical dimension — Western nations seeking supply chain independence from China — creates an additional structural moat impervious to AI disruption. The only downgrade from IMMUNE (9) is that AI could optimize competitors&#39; mining operations, though this competitive effect is marginal. AI Opportunity (0/1): Almonty does not generate AI-related revenue. The company benefits indirectly from AI-driven tungsten demand in semiconductor manufacturing, but this is not AI revenue itself.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            0
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Almonty Industries Q2 2026 Financial Results — Revenue C$43.0M (+498% YoY, +69% QoQ), Mining Income C$26.1M, EBITDA C$17.6M, Net Income C$181.8M (Includes Fair Value Adjustments), Cash C$1.2B, SEC 6-K/Mining Weekly, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Almonty Industries Q1 2026 Financial Results — Revenue C$25.4M (+221% YoY), EBITDA C$6.1M, Positive Operating Cash Flow $9.7M, Sangdong Commissioning Ceremony March 2026, SEC 6-K, May 2026</li>
+        
+        <li><span class="src-num">3.</span> Almonty Industries — CEO Lewis Black Profile, 15+ Years Mining Experience, Western Tungsten Supply Chain Vision, 'Hard Work' Newsletter, Tungsten's Role in AI Era, Leaders Magazine/Korea Times, 2023-2026</li>
+        
+        <li><span class="src-num">4.</span> Almonty Industries ESG and Governance — Solar 2.52MW at Panasqueira, 100% Renewable Grid at Sangdong, Women in Mining, Seoul National University MOU, Pure Tungsten Lawsuit, CFO Departure, Insider Selling $227.6M Net, 2021-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

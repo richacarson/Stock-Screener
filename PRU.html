@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen PRU — Prudential Financial, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/PRU_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('PRU')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            PRU
+            <span class="stock-name-full">Prudential Financial, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-10</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -49</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">52</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Insurance - Life</span>
+        <span class="sep">&middot;</span><span>NYSE</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Prudential Financial is one of the largest insurance and financial services companies in the world, providing life insurance, annuities, retirement-related services, and asset management to individual and institutional customers. Founded in 1875, the company operates through segments including PGIM (its global investment management arm with $1.6T+ AUM), U.S. Businesses (individual life, group insurance, retirement), and International Businesses (currently exiting select emerging markets). Q2 2026 adjusted operating income was $1.4B ($4.08/share, +14% YoY), and the company is executing a strategic plan to unlock $3B+ in capital from emerging market exits while raising its efficiency target to $750M. Market cap is approximately $36B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>40,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.prudential.com" target="_blank" rel="noopener">www.prudential.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Prudential has executed incremental strategic portfolio moves — exiting emerging markets to unlock $3B+ in capital, streamlining operations, and repositioning toward higher-growth domestic businesses <span class="source-ref">[1]</span>. However, these are financial engineering and portfolio optimization decisions rather than product innovation or business model transformation. The core insurance and asset management business model is essentially unchanged from five years ago. AI Deployment (1/2): Prudential has developed a comprehensive AI strategy spanning three domains: healthcare, financial advice, and customer experience <span class="source-ref">[2]</span>. The company is deploying agentic AI for customer service, AI-enhanced underwriting and claims processing, and AI tools to support financial representatives with training and customer communication. A governance framework based on FEAT (fairness, ethics, accountability, transparency) principles manages AI risk. However, deployment is cautious — leadership has emphasized keeping humans in the loop for customer-facing applications where &#39;mistakes can have serious consequences&#39; <span class="source-ref">[2]</span>. Market Share (1/2): Prudential is a top-5 US life insurer and PGIM manages $1.6T+ in assets, making it a top-15 global asset manager <span class="source-ref">[1]</span>. The company has significant scale but is not the dominant leader in any single category — MetLife, New York Life, and others hold comparable positions in life insurance. Pipeline (0/2): No specific next-gen products announced with timelines. The raised efficiency target of $750M and emerging market exit plan are operational rather than product-driven. R&amp;D Intensity (0/1): Financial services companies do not report R&amp;D spending. Technology investment is embedded in operating expenses without separate disclosure.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Prudential&#39;s purpose is &#39;to make lives better by solving the financial challenges of our changing world&#39; — a clear and specific statement that connects the company&#39;s work to a broader social impact beyond profit <span class="source-ref">[2]</span>. The mission identifies both what the company does (solves financial challenges) and why it matters (makes lives better). It differentiates from generic financial services platitudes but has not been tested as a transformative strategic force the way NVDA&#39;s &#39;accelerate computing&#39; has shaped decades of capital allocation. Community Impact (1/2): Prudential has established commitments including nine pledges to racial equity, representation and pay equity disclosures, and foundation-level community investment <span class="source-ref">[3]</span>. The company publishes detailed diversity data and ties executive compensation to inclusion and diversity targets. These are meaningful programs but not distinctive in scale or approach relative to large-cap financial services peers. Employee Retention (1/2): Glassdoor reviews reflect mixed sentiment — employees praise &#39;great culture and work flexibility&#39; and note that the company &#39;genuinely cares about employees,&#39; but 58 reviews cite &#39;senior leadership expectations are very unrealistic and selfish&#39; <span class="source-ref">[2]</span>. The CEO transition from Charles Lowrey to Andy Sullivan (effective March 2025) was orderly, suggesting institutional stability. Insider Buying (0/2): No evidence of meaningful net insider buying by executives identified in public filings.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics. PRU&#39;s standout strengths are its deeply discounted Forward P/E of 7.09x — less than half the 20x target, scoring a perfect 1.0 — and strong revenue growth YoY of 13.45%, also scoring 1.0 <span class="source-ref">[4]</span>. Dividend consistency is excellent with 17 consecutive years of payment and 16 years of consecutive growth, both capping at 1.0 (with years paid at 2x weight). D/E of 107% scores 0.84, comfortably below the insurance industry average and well within the 300% floor. The primary drags are ROE of 8.50% (scoring 0.57 against the 15% target), profit margin of 7.3% (scoring 0.37 — thin relative to the 20% target but characteristic of life insurance), 5-year revenue CAGR of approximately 3% (scoring 0.53 — insurance revenue is inherently volatile with investment gains/losses), and 5-year dividend growth CAGR of 4.01% (scoring 0.67 at 2x weight, below the 6% target). Payout ratio of 52% scores 0.80. Liquidity is ample at approximately $186M in daily trading volume.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Prudential is a 151-year-old institution that has survived multiple financial crises, wars, and industry transformations — demonstrating the staying power Sinek values. The company&#39;s purpose of &#39;making lives better by solving financial challenges&#39; is genuine and partially shapes strategic decisions, including the recent decision to exit emerging markets to focus on businesses where Prudential can deliver the most value. However, the quarterly focus on adjusted operating income growth, efficiency targets, and capital return metrics reflects a financial engineering orientation that prioritizes near-term performance metrics over building long-term capability. The CEO transition from Lowrey to Sullivan was orderly but Sullivan&#39;s early focus on &#39;alignment&#39; and &#39;agility&#39; reads as management consulting language rather than cause-driven leadership.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Prudential&#39;s purpose — &#39;to make lives better by solving the financial challenges of our changing world&#39; — is genuine, somewhat distinctive, and partially lived <span class="source-ref">[2]</span>. The company&#39;s 151-year history of providing financial security through two world wars, the Great Depression, 2008 financial crisis, and COVID demonstrates consistency of purpose across eras. The nine racial equity commitments and tied executive compensation show the cause extends beyond marketing. However, the purpose has not demonstrably shaped costly strategic decisions — the emerging market exit and efficiency targets are financially rational moves that any shareholder-value-maximizing company would make, not sacrificial choices driven by the cause.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Prudential maintains a workforce of approximately 40,000 employees with generally positive cultural elements — employees cite &#39;great culture and work flexibility&#39; and a sense that the company &#39;genuinely cares about employees&#39; <span class="source-ref">[2]</span>. The CEO succession from Lowrey to Sullivan was planned and executed smoothly, suggesting organizational stability. However, Glassdoor reviews reveal tension: 58 reviews criticize &#39;unrealistic and selfish&#39; senior leadership expectations, and concerns about commission structures suggest some employees feel squeezed between company demands and customer needs. The company&#39;s restructuring and emerging market exits introduce uncertainty about job security for affected employees.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Prudential&#39;s competitive positioning focuses on scale, efficiency, and capital optimization — metrics of winning market position rather than competitive learning. The company&#39;s strategic communications emphasize market share in retirement, AUM rankings for PGIM, and efficiency targets relative to peers, suggesting a finite competitive frame oriented toward outperforming rather than improving through competitive awareness <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Over 151 years, Prudential has evolved significantly — from a Newark-based industrial life insurer serving working-class families to a global financial conglomerate spanning life insurance, asset management, and retirement services <span class="source-ref">[1]</span>. The demutualization and IPO in 2001 was a significant structural transformation. The current emerging market exit to unlock $3B+ in capital represents strategic portfolio evolution. However, these are incremental adaptations to changing market conditions rather than transformative reinventions driven by the cause. Prudential has never fundamentally abandoned its core insurance business model — it has expanded and contracted around it.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The decision to exit emerging markets and unlock $3B+ in capital demonstrates willingness to sacrifice short-term revenue for long-term strategic focus <span class="source-ref">[1]</span>. Prudential&#39;s commitment to raising the efficiency target to $750M requires difficult organizational changes. The company maintained its dividend through the 2020 COVID crisis (though it had cut during 2008-2009). However, these decisions are fundamentally financially rational — they represent standard capital allocation discipline rather than contrarian or costly principled stands. The 2008 dividend cut reveals that when financial pressure becomes severe, Prudential prioritizes balance sheet preservation over shareholder commitments.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">PRU at 7.09x forward earnings is one of the cheapest large-cap financial services companies in the market, offering a 5.13% dividend yield with 16 consecutive years of growth backed by 151 years of institutional history <span class="source-ref">[1]</span><span class="source-ref">[4]</span>. Q2 2026 adjusted operating income of $4.08/share (+14% YoY) demonstrates earnings acceleration, with record group insurance results and 14% AOI growth across the platform. The strategic plan to exit emerging markets unlocking $3B+ in capital provides a visible catalyst for buybacks, dividend growth, and higher-return domestic reinvestment. PGIM&#39;s $1.6T+ AUM generates stable fee income, and the raised $750M efficiency target creates a clear path to margin expansion. The company&#39;s comprehensive AI strategy — deploying agentic AI for customer experience, underwriting, and financial representative support — positions Prudential to capture efficiency gains while maintaining a cautious, governance-led approach that reduces regulatory risk <span class="source-ref">[2]</span>.</div>
+    <div class="thesis-text">The bear case centers on structural growth limitations, AI disruption exposure, and the Inspire MISALIGNED rating. Insurance industry ROE of 8.50% and profit margin of 7.3% are structurally constrained — regulatory capital requirements and the low-rate legacy book limit the upside even as current earnings accelerate <span class="source-ref">[4]</span>. The 5-year revenue CAGR of approximately 3% reflects volatile insurance revenue that includes investment gains and losses, making sustainable growth difficult to forecast. AI disruption risk is moderate — while core insurance is regulated and protected, fintech competitors deploying robo-advisory, automated underwriting, and AI-driven wealth management could erode Prudential&#39;s retail-facing businesses over time <span class="source-ref">[2]</span>. The Inspire Impact Score of -49 (MISALIGNED) with &#39;LGBT Activism&#39; as a negative attribution limits allocation for faith-based investors despite 14 positive ESG attributions <span class="source-ref">[3]</span>. The CEO transition to Andy Sullivan (March 2025) introduces execution risk for the strategic transformation, and the 2008-2009 dividend cut demonstrates that Prudential will sacrifice shareholder commitments under severe financial stress. The payout ratio of 52% leaves less margin for dividend growth than peers like MetLife (~40% payout).</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Emerging market exit unlocking $3B+ in capital for redeployment into higher-return domestic businesses, buybacks, and dividend growth — management has outlined a clear timeline and capital deployment plan <span class="source-ref">[1]</span></li>
+        
+        <li>Raised efficiency target from previous levels to $750M, creating a visible path to margin expansion and operating leverage as AI and automation drive productivity gains across underwriting, claims, and customer service <span class="source-ref">[1]</span></li>
+        
+        <li>Record group insurance results and 14% AOI growth in Q2 2026 suggest the current earnings trajectory could sustain double-digit operating income growth, potentially driving multiple expansion from the deeply discounted 7.09x forward P/E <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Structural ROE of 8.50% and profit margin of 7.3% are constrained by regulatory capital requirements and the legacy long-duration insurance book — even with efficiency gains, Prudential may struggle to achieve the 12%+ ROE that would justify a premium financial services multiple <span class="source-ref">[4]</span></li>
+        
+        <li>AI-driven fintech competitors (Wealthfront, Betterment, InsurTech startups) deploying automated underwriting, robo-advisory, and digital insurance distribution could erode Prudential&#39;s retail-facing businesses, particularly in term life and individual wealth management <span class="source-ref">[2]</span></li>
+        
+        <li>Insurance revenue volatility (5-year CAGR of only 3%) makes earnings unpredictable — investment gains/losses, reserve adjustments, and catastrophe losses can swing quarterly results significantly, creating periodic price dislocations despite fundamental stability <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): Prudential&#39;s core businesses — life insurance underwriting, annuity products, retirement plan administration, and institutional asset management — operate within deeply regulated frameworks that require licensed professionals, fiduciary oversight, and complex actuarial science <span class="source-ref">[1]</span>. These regulatory moats provide meaningful protection from AI disruption. Physical infrastructure (branch offices, agent networks, compliance systems) and switching costs (policy terms, tax implications of annuity transfers) create additional defensive barriers. However, AI presents real substitution risk for specific business lines: robo-advisory platforms threaten the individual financial advice model, automated underwriting could commoditize term life insurance, and AI-driven wealth management tools from fintech competitors could erode PGIM&#39;s retail asset management flows <span class="source-ref">[2]</span>. The company acknowledges AI risks in its 10-K, noting that &#39;the development and adoption of artificial intelligence may increase operational risks or create new operational risks.&#39; Prudential&#39;s cautious approach to customer-facing AI deployment suggests awareness of these threats but also slower adaptation relative to fintech competitors. AI Opportunity (0/1): While Prudential is investing in agentic AI for customer experience and internal efficiency ($750M efficiency target raised), the company does not generate quantifiable revenue from AI products or services <span class="source-ref">[2]</span>. AI is a cost-reduction tool, not a revenue driver.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -49
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">LGBT Activism</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Prudential Financial Q2 2026 Earnings — AOI $1.4B ($4.08/share, +14% YoY), Record Group Insurance, Emerging Market Exit Plan ($3B+ Capital), Efficiency Target Raised to $750M, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Prudential Financial AI Strategy and Leadership — Andy Sullivan CEO (March 2025), Agentic AI Deployment, FEAT Governance Framework, Glassdoor Culture Reviews — TechTarget, Computer Weekly, Glassdoor, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Prudential Financial ESG and Community — Racial Equity Commitments, Pay Equity Disclosure, Diversity Targets in Executive Comp, MSCI ESG Rating AA — Investor Relations, KnowESG, 2021-2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis, Yahoo Finance, GuruFocus — PRU Key Statistics: Stock Price $109.16, Forward P/E 7.09x, D/E 107%, ROE 8.50%, Profit Margin 7.3%, Dividend Yield 5.13%, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
