@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen LVS — Las Vegas Sands Corp.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/LVS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('LVS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            LVS
+            <span class="stock-name-full">Las Vegas Sands Corp.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-20</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score negative">Inspire: -1</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">50</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Consumer Cyclical</span>
+        <span class="sep">&middot;</span><span>Resorts & Casinos</span>
+        <span class="sep">&middot;</span><span>NYQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Las Vegas Sands owns and operates integrated resorts in Macao (The Venetian Macao, The Londoner Macao, The Parisian Macao, The Plaza Macao/Four Seasons, The Sands Macao) and Singapore (Marina Bay Sands), combining gaming, hotel, convention, dining, and retail. Patrick Dumont became Chairman and CEO effective March 1, 2026, succeeding Robert Goldstein who transitioned to a senior advisor role [2]. Q1 2026 net revenue rose 25.3% to $3.59B with net income up 57.1% to $641M; Q2 2026 revenue was $3.15B (-0.7% YoY) with net income of $373M. H1 2026 revenue was $6.74B (+11.6%). The company is developing an $8B ultra-luxury expansion in Singapore that broke ground July 2025.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>41,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.sands.com" target="_blank" rel="noopener">www.sands.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Sands&#39; strategic moves over the last five years center on portfolio concentration — selling The Venetian Las Vegas for $6.25B (2021) to focus entirely on Asia — and continued reinvestment in existing Macao and Singapore properties, including the $8B Marina Bay Sands ultra-luxury expansion <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. This is incremental geographic concentration, not a business-model pivot or transformative new product launch. AI Deployment (0/2): No evidence of AI-powered products or quantified AI-driven savings was found in any filings or press releases. Market Share (2/2): Sands China&#39;s mass gross gaming revenue grew 8% YoY in Q2 2026, explicitly outperforming the broader Macao market&#39;s 4% growth, and Marina Bay Sands Q1 2026 EBITDA surged 30% to $788M — specific, cited share gains in both core markets <span class="source-ref">[1]</span>. Product Pipeline (1/2): The $8B Marina Bay Sands ultra-luxury expansion project (broke ground July 2025) represents committed forward capital investment with massive scale, but no specific completion date or incremental revenue projections have been disclosed <span class="source-ref">[2]</span>. R&amp;D Intensity (0/1): Not applicable for an integrated resort operator; no R&amp;D figures are reported.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (1/4): Sands&#39; hospitality and integrated-resort positioning is standard for the industry — &#39;creating world-leading integrated resorts&#39; is clear about what the company does but interchangeable with peers like Wynn or MGM, lacking a distinctive purpose beyond operational excellence and shareholder returns <span class="source-ref">[2]</span>. Community &amp; Charitable Impact (2/2): Sands invested $220M in workforce development from 2021-2025, exceeding its $200M ambition, including nearly $38M in 2024 alone on job-skills and career training for team members and the local labor pool, and has published comprehensive ESG reports with GHG reduction targets since 2015 <span class="source-ref">[3]</span>. Employee Retention (0/2): No specific voluntary turnover data or average tenure figures were found; Glassdoor reviews citing &#39;lack of innovation&#39; and promotion based on personal connections suggest cultural headwinds rather than retention strength. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock (PEG 2x, ROE 2x, Revenue Growth 5yr CAGR 2x weights). Forward P/E of 11.2x and Forward PEG of 0.81 both score at the 1.0 cap, reflecting the market&#39;s discounted valuation for the gaming sector <span class="source-ref">[4]</span>. ROE of 122.9% scores 1.0 (2x weight) though inflated by a $0.90 book value from leveraged buybacks. Profit margin of 12.6% scores 0.63. Revenue Growth 5yr CAGR is excluded (2021 data unavailable due to COVID shutdown); Revenue Growth YoY of -0.7% from the Q2 2026 report scores 0.64, though H1 2026 revenue was up 11.6% <span class="source-ref">[1]</span>. The dominant drag is D/E of 1704% from the integrated-resort development financing structure, which exceeds the 300% floor (score 0.0) — total debt of $15.3B against $3.4B cash, though the $3.7B operating cash flow provides strong coverage <span class="source-ref">[4]</span>. Liquidity check: $213M daily dollar volume ($38 x 5.6M shares) easily clears the $1M floor.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>2</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Las Vegas Sands is a well-run operator delivering strong financial results in Macao and Singapore, with the $8B Marina Bay Sands expansion showing willingness to invest through cycles. But Sinek&#39;s test asks whether the company plays to endure with a consistent purpose — and here the evidence is thin. No distinctive Just Cause was identified beyond standard hospitality positioning, Glassdoor reviews cite promotion-by-connections culture, and the company&#39;s strategic language centers on shareholder returns and market share rather than a service-oriented vision. The sale of Las Vegas operations to focus on Asia shows some strategic flexibility, but the core business model has not been reinvented.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 10%"></div>
+        </div>
+        <span class="score-num red">1</span>
+    </div>
+    <div class="score-analysis">Just Cause (0/3): No resilient, service-oriented purpose beyond operating profitable integrated resorts was identified — the company&#39;s public communications emphasize an &#39;Asia-first strategy,&#39; shareholder returns ($787M in Q2 2026 buybacks, $6B authorization), and competitive market positioning rather than an idealistic cause that invites others to contribute to a better future <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Sheldon Adelson&#39;s original convention-led tourism vision was distinctive but has not been articulated as a living cause under the Goldstein-to-Dumont leadership transition.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Glassdoor reviews cite &#39;lack of innovation&#39; and note &#39;you will never get promoted within unless you know personally a higher up/director&#39; — evidence of a political rather than high-trust culture. The CEO transition from Goldstein to Dumont (who has been with the company since 2010) was orderly, with Goldstein remaining as advisor through 2028, but no specific evidence of employee empowerment or psychological safety was found <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No management commentary framing competitors (Wynn, Galaxy, MGM China) as worthy rivals whose strengths sharpen Sands&#39; own strategy was found. Competitive language focuses on market share outperformance (8% mass GGR growth vs market&#39;s 4%) rather than learning from rivals&#39; capabilities <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Sands made a meaningful strategic shift by selling its entire Las Vegas operations (The Venetian, Palazzo, Sands Expo) for $6.25B in 2021 to concentrate entirely on Asia, and is now investing $8B in a transformative Singapore expansion <span class="source-ref">[2]</span>. This represents genuine strategic evolution from a U.S.-and-Asia casino company to an Asia-only integrated resort operator. However, the underlying business model (gaming + hospitality + conventions) has not fundamentally changed.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Committing $8B to the Marina Bay Sands ultra-luxury expansion while carrying $15.3B in debt and navigating Macao&#39;s uncertain regulatory environment demonstrates willingness to make a costly long-term bet <span class="source-ref">[2]</span>. The company continued heavy capital reinvestment in both Singapore and Macao properties through regional headwinds, though this represents a single dimension of courage rather than a pattern of principled decisions that sacrificed near-term earnings.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">LVS at $38 with a $24.6B market cap is executing a strong Asia-focused strategy under new Chairman/CEO Patrick Dumont, with Q1 2026 net revenue up 25.3% to $3.59B and net income surging 57.1% to $641M, driven by Marina Bay Sands EBITDA of $788M (+30% YoY) and Sands China mass gaming revenue growing 8% versus the broader Macao market&#39;s 4% <span class="source-ref">[1]</span>. Forward P/E of 11.2x and PEG of 0.81 are attractive, with the $8B ultra-luxury Singapore expansion (broke ground July 2025) positioning LVS for the next decade of premium hospitality demand in Asia&#39;s fastest-growing gaming market <span class="source-ref">[2]</span>. The company generates $3.7B in operating cash flow, returned $984M to shareholders in Q2 alone ($787M buybacks + $197M dividends), and has expanded its buyback authorization to $6B. Integrated resorts combining gaming, conventions, luxury hotels, and retail are structurally immune to AI disruption.</div>
+    <div class="thesis-text">The bear case centers on extreme leverage, cyclical exposure, and governance concerns. D/E of 1704% reflects $15.3B in debt against a razor-thin equity base ($0.90 book value) from the capital-intensive integrated resort model, leaving minimal balance sheet flexibility if Macao or Singapore demand softens <span class="source-ref">[4]</span>. Revenue growth has stalled — Q2 2026 revenue declined 0.7% YoY and net income fell 28.1% to $373M, with the consensus estimate of $3.40B missed by $250M, suggesting the post-COVID recovery momentum is fading <span class="source-ref">[1]</span>. The concentration of revenue in two geographies (Macao and Singapore) exposes LVS to regulatory risk from China&#39;s gaming supervision policies and geopolitical tensions that could disrupt tourism flows. The CEO transition from Goldstein to Dumont, while orderly, occurs alongside a family-aligned controlled-company governance structure where the Adelson family retains significant influence <span class="source-ref">[2]</span>. Glassdoor reviews citing political culture and lack of innovation suggest the organization may struggle to adapt beyond its current operational playbook. The 3-year dividend history since COVID resumption does not yet meet the 5-year requirement for Dividend sleeve classification.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>$8B Marina Bay Sands ultra-luxury expansion project (broke ground July 2025) positioning Singapore as the premium integrated resort destination in Asia, following Q1 2026 Singapore EBITDA of $788M (+30% YoY) <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Continued Macao mass gaming share gains — Sands China mass GGR grew 8% vs market&#39;s 4% in Q2 2026 — as premium visitation normalizes and China&#39;s economic recovery supports outbound tourism <span class="source-ref">[1]</span></li>
+        
+        <li>Aggressive capital returns with $6B buyback authorization and 3.16% dividend yield, funded by $3.7B annual operating cash flow, at a Forward PEG of 0.81 that undervalues the normalized earnings trajectory <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Extreme leverage (D/E 1704%, $15.3B total debt) with thin equity base ($0.90 book value) leaves minimal financial flexibility if a Macao or Singapore demand shock occurs from regulatory tightening, geopolitical tensions, or economic slowdown <span class="source-ref">[4]</span></li>
+        
+        <li>Revenue growth stalling — Q2 2026 revenue declined 0.7% YoY to $3.15B, missing consensus by $250M, with net income falling 28.1% to $373M, suggesting the post-COVID recovery trajectory is decelerating <span class="source-ref">[1]</span></li>
+        
+        <li>Geographic concentration in two markets (Macao and Singapore) exposes LVS to asymmetric regulatory and geopolitical risk, particularly from China&#39;s evolving gaming supervision policies and cross-strait tensions that could disrupt premium tourism flows</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Sands&#39; business is fundamentally physical and experiential — casino gaming floors, hotel rooms, live entertainment, convention space, and luxury retail — none of which AI can substitute for <span class="source-ref">[4]</span>. The gaming licenses required to operate in Macao and Singapore are among the most deeply regulated in the world, creating structural regulatory moats that AI-native entrants cannot bypass. No analyst commentary suggests AI displacement risk to the integrated-resort model. The $8B Singapore expansion further deepens physical-world asset intensity. AI could marginally improve customer analytics and operational efficiency but poses zero substitution risk to the core experience. AI Opportunity (0/1): No quantified AI-related revenue or AI-powered customer-facing products were identified in any filings or press releases.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            -1
+        </span>
+        
+        
+        <div class="inspire-attrs negative">
+            <span class="attr-label">Negative:</span>
+            
+            <span class="attr-tag negative">Gambling</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Las Vegas Sands Q1-Q2 2026 Earnings — Q1 revenue $3.59B (+25.3%), net income $641M (+57.1%), Singapore EBITDA $788M; Q2 revenue $3.15B (-0.7%), net income $373M, $787M buybacks, $6B authorization — SEC 8-K, Seeking Alpha, Quartr, 2026</li>
+        
+        <li><span class="src-num">2.</span> Las Vegas Sands Leadership Transition — Patrick Dumont appointed Chairman/CEO March 1, 2026, Goldstein to senior advisor through 2028, $8B Singapore expansion broke ground July 2025 — Investor Relations, Hotel-Online, GGB News, 2025-2026</li>
+        
+        <li><span class="src-num">3.</span> Sands 2024 ESG Report — $220M workforce development spend 2021-2025 ($38M in 2024), GHG reduction targets since 2015, Sustainalytics risk score 18.7 — PRNewswire, iGaming Business, Supply Chain EDF, 2025</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — LVS key statistics: Forward P/E 11.2x, PEG 0.81, D/E 1704%, ROE 122.9%, stock price $38.01, avg volume 5.6M, accessed October 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

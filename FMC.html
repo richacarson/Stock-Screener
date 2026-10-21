@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen FMC — FMC Corporation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/FMC_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('FMC')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            FMC
+            <span class="stock-name-full">FMC Corporation</span>
+        </div>
+        <div class="stock-meta">
+            <span>DIVIDEND SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-21</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 50</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">42</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Basic Materials</span>
+        <span class="sep">&middot;</span><span>Agricultural Inputs</span>
+        <span class="sep">&middot;</span><span>NYQ</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">FMC Corporation develops, markets, and sells crop protection chemicals — insecticides, herbicides, fungicides, biologicals, crop nutrition, and seed treatment products — across Latin America, North America, Europe, the Middle East, Africa, and Asia. The company is the fifth-largest global innovator in crop protection, with a network of 800+ scientists. FMC is in severe financial distress: TTM revenue of $3.25B is down 17.5% YoY, trailing EPS is -$21.46 due to massive impairments, and the dividend was cut 86% from $0.58/q to $0.08/q in late 2025. Founded in 1883 and headquartered in Philadelphia, Pennsylvania.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>5,500 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.fmc.com" target="_blank" rel="noopener">www.fmc.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): FMC has not executed a meaningful business model transformation in the last 5 years; the company divested its lithium business (which subsequently surged in value) and Health &amp; Nutrition segment to become a pure-play crop protection company, but since then revenue has declined from ~$5.8B peak to $3.25B TTM <span class="source-ref">[1]</span>. The most significant product development is the launch of fluindapyr, a patented fungicide, in the United States and Brazil. AI Deployment (0/2): No evidence of AI-powered products or measurable AI-driven cost savings was found in any search results; the company referenced &#39;digital and precision technologies&#39; historically but provided no specifics or quantified results <span class="source-ref">[2]</span>. Market Share (1/2): FMC is the fifth-largest global crop protection innovator with a meaningful market position, but revenue declined 17% YoY in Q2 2026 with volumes down 10% as growers contend with strained margins, suggesting market share loss or at best contraction in line with a deeply distressed agricultural chemicals market <span class="source-ref">[1]</span>. Product Pipeline (1/2): The company maintains a global R&amp;D network of 800+ scientists across India, Brazil, France, Denmark, and the United States, with new active ingredients expected to drive Q4 2026 growth, but no specific next-generation products with named launch dates beyond fluindapyr were identified <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): Maintaining 800+ scientists across five countries represents significant R&amp;D investment for a $3.25B-revenue company, placing FMC well above agricultural inputs industry average in research intensity <span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): FMC&#39;s purpose centers on protecting the world&#39;s food supply through innovative crop protection science — a clear and meaningful mission that connects the company&#39;s work to a larger purpose (feeding the world), differentiating it somewhat from peers through its science-first identity <span class="source-ref">[2]</span>. However, the mission has not prevented severe financial deterioration or the 86% dividend cut, suggesting limited strategic primacy. Community Impact (1/2): FMC joined global initiatives targeting sustainable agriculture and food systems resilience, received a CDP A- climate rating, and publishes sustainability reports, but no specific charitable foundations, community investment dollar amounts, or distinctive philanthropic programs were identified <span class="source-ref">[3]</span>. Employee Retention (0/2): No publicly available voluntary turnover data or employee tenure statistics. CEO Pierre Brondeau returned to the role in June 2024, and President Ronaldo Pereira departed in December 2025, suggesting leadership instability. Insider Buying (0/2): No evidence of meaningful net insider buying by CEO or senior executives found in search results.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Dividend stock. FMC&#39;s financial profile reflects deep distress: D/E of 265.0% (score 0.15) is near the 300% floor with $4.4B debt against only $477M cash, while ROE of -88.4% (score 0.0) and profit margin of -84.8% (score 0.0) reflect massive GAAP losses driven by impairment charges <span class="source-ref">[1]</span>. Revenue declined 17.5% YoY (score 0.08) and the 5-year revenue CAGR of approximately -8% (score 0.0) captures the collapse from $5.8B peak to $3.25B TTM. The only bright spot is Forward P/E of 3.81 (score 1.0), reflecting the market&#39;s expectation of earnings recovery to ~$1.39 forward EPS. Dividend metrics are devastated by the 86% cut in late 2025: payout ratio of 223% (score 0.0), 0 consecutive years of growth (score 0.0), and deeply negative 5-year dividend growth CAGR (score 0.0), partially offset by 50+ consecutive years of dividend payments (score 1.0, 2x weight). Daily dollar volume of $24.7M passes the liquidity floor <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">FMC operates with a largely finite mindset, driven by the financial pressures of a severe industry downturn. The company&#39;s transformation from a diversified industrial conglomerate to a pure-play crop protection company showed some existential flexibility, but the 86% dividend cut, CEO carousel (Douglas out, Brondeau returned, Pereira departed), and revenue collapse from $5.8B to $3.25B suggest a company fighting for survival rather than advancing a durable cause. The science-first identity and 140+ year history provide some foundation for infinite game thinking, but current actions are reactive to financial distress rather than proactive pursuit of a Just Cause.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): FMC&#39;s purpose of protecting the world&#39;s food supply through crop protection science is genuine and connects to a larger mission — feeding a growing global population is a meaningful cause <span class="source-ref">[2]</span>. However, the company&#39;s actual behavior in recent years has been dominated by financial survival: divesting businesses, cutting the dividend 86%, cycling through leadership, and guiding to continued revenue declines. The cause exists but is overwhelmed by finite-game financial pressures, and hasn&#39;t been validated through consistent execution during the current crisis.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): FMC shows signs of organizational instability: CEO Mark Douglas departed in 2024, Pierre Brondeau returned to the CEO role in June 2024, and President Ronaldo Pereira left in December 2025 <span class="source-ref">[2]</span>. Leadership turnover during a severe financial downturn creates organizational uncertainty, and the 86% dividend cut likely impacted employee morale for the 5,500-person workforce. No specific evidence of employee empowerment, psychological safety, or trust-based cultural practices was found.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of FMC management acknowledging competitors&#39; strengths, learning from rivals like BASF, Corteva, or Syngenta, or framing competition as motivation for self-improvement <span class="source-ref">[2]</span>. The company&#39;s competitive messaging focuses on its own patent portfolio and science capabilities rather than demonstrating an infinite competitive mindset. Patent infringement lawsuits against Rainbow (Mexico) and enforcement of patents in China suggest a more protective than learning-oriented competitive posture.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): FMC transformed from a diversified industrial conglomerate (chemicals, minerals, machinery) to a pure-play agricultural sciences company through bold divestitures — selling the lithium business (which subsequently surged in value after the EV boom) and Health &amp; Nutrition segment <span class="source-ref">[2]</span>. This pivot was significant and required abandoning legacy businesses, but was incremental over many years rather than a single transformative act, and the sale of lithium proved strategically costly in hindsight. The current distress leaves little room for further strategic flexibility.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): The 86% dividend cut in late 2025 from $0.58/q to $0.08/q — while painful for shareholders — can be viewed as a courageous capital preservation decision during severe industry distress, prioritizing balance sheet repair over short-term shareholder placation <span class="source-ref">[1]</span>. Maintaining an 800+ scientist R&amp;D network during a revenue collapse from $5.8B to $3.25B shows commitment to long-term innovation capability. However, the leadership carousel and reactive posture to industry headwinds suggest survival mode rather than bold forward-looking investment.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">FMC at $5.31 with an $826M market cap is a deeply distressed turnaround candidate trading at 3.81x forward earnings, with the market pricing in a significant probability of further deterioration against management&#39;s expectation of a Q4 2026 return to growth <span class="source-ref">[1]</span>. The company maintains 800+ scientists, a patent portfolio including the newly launched fluindapyr fungicide, and a position as the fifth-largest global crop protection innovator — assets that could drive substantial upside if the agricultural chemicals cycle recovers. Q1 2026 adjusted EBITDA came in above the high end of guidance, Q2 adjusted EBITDA also beat, and full-year adjusted EPS guidance of $1.19-$1.49 implies a forward P/E under 4x, suggesting the stock is priced for permanent impairment rather than cyclical recovery <span class="source-ref">[1]</span>. The 86% dividend cut to $0.08/q preserves cash, and free cash flow turned positive at $166M TTM.</div>
+    <div class="thesis-text">The bear case is severe and multi-dimensional. Revenue has collapsed from ~$5.8B to $3.25B with full-year 2026 guidance cut to $3.50-$3.70B (down 7% at the midpoint), while organic revenue declined 22% in Q2 and volumes fell 10% as North American growers face margin compression from low crop prices <span class="source-ref">[1]</span>. The balance sheet is stretched at 265% D/E with $4.4B debt against declining earnings power, and GAAP trailing EPS of -$21.46 reflects massive impairment charges that destroyed book value. Q3 2026 guidance is particularly weak at adjusted EBITDA of $120-140M (down 45% YoY) as North American distributors shift orders to Q4, creating concentration risk in the final quarter. The leadership carousel — CEO Douglas out, Brondeau returned, President Pereira departed — signals organizational stress, and the EPA has previously cited FMC for federal pesticide law violations ($1M settlement in 2017), while Greenpeace identified 41% of leading agrochemical products containing highly hazardous pesticides <span class="source-ref">[2]</span><span class="source-ref">[3]</span>. The dividend cut from $2.32/yr to $0.32/yr destroyed income investor trust.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Q4 2026 return to growth — management guides revenue of $1.06-$1.20B (up ~4% YoY) and adjusted EBITDA of $275-$315M (up ~5%), driven by increased direct-to-grower sales in Brazil, new active ingredients including fluindapyr, and deferred North American distributor orders from Q3 <span class="source-ref">[1]</span></li>
+        
+        <li>Forward P/E of 3.81x prices in permanent impairment rather than cyclical recovery — if FMC achieves consensus FY2027 EPS of $1.55, the stock trades at just 3.4x forward earnings, offering substantial upside on any normalization of agricultural chemical demand <span class="source-ref">[1]</span></li>
+        
+        <li>Patent portfolio and R&amp;D pipeline provide differentiation — 800+ scientists across five countries and proprietary active ingredients like fluindapyr create barriers to generic competition and potential for new product-driven revenue growth <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Balance sheet distress at 265% D/E with $4.4B debt and GAAP losses of -$21.46/share trailing — continued revenue declines could trigger covenant violations or require dilutive equity raises, and the company&#39;s ability to service debt depends on the Q4 recovery materializing <span class="source-ref">[1]</span></li>
+        
+        <li>Agricultural chemicals secular headwinds — precision agriculture and AI-driven targeted application could structurally reduce per-acre chemical volumes, while low crop prices compress grower margins and reduce willingness to pay for premium crop protection products <span class="source-ref">[1]</span></li>
+        
+        <li>Leadership instability — CEO Pierre Brondeau returned to the role in June 2024 after predecessor Mark Douglas departed, then President Ronaldo Pereira left in December 2025, creating organizational uncertainty during the most challenging period in FMC&#39;s recent history <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): FMC&#39;s core business is the development, manufacturing, and distribution of physical crop protection chemicals — insecticides, herbicides, and fungicides that must be physically applied to crops <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. AI cannot replace chemical products sprayed on fields, and the regulatory barriers to agrochemical registration (multi-year EPA and international approval processes) create substantial moats against new entrants. However, AI-driven precision agriculture could reduce per-acre chemical application volumes through targeted spraying and drone-based application, representing a moderate headwind for the industry&#39;s volume growth trajectory. FMC&#39;s patent portfolio on active ingredients like fluindapyr provides additional defensive moat against AI-enabled generic competition. AI Opportunity (0/1): No evidence of AI-generated revenue or AI products was found — FMC referenced &#39;digital and precision technologies&#39; historically but has no quantifiable AI revenue stream <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            50
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Resilience</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Environmental Risk Mitigation</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> FMC Corporation Q2 2026 Earnings Release — Revenue $867M (-17% YoY), Adjusted EBITDA $153M (-26%), GAAP Loss -$1.49/share, Full-Year Guidance Cut to $3.50-$3.70B Revenue, SEC 8-K Filing, July 2026</li>
+        
+        <li><span class="src-num">2.</span> FMC Corporation Leadership and Innovation — CEO Pierre Brondeau (returned June 2024), 800+ Scientists, Fluindapyr Launch, EPA Pesticide Law Citation, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> FMC Corporation ESG and Environment — EPA Stallion Insecticide Settlement $1M, Greenpeace Hazardous Pesticide Report, Superfund Liabilities $500M+, CDP A- Rating, DeSmog and EPA, 2017-2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

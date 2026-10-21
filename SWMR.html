@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen SWMR — Swarmer, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/SWMR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('SWMR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            SWMR
+            <span class="stock-name-full">Swarmer, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-13</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: N/A</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">59</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Infrastructure</span>
+        <span class="sep">&middot;</span><span>NCM</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Swarmer develops autonomous drone swarm software and AI solutions for military organizations. Founded in 2023 by former Amazon Ring AI lead Serhii Kupriienko after Russia's invasion of Ukraine, the company builds hardware-agnostic platforms — STYX AI Command & Control, MINAS Autonomy and Collaboration AI, and TRIDENT Embedded Drone OS — enabling single operators to coordinate large-scale unmanned systems. Swarmer became the first Ukrainian defense startup to list on NASDAQ in March 2026, reporting Q2 2026 revenue of $216K with 84.9% gross margin and $25.3M in cash.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>49 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://swarmer.com" target="_blank" rel="noopener">swarmer.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): In under three years Swarmer built three distinct platforms — STYX AI C2, MINAS collaborative autonomy, and TRIDENT embedded drone OS — and deployed them in active combat in Ukraine, claiming 100,000+ missions since April 2024 <span class="source-ref">[3]</span><span class="source-ref">[5]</span>. The company successfully transitioned from a wartime startup to a NASDAQ-listed public company in March 2026, opening a new market category of pure-play drone swarm autonomy software. AI Deployment (2/2): Swarmer&#39;s entire product suite is AI — autonomous coordination, real-time mission planning, mesh networking, and multi-drone collaboration are shipping to military end-users with measurable deployment at scale in Ukraine&#39;s theater of operations <span class="source-ref">[3]</span>. The company&#39;s combat-tested AI represents one of the few verifiable large-scale autonomous systems deployments globally. Market Share (1/2): Swarmer is a meaningful player in the nascent drone swarm software market as the first publicly traded pure-play in this category, but faces formidable competition from Anduril, Palantir, and Shield AI, with no quantified market share data available <span class="source-ref">[5]</span>. Product Pipeline (1/2): Swarmer Labs was created as a dedicated R&amp;D division under CEO Kupriienko for next-generation AI and autonomy, but specific next-gen product names, timelines, and revenue visibility have not been publicly disclosed <span class="source-ref">[4]</span>. R&amp;D Intensity (1/1): Operating expenses of $7.5M in Q2 2026 against $216K revenue reflect near-total R&amp;D intensity as the company invests heavily in platform development, partnerships, and international expansion <span class="source-ref">[1]</span><span class="source-ref">[2]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Swarmer&#39;s purpose — enabling democratic nations to defend themselves through autonomous drone technology — is clear and specific, born from CEO Kupriienko&#39;s decision to leave Amazon after Russia&#39;s invasion of Ukraine <span class="source-ref">[3]</span>. The mission connects technology to a larger geopolitical cause, but it is essentially a product-level mission rather than a transformative vision of a future state that has been validated by execution over time. Community Impact (1/2): Swarmer has a collaboration with Tekmara and Florida International University to evaluate autonomous drone swarms for environmental monitoring and coastal restoration, showing some effort to extend military technology into civilian benefit <span class="source-ref">[3]</span>. However, scale is minimal for a 49-person company with under $300K trailing revenue. Employee Retention (0/2): With only 49 employees and a company history of under three years, no meaningful retention or tenure data exists to evaluate. Insider Buying (0/2): No insider buying data available; the company completed its IPO in March 2026 and insider transactions are dominated by post-IPO lockup dynamics rather than conviction-driven purchases.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock on four available metrics (ROE, 5yr CAGR, and PEG excluded due to null data). D/E of 1.4% is exceptional (score 1.0), reflecting $435K total debt against $25.3M cash raised through the IPO <span class="source-ref">[1]</span>. Revenue growth YoY of 56.6% far exceeds the 10% target (score 1.0), driven by Q2 2026 revenue of $216K vs. $138K in Q2 2025, though from a trivially small base <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Forward P/E of 44.9 is elevated versus the 20 target (score 0.38), reflecting pre-profitability valuation on speculative forward EPS of $0.27. Profit margin of 0.0% scores at floor (0.0) as the company posted a $7.3M net loss in Q2 2026 on $216K revenue <span class="source-ref">[1]</span>. Weighted sum 2.38 / max 4.0 = 5.94, rounded to 6. Daily dollar volume of $7.3M clears the $1M liquidity floor.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Swarmer&#39;s wartime origin and founder-led mission to defend democracies through autonomous drone technology give it a genuine cause, but the company is too young (incorporated 2023) to demonstrate the sustained commitment, strategic flexibility, or organizational depth that Sinek&#39;s framework demands. CEO Kupriienko showed personal courage leaving Amazon to build defense tech during the invasion, yet the company has not faced the tests — leadership transitions, market downturns, painful pivots — that distinguish infinite from finite players.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Swarmer&#39;s origin story — CEO Kupriienko leaving Amazon Ring&#39;s AI division after Russia&#39;s invasion to build autonomous defense technology — connects the company&#39;s work to a genuine cause larger than profit <span class="source-ref">[3]</span>. The mission to protect democratic nations through drone autonomy is specific, service-oriented, and inclusive. However, the company is under three years old, the cause has not survived leadership transitions or crises, and it remains unclear whether the purpose will guide strategic decisions when scaling pressures intensify or the Ukraine conflict evolves.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Job postings emphasize hiring operators with strong judgment, common sense, and execution discipline over pure visionaries, suggesting a culture that values practical empowerment over hierarchical control <span class="source-ref">[3]</span><span class="source-ref">[4]</span>. The dual-CEO structure (Kupriienko as Global CEO leading Swarmer Labs, Fink as U.S. CEO/President) provides leadership continuity. However, with only 49 employees and under three years of history, there is insufficient data on voluntary turnover, average tenure, or employee sentiment to distinguish Swarmer from industry norms.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of management publicly acknowledging competitors&#39; strengths or framing competition as motivation for self-improvement. Swarmer&#39;s competitive positioning focuses on its own combat-tested credentials and first-mover status as the first Ukrainian defense startup on NASDAQ <span class="source-ref">[5]</span>, which is a finite &#39;winning&#39; posture rather than an infinite learning orientation.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (0/2): Swarmer is under three years old and has not yet faced the strategic test of pivoting away from a core business in service of a larger cause <span class="source-ref">[3]</span>. The company&#39;s narrow focus on military drone swarm software is appropriate for its stage but provides no evidence of transformative flexibility. The environmental monitoring collaboration with Florida International University hints at adjacent markets but is exploratory rather than a strategic pivot.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Kupriienko demonstrated personal courage by leaving a comfortable position at Amazon Ring to build defense technology in an active war zone, sacrificing career security for a purpose-driven venture <span class="source-ref">[3]</span>. The company&#39;s IPO amid volatile market conditions and its investment of $7.5M per quarter in R&amp;D despite sub-$300K revenue show willingness to prioritize long-term capability over near-term profitability <span class="source-ref">[1]</span>. However, the company is too young to show a sustained pattern of courage through multiple cycles.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Swarmer at $12.13 with a $173M market cap is a speculative pure-play on autonomous drone swarm software for military applications, leveraging combat-proven AI deployed across 100,000+ missions in Ukraine since April 2024 <span class="source-ref">[3]</span><span class="source-ref">[5]</span>. Q2 2026 revenue of $216K grew 57% YoY with 84.9% gross margin, and the company holds $25.3M in cash after its March 2026 NASDAQ IPO, providing a runway management expects to fund operations for at least 12 months <span class="source-ref">[1]</span>. The hardware-agnostic platform approach — software that coordinates any drone from any manufacturer — positions Swarmer to capture the expanding autonomous systems market as NATO countries increase defense spending and adopt drone warfare doctrines proven in Ukraine.</div>
+    <div class="thesis-text">The bear case is severe. Trailing twelve-month revenue is under $300K while quarterly operating expenses run $7.5M, producing a net loss of $7.3M in Q2 2026 alone with no clear pathway to profitability <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company lost its largest customer (a Ukrainian entity) in Q1 2026, causing revenue to plunge 82% QoQ, and management provided no formal revenue guidance. Forward P/E of 44.9x on speculative $0.27 EPS reflects extreme valuation risk. Erik Prince&#39;s involvement as non-executive chairman brings defense network access but also documented reputational and regulatory baggage from Blackwater <span class="source-ref">[6]</span>. Competition from well-funded incumbents — Anduril ($14B+ valuation), Shield AI, Palantir — threatens to commoditize Swarmer&#39;s first-mover advantage in drone swarm coordination, and the company&#39;s 49 employees face a massive scaling challenge against these rivals.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>NATO drone warfare doctrine adoption — European and allied nations accelerating autonomous systems procurement based on Ukrainian battlefield lessons could generate material contract wins for Swarmer&#39;s combat-proven platform <span class="source-ref">[3]</span><span class="source-ref">[5]</span></li>
+        
+        <li>International expansion beyond Ukraine — management emphasized partnerships and international market development in Q1 and Q2 earnings calls, with the U.S. CEO structure specifically designed to pursue Pentagon and allied procurement <span class="source-ref">[4]</span></li>
+        
+        <li>Swarmer Labs R&amp;D pipeline — dedicated next-generation AI and autonomy research division under CEO Kupriienko could produce breakthrough capabilities in multi-domain autonomous coordination <span class="source-ref">[4]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Pre-revenue cash burn unsustainable — $7.5M quarterly operating expenses against $216K quarterly revenue with $25.3M cash provides only ~3.4 quarters of runway, creating near-term dilution risk from additional capital raises <span class="source-ref">[1]</span></li>
+        
+        <li>Customer concentration and loss — largest Ukrainian customer revenue wound down in Q1 2026, causing 82% QoQ revenue decline, and replacement customers have not yet materialized at scale <span class="source-ref">[2]</span></li>
+        
+        <li>Competitive displacement from well-funded AI defense incumbents — Anduril, Shield AI, and Palantir each have billions in capital, established Pentagon relationships, and growing autonomous systems portfolios that could commoditize Swarmer&#39;s drone swarm software niche <span class="source-ref">[5]</span><span class="source-ref">[6]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Swarmer IS AI infrastructure for defense — its entire business is building autonomous drone swarm coordination software powered by machine learning and real-time AI decision-making <span class="source-ref">[3]</span>. You cannot be disrupted by the technology you are building and deploying. The company&#39;s STYX, MINAS, and TRIDENT platforms represent the AI layer itself, making the business structurally immune to AI substitution. Military drone operations require physical-world integration, security clearances, and combat-proven reliability that AI tools cannot displace — they can only enhance. Scores 8 rather than 9 because the company&#39;s tiny scale means larger AI-native defense competitors (Anduril, Shield AI, Palantir) could build superior products, though this is competitive risk rather than AI disruption risk. AI Opportunity (1/1): 100% of Swarmer&#39;s revenue derives from AI-powered products — autonomous drone coordination, AI command and control, and collaborative autonomy software <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The entire business model is AI revenue.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num negative">
+            N/A
+        </span>
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Swarmer Q2 2026 Earnings Release — Revenue $216K (+57% YoY), Gross Margin 84.9%, Net Loss $7.2M, Cash $25.3M — Quartr/TechnologyMagazine, July 2026</li>
+        
+        <li><span class="src-num">2.</span> Swarmer Q1 2026 Earnings Release — Revenue $20K (down from $111K YoY), largest customer wind-down — StreetInsider, April 2026</li>
+        
+        <li><span class="src-num">3.</span> Swarmer Company Profile — CEO Serhii Kupriienko, Amazon Ring AI background, 100,000+ combat missions, STYX/MINAS/TRIDENT platforms — The Air Current, 2026</li>
+        
+        <li><span class="src-num">4.</span> Swarmer Leadership Changes — Garrett Kasper CCO, Swarmer Labs division, Alexander Fink U.S. CEO/President — Pulse2/BriefGlance, 2026</li>
+        
+        <li><span class="src-num">5.</span> Swarmer IPO and Market Analysis — First Ukrainian defense startup on NASDAQ, March 2026 debut, 700% intraday surge — Barchart, March 2026</li>
+        
+        <li><span class="src-num">6.</span> Swarmer Governance Concerns — Erik Prince involvement, verification gaps, disclosure issues — Robotics.press, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

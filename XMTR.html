@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen XMTR — Xometry, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/XMTR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('XMTR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            XMTR
+            <span class="stock-name-full">Xometry, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-02</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 63</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">61</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Industrials</span>
+        <span class="sep">&middot;</span><span>Industrial Distribution</span>
+        <span class="sep">&middot;</span><span>NMS</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Xometry operates an AI-powered global marketplace for on-demand manufacturing, connecting buyers needing custom parts with a network of suppliers offering CNC machining, 3D printing, injection molding, sheet metal fabrication, and other processes. Proprietary AI algorithms provide instant pricing, lead times, and supplier matching. In Q2 2026, Xometry delivered record revenue of $229M (up 41% YoY) with marketplace revenue of $215.4M (up 45% YoY), and raised full-year 2026 revenue guidance to 33-34% growth with adjusted EBITDA of $60-62M.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>1,174 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.xometry.com" target="_blank" rel="noopener">www.xometry.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): Xometry has scaled from a niche CNC machining marketplace to a comprehensive on-demand manufacturing platform spanning 3D printing, injection molding, sheet metal, urethane casting, and finishing services with international expansion across Europe and Asia <span class="source-ref">[1]</span>. Revenue grew from $381M (FY2022) to $808M TTM, and active buyers reached 89,557 (up 20% YoY) in Q2 2026 <span class="source-ref">[1]</span>. The core marketplace model has been consistently expanded, not transformed. AI Deployment (2/2): Xometry&#39;s proprietary AI pricing, sourcing, and supplier-matching algorithms are the core product — AI is not an add-on but the foundational technology. Q2 2026 marketplace gross margin improvements were directly attributed to AI model enhancements, and the instant quoting engine processes millions of part configurations with real-time pricing <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company recently added Lukas Biewald (former Weights &amp; Biases CEO) to its board to deepen AI capabilities <span class="source-ref">[3]</span>. Market Share (2/2): Xometry is the dominant AI-powered manufacturing marketplace globally, with 89,557 active buyers, 2,039 enterprise accounts ($50K+ annual spend, up 23% YoY), and 98% of Q2 revenue from existing accounts demonstrating deep retention <span class="source-ref">[1]</span>. No competitor matches their scale in AI-driven custom parts procurement. Product Pipeline (1/2): New CEO Sanjeev Singh Sahni brings B2B e-commerce and AI expertise, and expanded enterprise adoption is a stated priority. Platform enhancements including Workcenter (financial services) and Teamspace (collaboration) are shipping, but no specific next-gen product launches with defined timelines <span class="source-ref">[3]</span>. R&amp;D Intensity (1/1): Product development spending of ~5.7% of revenue is above average for industrial distribution, reflecting sustained investment in AI/ML model improvements <span class="source-ref">[1]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Xometry&#39;s mission to &#39;accelerate innovation by providing real-time, equitable access to global manufacturing capacity&#39; is specific, thoughtful, and connects the company&#39;s work to a larger purpose of democratizing industrial capability for businesses of all sizes <span class="source-ref">[4]</span>. The word &#39;equitable&#39; signals genuine intentionality about inclusivity in manufacturing access, differentiating from generic platform companies. Strategic decisions — expanding manufacturing processes, international growth, AI investment — trace back to this purpose. Community Impact (1/2): Xometry funds scholarships for 250 students at two- and four-year institutions across six states through a donor-advised fund, offers Go Green initiatives with product-level carbon calculations through Gravity Climate, and offsets 100% of shipping emissions through Dot Neutral <span class="source-ref">[4]</span>. Programs are meaningful but modest relative to company scale. Employee Retention (0/2): Glassdoor reviews describe an intense but innovative culture where leaders are accessible, but no specific retention or tenure data is available <span class="source-ref">[3]</span>. The mid-2026 CEO transition from co-founder Randy Altschuler to Sanjeev Singh Sahni introduces organizational uncertainty. Insider Buying (0/2): No evidence of meaningful net insider buying by executives in the last 12 months.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock. D/E of 57.0% is within the 70% target (score 1.0), with $339.8M in convertible notes offset by $516.7M in cash and marketable securities <span class="source-ref">[1]</span>. ROE of -7.1% is below the 0% floor (score 0.0, 2x weight) as the company remains GAAP unprofitable with a net loss rate improving toward breakeven <span class="source-ref">[1]</span>. Revenue growth of 41.1% YoY far exceeds the 10% target (score 1.0), and the 3-year revenue CAGR of approximately 21.7% from $381M in 2022 to $687M in 2025 also scores 1.0 (2x weight) <span class="source-ref">[1]</span>. Forward P/E of 81.2 exceeds the 60 floor (score 0.0), reflecting extreme premium valuation on early-stage profitability <span class="source-ref">[2]</span>. Profit margin of -3.8% is below the 0% floor (score 0.0), though this has improved from -26.9% in FY2021 as the company approaches breakeven <span class="source-ref">[1]</span>. PEG ratio is unavailable and excluded. Daily dollar volume of approximately $78.3M provides strong liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>5</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Xometry demonstrates genuine infinite game characteristics — a thoughtful purpose in democratizing manufacturing access, consistent platform investment despite years of losses, and strategic evolution across manufacturing processes. However, the recent CEO succession from co-founder to an external executive introduces questions about cause continuity, and the company&#39;s competitive language focuses more on market dominance than self-improvement. At 12 years old, the core vision has not yet been tested through a true crisis or multi-decade consistency.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Xometry&#39;s founding purpose of making custom manufacturing accessible to businesses worldwide through AI addresses a genuine market inefficiency and connects to a larger vision of democratizing industrial capability <span class="source-ref">[4]</span>. Co-founder Randy Altschuler built the company around this idea for over a decade, and strategic decisions — expanding manufacturing processes, international growth, AI investment — trace back to this purpose. However, the company is only 12 years old and the cause has not yet been tested through leadership crises, market disruptions, or multi-decade consistency. The CEO transition to Sanjeev Sahni will test whether the cause survives the founder&#39;s departure from operational leadership <span class="source-ref">[3]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Glassdoor reviews describe accessible leadership where leaders across all levels engage with employees and listen to feedback, creating an innovative but demanding culture <span class="source-ref">[3]</span>. The CEO transition was handled through a structured succession plan (co-founder to long-serving president), suggesting organizational maturity. However, no specific employee retention data or tenure metrics are available, and the intense performance culture could create pressure that undermines psychological safety.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): Xometry&#39;s public communications do not reference learning from competitors such as Protolabs, Hubs, Fictiv, or Paperless Parts. Management commentary emphasizes Xometry&#39;s AI-powered differentiation and market-leading position rather than acknowledging rivals&#39; strengths as motivation for improvement. The competitive framing is about winning market share rather than self-improvement through competitive awareness.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Xometry has evolved from a CNC-only marketplace to a comprehensive multi-process manufacturing platform spanning 3D printing, injection molding, sheet metal, finishing, and international operations, also adding Thomasnet, Workcenter, and Teamspace <span class="source-ref">[1]</span>. This represents meaningful strategic adaptation as new manufacturing categories and ancillary services were added. However, each expansion was additive — the company has never abandoned a core business line or made a painful strategic pivot. The marketplace model has been consistent since founding; what changed was scope, not architecture.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Xometry has consistently invested in platform growth and AI capabilities despite reporting net losses every year since founding — cumulative losses exceeding $200M demonstrate willingness to sacrifice near-term profitability for long-term market position <span class="source-ref">[1]</span>. The company&#39;s decision to raise $339.8M in convertible notes to fund growth rather than cutting costs for quick profitability shows long-term thinking. Q2 2026 adjusted EBITDA of $14.1M (up from $3.9M YoY) suggests this patience is beginning to pay off.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Xometry at $104.23 with a $5.97B market cap delivered a breakout Q2 2026 with record revenue of $229M (41% YoY growth), marketplace revenue of $215.4M (45% YoY, accelerating 500bps from Q1), and adjusted EBITDA of $14.1M versus $3.9M a year earlier <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. Management raised full-year 2026 guidance to 33-34% revenue growth and $60-62M adjusted EBITDA (more than 3x FY2025&#39;s $18.5M), with incremental EBITDA margins targeting 20% in H2 2026 <span class="source-ref">[2]</span>. The AI-powered marketplace creates powerful network effects — more buyers attract more suppliers, generating more pricing data that improves AI model accuracy, which drives better margins and more buyers. With 89,557 active buyers and 2,039 enterprise accounts ($50K+ spend, up 23% YoY), Xometry is positioned to become the dominant platform for custom manufacturing procurement globally.</div>
+    <div class="thesis-text">The primary risk is valuation. At 81.2x forward earnings and 7.4x trailing revenue, Xometry is priced for sustained hypergrowth in a company that has never generated a full year of GAAP profit <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The stock has risen from $91.58 (50-day SMA) to $104.23, creating a high bar for continued performance. The CEO transition from co-founder Randy Altschuler to Sanjeev Singh Sahni in July 2026 introduces execution risk at a critical inflection point — new leadership must maintain growth momentum while driving the final push to sustained GAAP profitability <span class="source-ref">[3]</span>. Profit margin remains negative at -3.8% and ROE at -7.1%, reflecting ongoing losses despite rapid revenue growth. The $339.8M in convertible notes creates refinancing risk and potential dilution. While the path to profitability is becoming clearer with adjusted EBITDA scaling rapidly, any growth deceleration from the current 41% pace could trigger significant multiple compression from current elevated levels.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>GAAP profitability inflection expected in late 2026 or 2027 as raised adjusted EBITDA guidance of $60-62M (3x+ FY2025) and 20% incremental EBITDA margins in H2 2026 indicate fixed-cost leverage is accelerating toward breakeven <span class="source-ref">[1]</span><span class="source-ref">[2]</span></li>
+        
+        <li>Enterprise account expansion — 2,039 accounts at $50K+ annual spend (up 23% YoY) with 98% of revenue from existing accounts demonstrates deepening penetration into larger procurement budgets with higher lifetime value and stickier relationships <span class="source-ref">[1]</span></li>
+        
+        <li>International expansion into European and Asian manufacturing markets offers massive TAM with limited AI-powered marketplace competition, and marketplace gross margins expanding toward the 35-40% target range provide room for margin improvement <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Forward P/E of 81.2x leaves no margin of safety — any growth deceleration from the current 41% YoY pace or delay in reaching GAAP profitability could trigger significant multiple compression from the $5.97B market cap <span class="source-ref">[2]</span></li>
+        
+        <li>CEO transition from co-founder to external executive at a critical growth inflection point creates execution risk around strategic continuity, cultural preservation, and maintaining relationships with key enterprise accounts <span class="source-ref">[3]</span></li>
+        
+        <li>Negative profit margin (-3.8%) and negative ROE (-7.1%) mean the company has never generated sustained GAAP profit — the path to profitability depends on continued rapid revenue growth and operating leverage that could be disrupted by competitive pressure or macro slowdown <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (7/9): Xometry&#39;s core business coordinates physical manufacturing — CNC machining, 3D printing, injection molding — which AI cannot substitute. The marketplace model requires a physical supplier network, quality inspection capabilities, and logistics coordination that are structurally beyond AI&#39;s reach <span class="source-ref">[1]</span>. Xometry&#39;s proprietary pricing data from millions of historical transactions creates a deepening data moat that would take years for competitors to replicate. However, AI tools could eventually enable buyers to build their own supplier networks or automate RFQ processes, partially disintermediating the marketplace; other AI-native platforms could emerge as competitors. AI Opportunity (1/1): AI is the foundational technology driving Xometry&#39;s business — proprietary ML models power instant quoting, supplier matching, and dynamic pricing across all manufacturing processes. 100% of the $229M Q2 revenue flows through AI-powered infrastructure, and marketplace gross margin improvements are directly attributed to AI model enhancements <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            63
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Xometry Q2 2026 Earnings Release — Record Revenue $229M (+41% YoY), Marketplace Revenue $215.4M (+45%), Adjusted EBITDA $14.1M, SEC 8-K Filing, August 2026</li>
+        
+        <li><span class="src-num">2.</span> Xometry 2026 Full-Year Guidance Raise — 33-34% Revenue Growth, $60-62M Adjusted EBITDA, Investing.com Earnings Transcript, August 2026</li>
+        
+        <li><span class="src-num">3.</span> Xometry CEO Succession — Sanjeev Singh Sahni Named CEO July 2026, Randy Altschuler to Executive Chair, DigitalCommerce360, February 2026</li>
+        
+        <li><span class="src-num">4.</span> Xometry ESG and Community Initiatives — Go Green Carbon Offsets, 250 Student Scholarships, xometry.com/esg, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

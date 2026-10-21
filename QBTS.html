@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen QBTS — D-Wave Quantum Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/QBTS_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('QBTS')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            QBTS
+            <span class="stock-name-full">D-Wave Quantum Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-02</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 50</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">51</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Computer Hardware</span>
+        <span class="sep">&middot;</span><span>NMS</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">D-Wave Quantum develops and delivers quantum computing systems, software, and services. Its products include the Advantage and Advantage 2 quantum annealing computers, Leap quantum cloud service, and Ocean open-source SDK. Applications span logistics optimization, resource scheduling, drug discovery, portfolio optimization, and AI-related workflows. TTM revenue of $12.4M with a $6.3B market cap — the stock trades at over 500x revenue. Q1 2026 revenue was $2.9M (down 81% YoY) and Q2 was $3.1M (flat YoY). Founded in 1999, headquartered in Palo Alto, California.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>382 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.dwavequantum.com" target="_blank" rel="noopener">www.dwavequantum.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Track Record (2/3): D-Wave is the world&#39;s first commercial quantum computing company, having shipped successive generations of quantum annealers — D-Wave One (2011), D-Wave Two (2013), D-Wave 2000Q (2017), Advantage (2020), and now Advantage 2 in development — each representing genuine technological advancement in qubit count and connectivity <span class="source-ref">[1]</span>. The Leap quantum cloud service democratized access to quantum hardware and expanded the addressable market beyond on-premises installations. However, commercial scale remains minimal at $12.4M TTM revenue after 27 years. AI Deployment (1/2): D-Wave applies quantum annealing to AI-adjacent workflows including optimization for machine learning, logistics routing, and portfolio construction, and actively markets quantum computing as complementary to AI workloads <span class="source-ref">[3]</span>. However, no specific AI-driven revenue or cost savings have been quantified. Market Share (1/2): D-Wave is the undisputed leader in quantum annealing, but the overall commercial quantum computing market remains tiny and fragmented across IBM (gate-based), Google (Sycamore/Willow), IonQ, and Rigetti <span class="source-ref">[1]</span>. Commercial customer mix improved — 62.4% of Q2 2026 revenue came from commercial customers (up from 45.1% YoY), with Forbes Global 2000 customers rising to 47.7% of revenue <span class="source-ref">[1]</span>. Pipeline (1/2): Advantage 2 next-generation system is in development with expanded qubit count and connectivity, and Q1 2026 bookings reached $33.4M (a strong leading indicator), but no specific product launch dates or revenue timelines have been announced <span class="source-ref">[1]</span>. R&amp;D (1/1): R&amp;D spending vastly exceeds revenue — the company invests approximately 9x its annual revenue in R&amp;D and operations, well above any industry benchmark.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): D-Wave&#39;s purpose is to deliver practical quantum computing for real-world problems — &#39;real quantum computing for real applications&#39; — which is clear and identifies what the company does and for whom, but does not articulate a deeper human-impact purpose beyond the technology itself <span class="source-ref">[3]</span>. The mission is distinguishable from generic tech statements but not transformative in scope. Community Impact (0/2): No evidence of significant charitable programs, community investment, or foundation activities beyond general corporate operations and ESG reporting that does not include carbon emissions data <span class="source-ref">[4]</span>. The company positions its technology as supporting UN Sustainable Development Goals but provides no specific community investment data. Employee Retention (1/2): D-Wave was certified as a &#39;Great Place to Work&#39; in 2026 based on employee surveys, and Glassdoor shows 75% recommendation rate with a 4.0 culture rating — above average for tech startups <span class="source-ref">[3]</span>. However, with only 382 employees, the sample is small, and some reviews cite VP-level leaders who are &#39;abrasive and condescending.&#39; Insider Buying (0/2): Heavy insider selling dominates — cumulative insider buying over the past two years amounts to just $1,795, a negligible figure compared to insider disposals, raising governance questions about leadership conviction <span class="source-ref">[4]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock with minimal revenue and a massive valuation disconnect. D/E of 4.4% is essentially debt-free with $546M cash against $48M debt (score 1.0) — the cash position provides approximately 4-5 years of runway at the current burn rate of $111M annually <span class="source-ref">[1]</span>. ROE of -28.0% is below the 0% floor (score 0.0, 2x weight), reflecting persistent losses typical of pre-commercial quantum computing. Revenue growth YoY of -0.6% (Q2 2026 was flat at $3.1M) is below the 10% target (score 0.65), though H1 2026 revenue of $5.9M represents a 67% decline from H1 2025&#39;s $18.1M due to lapping a large NTT contract <span class="source-ref">[1]</span>. 5-year revenue CAGR of approximately 15% (score 1.0, 2x weight) reflects growth from ~$6M in 2021 to $12.4M TTM, though the trajectory is lumpy due to large contract timing. Forward P/E and PEG excluded as earnings are negative (forward EPS -$0.38). Profit margin is deeply negative — operating cash burn of $111M on $12.4M revenue implies roughly -800% margin (score 0.0) <span class="source-ref">[1]</span>. Daily dollar volume of $278M provides strong liquidity.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>4</span> /10</span>
+    </div>
+
+    <div class="ig-quote">D-Wave demonstrates genuine long-term commitment to quantum computing through 27 years of persistent investment, but the cause has not been validated by commercial execution — $12.4M in TTM revenue after a quarter-century of operation is not a success story regardless of the technology&#39;s promise. The company shows adequate organizational trust (Great Place to Work certified, 75% Glassdoor recommendation) and some existential flexibility in evolving from hardware to cloud services, but heavy insider selling, lack of competitive acknowledgment, and unproven commercial viability suggest a company still searching for sustainable market fit rather than playing an infinite game.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): D-Wave&#39;s purpose — making quantum computing practical for real-world applications — has sustained the company for 27 years through massive losses and scientific skepticism, demonstrating genuine commitment <span class="source-ref">[3]</span>. However, the cause is technology-centric rather than deeply purposeful in a human-impact sense, and it has not been validated by execution: $12.4M in TTM revenue after 27 years, with revenue declining 67% in H1 2026, does not demonstrate that the cause is driving sustainable value creation. The cause exists and is genuine but reads as an R&amp;D mission rather than a Just Cause that inspires sacrificial contribution.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): D-Wave shows positive culture signals — certified as a &#39;Great Place to Work&#39; in 2026 via employee survey, 75% Glassdoor recommendation rate, and 4.0/5 culture and values rating <span class="source-ref">[3]</span>. Employees describe &#39;excellent leadership and teamwork, brilliant colleagues, cutting-edge tech.&#39; However, some reviews cite VP-level leaders who are &#39;abrasive, condescending and blame others,&#39; and the CEO has been noted for speaking poorly of others in front of teams, creating pockets of low trust within an otherwise adequate culture.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of D-Wave leadership acknowledging competitors&#39; strengths or framing competition as motivation for self-improvement <span class="source-ref">[3]</span>. The company positions itself as the first and only commercial quantum computing provider using annealing, implicitly dismissing gate-based competitors&#39; approaches (IBM, Google, IonQ) as different rather than learning from them.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): D-Wave has evolved from selling on-premises quantum hardware to offering the Leap quantum cloud service, democratizing access and shifting toward a recurring revenue model <span class="source-ref">[1]</span>. The company has also adapted its approach to incorporate hybrid quantum-classical solvers, acknowledging that pure quantum solutions alone are insufficient for enterprise adoption. However, all evolution remains within quantum computing — the company has not demonstrated willingness to pivot away from quantum if the market demands it.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): D-Wave has invested in quantum computing for 27 years despite never achieving profitability, and chose the unconventional annealing approach when the rest of the industry pursued gate-based quantum computing — a genuinely contrarian bet <span class="source-ref">[1]</span><span class="source-ref">[3]</span>. The company went public via SPAC in 2022 to fund continued R&amp;D. However, the courage is tempered by the fact that leadership has been a consistent net seller of shares ($1,795 in insider buying over two years), suggesting personal financial hedging against the very bet they&#39;re asking shareholders to make <span class="source-ref">[4]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">D-Wave Quantum at $16.56 is the world&#39;s first and most commercially advanced quantum annealing company, with $588M in cash providing 4-5 years of runway, Q1 2026 bookings of $33.4M signaling future revenue, and commercial customer concentration improving to 62.4% of revenue (up from 45.1% YoY) with Forbes Global 2000 clients rising to 47.7% <span class="source-ref">[1]</span>. The Advantage 2 system promises a generational leap in qubit count and connectivity, the Leap cloud service provides scalable distribution, and average booking size increased 87% YoY in Q2 2026, suggesting enterprise customers are expanding quantum workloads. If quantum computing reaches commercial inflection, D-Wave&#39;s 27-year head start in real-world quantum applications (logistics, scheduling, drug discovery) positions it as the category leader <span class="source-ref">[1]</span><span class="source-ref">[3]</span>.</div>
+    <div class="thesis-text">The bear case is overwhelming: $6.3B market cap on $12.4M TTM revenue means the stock trades at over 500x sales — pricing in a quantum computing future that may never materialize or may arrive too late for D-Wave <span class="source-ref">[1]</span>. H1 2026 revenue collapsed 67% to $5.9M from $18.1M due to lapping a large NTT contract, and Q2 EPS of -$0.13 missed consensus by $0.05, demonstrating both revenue lumpiness and persistent losses. The company burns approximately $111M annually in operating cash flow on $12.4M revenue, and while $546M in cash provides runway, eventual dilutive raises are nearly certain unless revenue accelerates dramatically. Cumulative insider buying of just $1,795 over two years versus massive insider selling raises serious governance concerns about management conviction <span class="source-ref">[4]</span>. Classical computing and AI improvements continue narrowing the problems where quantum provides meaningful advantage, and competitors IBM, Google, IonQ, and Rigetti are attacking the market from gate-based approaches that may prove commercially superior to D-Wave&#39;s annealing architecture <span class="source-ref">[3]</span>.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Q1 2026 bookings of $33.4M and Q2 average booking size up 87% YoY suggest enterprise pipeline is building, with commercial customers now comprising 62.4% of revenue — converting bookings to recognized revenue would reverse the declining trajectory <span class="source-ref">[1]</span></li>
+        
+        <li>Advantage 2 next-generation quantum system promises a generational leap in qubit count, connectivity, and computational power that could unlock new commercial applications and drive enterprise adoption acceleration <span class="source-ref">[1]</span></li>
+        
+        <li>Strong cash position of $546M provides 4-5 years of runway at current burn rates, allowing the company to sustain R&amp;D investment through the quantum computing commercialization timeline without immediate dilution risk <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Revenue collapsed 67% in H1 2026 to $5.9M from $18.1M due to contract lumpiness, with TTM revenue of only $12.4M supporting a $6.3B market cap (500x+ sales) — any loss of investor confidence in quantum computing timeline could trigger catastrophic multiple compression <span class="source-ref">[1]</span></li>
+        
+        <li>Negligible insider buying ($1,795 over two years) against substantial insider selling raises governance concerns about management conviction in the company&#39;s own long-term prospects <span class="source-ref">[4]</span></li>
+        
+        <li>Classical computing and AI improvements continue narrowing quantum computing&#39;s advantage window, while gate-based competitors (IBM, Google, IonQ) may prove commercially superior to D-Wave&#39;s annealing approach if universal quantum computing achieves practical scale first <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (6/9): D-Wave&#39;s core business is quantum computing hardware and cloud services — a technology complementary to AI rather than threatened by it <span class="source-ref">[3]</span>. Quantum annealing solves optimization problems (logistics routing, portfolio optimization, drug discovery) that classical AI approaches struggle with at scale, positioning D-Wave as a potential accelerator of AI capabilities rather than a victim of AI displacement. However, D-Wave faces indirect risk from classical AI improvements: as classical computing and AI continue advancing rapidly, the urgency and commercial justification for quantum computing may diminish, extending the timeline for quantum adoption. D-Wave is not critical AI infrastructure in the way that GPUs or data center power are — AI advancement does not directly increase demand for quantum hardware. The company scores PROTECTED rather than IMMUNE because quantum computing&#39;s commercial viability remains unproven at scale, and the threat is not from AI disruption per se but from classical computing&#39;s continued improvement making quantum less necessary <span class="source-ref">[1]</span>. AI Opportunity (1/1): D-Wave generates revenue from quantum computing applied to AI-adjacent workflows — optimization for machine learning, logistics, scheduling, and portfolio construction — though the absolute revenue remains small at $12.4M TTM <span class="source-ref">[1]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            50
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> D-Wave Q1 and Q2 2026 Earnings — Q1 Revenue $2.9M (-81% YoY), Q2 Revenue $3.1M (flat YoY), Q1 Bookings $33.4M, $588M Cash, Q2 EPS -$0.13 — SEC 8-K, BusinessWire, MarketBeat, TradingView, 2026</li>
+        
+        <li><span class="src-num">2.</span> D-Wave Revenue History and Outlook — TTM $12.4M, Revenue Triple Prediction Before 2030, Commercial Customer Mix Improving — Motley Fool, Macrotrends, September 2026</li>
+        
+        <li><span class="src-num">3.</span> D-Wave Leadership and Culture — CEO Alan Baratz, Glassdoor 75% Recommend, Great Place to Work Certified 2026, Quantum Computing for AI Workflows — Glassdoor, QuantumZeitgeist, StockTitan, 2026</li>
+        
+        <li><span class="src-num">4.</span> D-Wave ESG and Governance — No Carbon Emissions Reporting, UN SDG Alignment Claims, Heavy Insider Selling ($1,795 Total Buying), No Climate Pledges — MarketScreener, DitchCarbon, CarbonCredits, 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

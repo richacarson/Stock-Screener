@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen DDOG — Datadog, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/DDOG_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('DDOG')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            DDOG
+            <span class="stock-name-full">Datadog, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-19</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 59</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">MIXED</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">69</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Software - Application</span>
+        <span class="sep">&middot;</span><span>NMS</span>
+        <span class="sep">&middot;</span><span>United States</span>
+    </div>
+    
+    <div class="profile-desc">Datadog operates the leading cloud observability and security platform, offering 20+ integrated products spanning infrastructure monitoring, APM, log management, cloud SIEM, and LLM observability. Founded in 2010 by Olivier Pomel and Alexis Le-Quoc. Q2 2026 revenue reached $1.12B (+36% YoY) with ~4,720 customers at $100K+ ARR. Full-year 2026 guidance raised to $4.45-4.47B. Named Gartner Magic Quadrant leader for the sixth consecutive year. Market cap approximately $89B.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>8,100 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.datadoghq.com" target="_blank" rel="noopener">www.datadoghq.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): Datadog executed one of the most successful platform expansion strategies in enterprise software, growing from a single infrastructure monitoring product to a 20+ product platform spanning observability, security, and AI operations <span class="source-ref">[1]</span>. Revenue grew from $603M in 2020 to $3.43B in FY2025 (5x expansion) with Q2 2026 accelerating to $1.12B (+36% YoY), and over 100 new capabilities launched across observability and security in 2025-2026 <span class="source-ref">[2]</span>. AI Deployment (2/2): LLM Observability product monitors AI workloads in production and began materially contributing to billings in 2026; the &#39;State of AI Engineering&#39; report revealed 5% of AI model requests fail in production and 70% of companies use 3+ AI models requiring monitoring <span class="source-ref">[3]</span>. Bits AI provides AI-powered SRE automation for incident triage and root cause analysis. Market Share (1/2): Datadog is the observability market leader by revenue with ~4,720 $100K+ ARR customers (up 23% YoY) generating ~91% of ARR, and named Gartner Magic Quadrant leader for the 6th consecutive year <span class="source-ref">[2]</span>. Competition remains from Cisco/Splunk, Dynatrace, and open-source alternatives. Product Pipeline (1/2): Continued expansion into cloud security (CNAPP, CSPM), AI observability, and workflow automation with strong execution cadence; Q3 guidance of $1.135-1.145B and raised full-year to $4.45-4.47B <span class="source-ref">[2]</span>. R&amp;D Intensity (1/1): R&amp;D spending of ~$1.5B in FY2025 represents ~44% of revenue, top-quartile for the software sector <span class="source-ref">[5]</span>.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Datadog&#39;s mission — providing observability, analytics, and insight into cloud infrastructure — is clear and specific to what the company does for Dev and Ops teams but does not articulate a deeper transformative purpose beyond technical excellence <span class="source-ref">[6]</span>. Well-crafted but not the kind of mission that inspires sacrifice in Sinek&#39;s terms. Community Impact (1/2): The Datadog Cares program donated over $4M in 2021 to causes including COVID-19 relief, and the 2024 ESG Report shows approximately 5,000 metric tons CO2e removed exceeding Scope 1 and 2 offset commitments <span class="source-ref">[7]</span>. Genuine but not distinctive at the scale of an $89B company. Employee Retention (1/2): Datadog maintains a &#39;low ego, high discipline&#39; culture under Pomel&#39;s leadership with Built In culture ratings of 4.0/5 and Glassdoor ratings of 4.0-4.2 with 87-92% CEO approval <span class="source-ref">[4]</span><span class="source-ref">[8]</span>. However, specific turnover or tenure data is not publicly reported. Insider Buying (0/2): Significant net insider selling in 2025, with CEO Pomel selling $123.89M and executives collectively selling $206M in H1 2025 <span class="source-ref">[9]</span>. While structured through 10b5-1 plans, this represents clear net selling.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock on October 2026 data. D/E of 29.3% is well below the 70% target (score 1.0, 1x weight), reflecting a conservative balance sheet with $5.0B cash against $1.3B debt <span class="source-ref">[10]</span>. ROE of 4.7% is below the 15% target (score 0.31, 2x weight) due to high SBC depressing GAAP profitability. Revenue growth YoY of 35.6% far exceeds the 10% target (score 1.0, 1x weight), driven by Q2 2026 acceleration to 36% <span class="source-ref">[2]</span>. Revenue growth 5yr CAGR of approximately 31% well above target (score 1.0, 2x weight). Forward P/E of 83.1 exceeds the 60 floor (score 0.0, 1x weight). Profit margin of 4.5% well below the 20% target (score 0.22, 1x weight). Forward PEG of 1.28 modestly above the 1.0 target (score 0.86, 2x weight). Weighted sum: (1.0 + 0.626 + 1.0 + 2.0 + 0.0 + 0.225 + 1.72) = 6.57 / 10 = 6.57, rounds to 7. Daily dollar volume of ~$977M provides ample liquidity <span class="source-ref">[10]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">MIXED</span>
+        <span class="ig-overall">Overall: <span>6</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Datadog under co-founder Olivier Pomel demonstrates strong infinite-game characteristics through an unwavering commitment to building the definitive observability platform via relentless organic product innovation, shipping 20+ products from a single-product origin without acquisition dependency. Pomel&#39;s &#39;low ego, high discipline&#39; leadership style and engineering-first culture create organizational resilience. However, the company&#39;s relatively short public history (IPO 2019) limits evidence of multi-decade consistency, the mission is technical rather than transcendent, and $206M in insider selling raises questions about long-term executive conviction.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Datadog&#39;s cause — making cloud infrastructure observable, secure, and manageable for every engineering team — is genuine and drives consistent strategic decisions. The company has stayed true to its founding thesis since 2010 that monitoring should be unified, expanding organically rather than through acquisitions <span class="source-ref">[6]</span>. The expansion into AI observability is a natural extension of the same cause. However, &#39;better monitoring&#39; is fundamentally a technical mission rather than a transformative Just Cause in Sinek&#39;s terms — it does not describe a future state that people would sacrifice to achieve.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Datadog&#39;s culture emphasizes ownership, data-driven decisions, and engineering excellence. Glassdoor shows 4.0-4.2 overall rating with 87-92% CEO approval, and Built In rates the company 4.0/5 on culture <span class="source-ref">[4]</span><span class="source-ref">[8]</span>. Pomel&#39;s &#39;low ego, high discipline&#39; leadership creates psychological safety for technical teams, and the company has grown to 8,100 employees while maintaining engineering-first culture. However, some Glassdoor reviews cite growing pains and cultural challenges at scale, and specific retention or turnover data is not publicly reported.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Datadog consistently acknowledges competitors&#39; strengths and uses competitive pressure to improve its own platform rather than dismissing Splunk (Cisco), Dynatrace, or open-source alternatives like Grafana and OpenTelemetry <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The company responds to competition by building better integrations and expanding platform breadth, and Pomel has publicly acknowledged that competitive dynamics push Datadog to ship faster and better.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Datadog evolved from a single infrastructure monitoring product to a comprehensive observability, security, and AI operations platform — entering cloud security (CNAPP, CSPM), incident management, and AI observability as significant business expansions <span class="source-ref">[1]</span>. The pivot to AI observability as a major growth vector demonstrates adaptive thinking. However, these are incremental adjacencies rather than transformative, bet-the-company pivots — Datadog has never had to abandon a core business.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): Datadog demonstrates courage through sustained heavy R&amp;D investment (~44% of revenue, ~$1.5B annually) even as it depresses GAAP profitability, and the company chose to build rather than acquire, developing all 20+ products organically — sacrificing near-term revenue for long-term platform coherence <span class="source-ref">[5]</span>. However, with 80% gross margins, strong FCF, and $5.0B in cash, these investments carry relatively low financial risk — Datadog has never faced a truly painful investment decision against market expectations.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Datadog at $247 with an $89B market cap is the dominant cloud observability platform executing a powerful growth acceleration — Q2 2026 revenue surged 36% YoY to $1.12B, full-year 2026 guidance was raised to $4.45-4.47B (30%+ growth), and the unified 20+ product platform drives deep multi-product adoption with ~4,720 customers above $100K ARR generating 91% of total ARR <span class="source-ref">[2]</span>. AI workload proliferation creates a structural tailwind as enterprises deploying LLMs and AI agents require monitoring infrastructure, with AI-native customers already contributing ~6% of ARR and growing 3x YoY <span class="source-ref">[3]</span>. The balance sheet is conservative at $5.0B cash versus $1.3B debt, free cash flow runs at ~29% margins, and the Inspire Impact Score of 59 (ALIGNED) with zero negative attributions positions DDOG favorably for faith-based investors <span class="source-ref">[10]</span>.</div>
+    <div class="thesis-text">The primary concern remains extreme valuation. At 83x forward earnings with a trailing P/E of 494x, Datadog is priced for sustained 30%+ growth for many years — any deceleration would trigger significant multiple compression, and the company warned its largest customer will reduce usage starting Q3 2026 <span class="source-ref">[2]</span><span class="source-ref">[10]</span>. GAAP profitability remains thin at 4.5% net margin despite $4B+ annual revenue run rate, distorted by ~$1.5B in annual R&amp;D and substantial stock-based compensation; ROE of under 5% undermines capital efficiency claims despite rapid revenue growth <span class="source-ref">[5]</span>. Insider selling of $206M by executives in H1 2025, including $124M by CEO Pomel, signals leadership views the valuation as full <span class="source-ref">[9]</span>. Competition intensifies as Cisco integrates Splunk, CrowdStrike expands into observability, and maturing open-source alternatives (Grafana, OpenTelemetry) threaten pricing power across the product portfolio.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>AI observability emerging as a multi-billion dollar category — Datadog&#39;s LLM Observability monitors complex multi-model AI systems in production, with Q2 2026 revenue acceleration to 36% driven partly by AI infrastructure demand and AI-native customers growing 3x YoY <span class="source-ref">[2]</span><span class="source-ref">[3]</span></li>
+        
+        <li>Platform consolidation tailwind as enterprises reduce monitoring vendor sprawl — 4,720 $100K+ ARR customers (up 23% YoY) generating 91% of ARR, with multi-product adoption deepening wallet share and increasing switching costs <span class="source-ref">[2]</span></li>
+        
+        <li>Full-year 2026 guidance raised to $4.45-4.47B (30%+ growth) with expanding non-GAAP operating margins of 22-23% and strong FCF generation approaching $1.5B annually, demonstrating sustainable scaling at $1B+ quarterly revenue <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Extreme valuation at 494x trailing P/E and 83x forward P/E leaves no margin for error — the company&#39;s largest customer reducing usage starting Q3 2026 could cause visible revenue deceleration that compresses the multiple significantly <span class="source-ref">[2]</span><span class="source-ref">[10]</span></li>
+        
+        <li>Insider selling of $206M in H1 2025 by CEO Pomel ($124M) and other executives signals leadership views the stock as fully valued, and GAAP profit margin of just 4.5% with ROE under 5% raises questions about capital efficiency despite $4B+ annual revenue <span class="source-ref">[9]</span><span class="source-ref">[10]</span></li>
+        
+        <li>Open-source observability alternatives (Grafana Labs, OpenTelemetry) are maturing and gaining enterprise adoption, while Cisco/Splunk integration and CrowdStrike&#39;s expansion into observability could commoditize the monitoring layer and pressure pricing power <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">LOW RISK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (8/9): Datadog is structurally immune to AI disruption because the company IS AI infrastructure — as enterprises deploy AI workloads at scale, they require observability tools to monitor, debug, and optimize those systems, and Datadog&#39;s LLM Observability product was purpose-built for this <span class="source-ref">[3]</span>. The &#39;State of AI Engineering&#39; report found nearly 70% of companies now use 3+ AI models with complex agent workflows and 5% of AI requests fail in production — problems only observability platforms can solve <span class="source-ref">[3]</span>. Q2 2026 revenue growth accelerating to 36% demonstrates AI is driving demand for Datadog rather than threatening it <span class="source-ref">[2]</span>. Analysts universally view Datadog as a direct beneficiary of AI scaling, and the core monitoring infrastructure cannot be replaced by AI because monitoring AI in production IS the value proposition. AI Opportunity (1/1): LLM Observability began materially contributing to billings in 2026, the platform monitors AI workloads across thousands of enterprises, and AI-native customers contributed approximately 6% of ARR growing over 3x YoY <span class="source-ref">[2]</span><span class="source-ref">[3]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            59
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Business Ethics</span>
+            
+            <span class="attr-tag positive">Critical Risk Management</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Data Security</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">Fair Competition</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Datadog Q1 2026 Earnings — Revenue $1.006B (+32% YoY), FY2025 Revenue $3.43B — investors.datadoghq.com, May 2026</li>
+        
+        <li><span class="src-num">2.</span> Datadog Q2 2026 Earnings — Revenue $1.12B (+36% YoY), ~4,720 $100K+ ARR Customers, FY2026 Guidance Raised to $4.45-4.47B, Gartner Leader 6th Year — investors.datadoghq.com, August 2026</li>
+        
+        <li><span class="src-num">3.</span> Datadog State of AI Engineering Report — 70% of Companies Use 3+ AI Models, 5% AI Request Failure Rate, LLM Observability Product — datadoghq.com, 2026</li>
+        
+        <li><span class="src-num">4.</span> Glassdoor Datadog Reviews — 4.0-4.2 overall rating, 87-92% CEO approval, employee culture commentary, accessed October 2026</li>
+        
+        <li><span class="src-num">5.</span> Datadog R&D Spending FY2025 — ~$1.5B (~44% of Revenue), Top-Quartile Software Industry — SEC Filings, accessed October 2026</li>
+        
+        <li><span class="src-num">6.</span> Datadog Mission and Corporate Overview — Cloud Observability for Dev and Ops Teams — datadoghq.com, accessed October 2026</li>
+        
+        <li><span class="src-num">7.</span> Datadog ESG Report 2024 — ~5,000 MT CO2e Removed, Datadog Cares Program ($4M+ Donated) — datadoghq.com, 2024</li>
+        
+        <li><span class="src-num">8.</span> Datadog Culture — Built In 4.0/5 Culture Rating, Engineering-First Values, 8,100 Employees — Built In, 2026</li>
+        
+        <li><span class="src-num">9.</span> Datadog Insider Transactions — CEO Pomel $124M, Executives $206M Total H1 2025 — InsideArbitrage, MarketScreener, 2025</li>
+        
+        <li><span class="src-num">10.</span> Yahoo Finance — DDOG Key Statistics: Stock Price $247.11, Forward P/E 83.08, PEG 1.28, D/E 29.3%, ROE 4.7%, Avg Volume ~3.96M, Market Cap $89B, accessed October 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

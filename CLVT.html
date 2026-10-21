@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen CLVT — Clarivate Plc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/CLVT_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('CLVT')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            CLVT
+            <span class="stock-name-full">Clarivate Plc</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-10-14</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 62</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">FINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge watch">WATCH</span>
+            <div class="overall-score">
+                <span class="num">44</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Technology</span>
+        <span class="sep">&middot;</span><span>Information Technology Services</span>
+        <span class="sep">&middot;</span><span>NYQ</span>
+        <span class="sep">&middot;</span><span>United Kingdom</span>
+    </div>
+    
+    <div class="profile-desc">Clarivate is an information, analytics, and workflow solutions company serving academic, government, and corporate customers through proprietary databases including Web of Science (academic citation indexing), Derwent Innovation (patent intelligence), CompuMark (trademark search), and ProQuest (academic content). Under CEO Matti Shem Tov (appointed August 2024), the company is executing a Value Creation Plan focused on margin expansion and organic growth. Q1 2026 revenue was $585.5M with organic revenue up 0.6%; Q2 2026 revenue was $587.3M with organic revenue declining 1.5% and a $221.7M goodwill impairment. Full-year guidance: $2.30-2.42B revenue with recurring organic growth of 0.75-2.25% [1].</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        <span>12,000 Employees</span>
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.clarivate.com" target="_blank" rel="noopener">www.clarivate.com</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 50%"></div>
+        </div>
+        <span class="score-num gold">5</span>
+    </div>
+    <div class="score-analysis">Track Record (1/3): Clarivate has not executed a transformative product launch or organic business model pivot in the last five years. Growth has been acquisition-driven — ProQuest ($5.3B, 2021) and CPA Global ($8.6B, 2020) — but the stock has declined over 75% from 2021 highs as integration proved difficult and organic revenue stagnated <span class="source-ref">[1]</span>. The Value Creation Plan is operational restructuring, not product innovation. AI Deployment (1/2): Clarivate launched Web of Science Research Intelligence (AI-native platform), AI-powered Derwent Innovation for patent search, and RiskMark AI tool for trademark risk assessment and argument drafting <span class="source-ref">[2]</span>. The CEO&#39;s annual letter declared &#39;AI is not a disruption to Clarivate&#39;s strategy, it is an amplifier,&#39; and the company is embedding AI across customer workflows. However, no specific AI revenue figures are disclosed. Market Share (2/2): Clarivate holds dominant positions in several niche categories — Web of Science is one of only two major global citation databases (alongside Scopus), Derwent is a leading patent intelligence platform, and CompuMark is a dominant trademark search tool <span class="source-ref">[2]</span>. These proprietary databases represent decades of curated data that cannot be easily replicated. Product Pipeline (1/2): AI-enabled tools across IP, Academia &amp; Government, and Life Sciences segments, with new CEO focused on product innovation and a new IP segment leader (Simon Webster) appointed. However, specific next-gen product launch dates and revenue visibility are limited beyond general AI integration plans <span class="source-ref">[2]</span>. R&amp;D Intensity (0/1): No specific R&amp;D spending figures disclosed; the company&#39;s focus has been on cost restructuring and margin improvement rather than R&amp;D investment acceleration.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">WEAK</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Mission Floor (2/4): Clarivate&#39;s purpose — &#39;advancing innovation through research and knowledge sharing to solve the world&#39;s most complex challenges&#39; — is clear and identifies a worthy aim of enabling global research, but is not deeply distinctive from other information services companies and lacks evidence of shaping difficult strategic decisions <span class="source-ref">[2]</span>. The current Value Creation Plan is focused on margins and free cash flow optimization, not mission advancement. Community Impact (0/2): No evidence of specific charitable programs, foundation work, or community investment initiatives was identified beyond a general ESG program with four pillars launched in 2020 <span class="source-ref">[3]</span>. Employee Retention (0/2): Three CEO changes in five years (Jerre Stead, Jonathan Gear, Matti Shem Tov since 2019) signals chronic leadership instability that undermines organizational trust. No specific retention data is available, and the pattern of frequent reorganizations creates employee uncertainty. Insider Buying (0/2): No evidence of meaningful net insider buying identified. The stock&#39;s 75%+ decline from 2021 highs and continued revenue decline suggest executives have not been buying with personal capital.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Mechanically scored as a Growth stock on 7 metrics. The extremely low Forward P/E of 2.06 scores a perfect 1.0, reflecting deep value pricing after the stock&#39;s collapse from $25+ to $1.60 <span class="source-ref">[1]</span>. PEG of 0.18 is well below the 1.0 target (score 1.0, 2x weight). D/E of 93.8% scores 0.90, indicating manageable leverage despite $4.26B in total debt <span class="source-ref">[1]</span>. Revenue growth 5-year CAGR of approximately 5.0% (acquisition-inflated) scores 0.67 (2x weight). However, ROE of -7.0% falls below the 0% floor (score 0.0, 2x weight), reflecting ongoing GAAP unprofitability from goodwill impairments and restructuring charges <span class="source-ref">[1]</span>. Profit margin of -13.8% scores 0.0. Revenue growth YoY of -5.5% scores 0.48, dragged by divestitures and organic weakness <span class="source-ref">[1]</span>. Weighted sum 5.71/10. Daily dollar volume of $7.3M clears the liquidity floor.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">FINITE</span>
+        <span class="ig-overall">Overall: <span>3</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Clarivate exhibits primarily finite-game characteristics — the company has cycled through three CEOs since 2019, executed leveraged acquisitions totaling $14B+ that destroyed shareholder value (stock down 75%+), and is now focused on a Value Creation Plan oriented around margin expansion and cost optimization rather than mission advancement <span class="source-ref">[1]</span>. The $221.7M Q2 2026 goodwill impairment represents a concrete acknowledgment that acquisition-driven growth failed to create value. While the proprietary data assets are genuinely valuable, leadership instability and financial engineering have undermined any claim to infinite game thinking.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Just Cause (1/3): Clarivate&#39;s purpose of &#39;advancing innovation through research and knowledge sharing&#39; identifies a worthy aim but has been diluted by financial engineering — $14B+ in acquisitions followed by goodwill impairments ($221.7M in Q2 2026 alone), three CEO changes in five years, and a stock decline of 75%+ suggest the company has been more focused on financial returns than its stated mission <span class="source-ref">[1]</span><span class="source-ref">[2]</span>. The current Value Creation Plan is entirely focused on margins, free cash flow, and cost optimization rather than advancing the cause. No evidence that the mission has shaped difficult strategic decisions.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 20%"></div>
+        </div>
+        <span class="score-num red">2</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (0/2): Three CEO changes in five years (Stead, Gear, Shem Tov) creates chronic organizational instability that undermines psychological safety <span class="source-ref">[1]</span>. The pattern of frequent reorganizations — restructuring into new segments, divesting businesses, and changing strategic direction — makes long-term planning difficult for employees. This pattern describes a low-trust environment where employees navigate political uncertainty rather than advance a shared mission. No specific retention or engagement data is available to counter this negative signal.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill red" style="width: 30%"></div>
+        </div>
+        <span class="score-num red">3</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (0/1): No evidence of an infinite competitive mindset was found. Management frames AI as &#39;an amplifier, not a disruption,&#39; which could reflect genuine strategic clarity or denial of competitive threats from Google Scholar, Semantic Scholar, and AI-native research tools <span class="source-ref">[2]</span>. The competitive posture focuses on protecting proprietary data advantages rather than acknowledging where competitors like Elsevier/Scopus or AI-native platforms are stronger.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (1/2): Clarivate has evolved through acquisitions — ProQuest expanded into academic content, CPA Global added IP management — and is now divesting transactional businesses to focus on higher-quality recurring revenue <span class="source-ref">[1]</span>. The AI-native Web of Science Research Intelligence platform represents a strategic evolution toward AI-powered delivery. However, these are incremental portfolio adjustments driven by financial optimization rather than transformative pivots in service of a Just Cause, and organic revenue continues to decline.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (1/2): CEO Shem Tov&#39;s Value Creation Plan requires difficult decisions — divesting transactional revenue streams, restructuring the organization, and investing in AI-enabled products during financial pressure <span class="source-ref">[1]</span>. Publicly declaring &#39;AI is not a disruption but an amplifier&#39; and investing in new platforms like AI-powered Derwent Innovation while revenue declines shows some conviction. However, the broader pattern of acquisitions followed by write-downs and CEO changes reflects reactive financial management rather than proactive long-term investment <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Clarivate at $1.60 (2.06x forward earnings, PEG 0.18) is a deep-value turnaround candidate with irreplaceable data assets but severe execution risk. The crown jewels — Web of Science, Derwent, and CompuMark — represent proprietary databases with multi-decade moats that AI cannot replicate, generating approximately 80% recurring revenue <span class="source-ref">[1]</span>. CEO Shem Tov&#39;s Value Creation Plan is delivering margin improvement with adjusted EBITDA margins above 41% in Q1, and the company is using excess cash flow to pay down debt ($4.26B total). At a market cap of approximately $1.0B against $2.4B in annual revenue, the stock prices in significant distress — any stabilization of organic growth (currently oscillating around flat to slightly negative) toward the guided 0.75-2.25% recurring organic growth could unlock substantial re-rating <span class="source-ref">[1]</span>. The Inspire Impact Score of 62 (ALIGNED) with no negative attributions is the highest faith alignment score in this batch.</div>
+    <div class="thesis-text">The bear case is formidable: three CEO changes in five years signal chronic strategic instability, and the 75%+ stock decline from 2021 highs reflects the market&#39;s verdict on $14B+ in acquisitions that destroyed shareholder value <span class="source-ref">[1]</span>. The Q2 2026 goodwill impairment of $221.7M pushed quarterly net loss to $268.6M, demonstrating that acquisition integration has failed to create lasting value. Organic revenue is declining (-1.5% in Q2, -0.4% in H1), and the company&#39;s AI narrative (&#39;AI is an amplifier, not a disruption&#39;) is contradicted by the revenue trajectory and market reality — LLM-powered research tools from Google Scholar, Semantic Scholar, and Elicit are actively eroding the value proposition of paid citation databases <span class="source-ref">[2]</span>. GAAP profitability remains deeply negative (-13.8% net margin) despite strong adjusted EBITDA, suggesting heavy non-cash charges from acquisition intangibles and restructuring. ROE of -7.0% with $4.26B in total debt creates a levered balance sheet vulnerable to further deterioration. The fundamental question is whether these data assets can ever grow organically under any management team, or whether AI disruption has structurally impaired the business model.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>Organic revenue stabilization or inflection from the current -0.4% H1 trend toward the guided 0.75-2.25% recurring growth would signal a potential turnaround, with the stock&#39;s 2.06x forward P/E implying massive re-rating potential on even modest growth improvement <span class="source-ref">[1]</span></li>
+        
+        <li>AI-enabled product adoption (Web of Science Research Intelligence, Derwent Innovation AI, RiskMark) could deepen customer engagement with proprietary datasets, demonstrating that AI amplifies rather than disrupts the franchise value <span class="source-ref">[2]</span></li>
+        
+        <li>Continued debt reduction from strong free cash flow ($365-435M guided for FY2026) would improve the balance sheet from the current $4.26B total debt, reducing financial risk and interest expense <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>Continued organic revenue decline — total revenue fell 5.5% YoY and organic revenue declined 0.4% in H1 2026, with Q2 worsening to -1.5% organically, raising questions about whether the business can ever return to meaningful top-line growth <span class="source-ref">[1]</span></li>
+        
+        <li>AI disruption to the analytics and delivery layer — LLM-powered research tools and AI patent analysis platforms are actively reducing customer willingness to pay for Web of Science and Derwent subscriptions, even though the underlying proprietary data remains defensible <span class="source-ref">[2]</span></li>
+        
+        <li>Leadership instability with three CEO changes in five years and a $221.7M Q2 goodwill impairment signaling that $14B+ in acquisitions destroyed value rather than created it — the current management team has not yet proven it can stabilize and grow the business <span class="source-ref">[1]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): Clarivate&#39;s core moat is proprietary curated data — Web of Science contains over 100 years of curated citation data, Derwent holds world-leading patent classifications, and CompuMark maintains comprehensive trademark records <span class="source-ref">[2]</span>. This data cannot be replicated by AI; it IS the product. However, AI poses meaningful substitution risk to the analytics and delivery layer that sits on top of this data: LLM-powered research tools (Google Scholar + AI, Semantic Scholar, Elicit) could reduce reliance on Web of Science for literature discovery, and AI patent analysis tools could commoditize some Derwent analytics. The Q2 2026 results — $221.7M goodwill impairment, organic revenue declining 1.5%, and continued overall revenue decline — suggest the market is already pricing in AI-related disruption to the business model <span class="source-ref">[1]</span>. CEO Shem Tov frames AI as an amplifier, but the evidence (revenue decline, impairment) does not support that narrative yet. AI Opportunity (1/1): Clarivate is shipping AI products: Web of Science Research Intelligence (AI-native), AI-powered Derwent Innovation, RiskMark for trademark risk assessment. The company&#39;s strategy of embedding AI into proprietary data workflows could deepen the data moat if executed well <span class="source-ref">[2]</span>.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            62
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Customer Privacy</span>
+            
+            <span class="attr-tag positive">Customer Welfare</span>
+            
+            <span class="attr-tag positive">Employee Wellbeing</span>
+            
+            <span class="attr-tag positive">Energy Management</span>
+            
+            <span class="attr-tag positive">Ethical Labor Practices</span>
+            
+            <span class="attr-tag positive">Ethical Sales Practices</span>
+            
+            <span class="attr-tag positive">Ethical Supply Chain Management</span>
+            
+            <span class="attr-tag positive">GHG Emissions</span>
+            
+            <span class="attr-tag positive">Hiring Ethics</span>
+            
+            <span class="attr-tag positive">Human Rights</span>
+            
+            <span class="attr-tag positive">Low Ecological Impact</span>
+            
+            <span class="attr-tag positive">Materials Efficiency</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+            <span class="attr-tag positive">Product Safety</span>
+            
+            <span class="attr-tag positive">Product Sustainability</span>
+            
+            <span class="attr-tag positive">Regulatory Adherence</span>
+            
+            <span class="attr-tag positive">Waste and Hazmat Management</span>
+            
+            <span class="attr-tag positive">Water Conservation</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Clarivate Q1-Q2 2026 Earnings — Q1 Revenue $585.5M (Organic +0.6%), Q2 Revenue $587.3M (Organic -1.5%), Q2 Goodwill Impairment $221.7M, Net Loss $268.6M, FY2026 Guidance $2.30-2.42B Revenue, FCF $365-435M — SEC 8-K, Seeking Alpha, Yahoo Finance, May-August 2026</li>
+        
+        <li><span class="src-num">2.</span> Clarivate AI Strategy and Leadership — CEO Matti Shem Tov (Aug 2024), 'AI Is an Amplifier' Letter, Web of Science AI-Native Platform, Derwent Innovation AI, RiskMark, Simon Webster IP Segment Lead — Clarivate ARS, Kalkine Media, ProQuest Leadership, 2024-2026</li>
+        
+        <li><span class="src-num">3.</span> Clarivate ESG — Sustainalytics Strong Management/Medium Exposure Rating, Four-Pillar ESG Program Launched 2020, No Major Controversies Identified — Sustainalytics, SEC DEF 14A, 2021-2026</li>
+        
+        <li><span class="src-num">4.</span> Yahoo Finance — CLVT Key Statistics: Stock Price $1.60, Forward PE 2.06, PEG 0.18, ROE -7.01%, D/E 93.83%, Profit Margin -13.84%, Avg Volume 4.5M, accessed October 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>

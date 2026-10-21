@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F5F0">
+    <title>IOWN Screen INTR — Inter & Co, Inc.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── Light theme (matches Dashboard light palette) ── */
+        :root {
+            --bg: #F5F5F0;
+            --surface: #FFFFFF;
+            --card: #FFFFFF;
+            --card-hover: #F0F2EC;
+            --border: rgba(80,100,60,0.12);
+            --border-dark: rgba(80,100,60,0.22);
+            --t1: #1A2010;
+            --t2: #3A4A28;
+            --t3: #6E8450;
+            --t4: #9DAF88;
+            --accent: #4A6B25;
+            --accent-soft: rgba(74,107,37,0.08);
+            --accent-gold: #B8860B;
+            --bar-track: rgba(80,100,60,0.10);
+            --bar-green: #16A34A;
+            --bar-gold: #B8860B;
+            --bar-red: #DC2626;
+            --rec-buy: #16A34A; --rec-buy-bg: rgba(22,163,74,0.10);
+            --rec-hold: #D97706; --rec-hold-bg: rgba(217,119,6,0.10);
+            --rec-sell: #DC2626; --rec-sell-bg: rgba(220,38,38,0.10);
+            --rec-watch: #2563EB; --rec-watch-bg: rgba(37,99,235,0.10);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        @media print {
+            body { font-size: 11px; background: #fff; }
+            .page { padding: 24px 32px; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rec-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .attr-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--t1);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74,107,37,0.15); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(74,107,37,0.30); }
+        ::selection { background: rgba(74,107,37,0.25); color: var(--t1); }
+
+        /* Embedded mode */
+        body.embedded { background: transparent; }
+        body.embedded .page { padding: 16px 16px; }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        .stock-header { margin-bottom: 24px; }
+        .stock-name {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--t1);
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .stock-name-full {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--t3);
+            display: inline;
+            margin-left: 8px;
+        }
+        .stock-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .stock-meta .sep { color: var(--border-dark); }
+        .inspire-score { color: var(--bar-gold); }
+        .inspire-score.negative { color: var(--bar-red); }
+        .mindset-label { color: var(--accent-gold); }
+
+        .rec-badge {
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .rec-badge.buy { background: var(--rec-buy-bg); color: var(--rec-buy); }
+        .rec-badge.hold { background: var(--rec-hold-bg); color: var(--rec-hold); }
+        .rec-badge.sell { background: var(--rec-sell-bg); color: var(--rec-sell); }
+        .rec-badge.watch { background: var(--rec-watch-bg); color: var(--rec-watch); }
+
+        .header-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .overall-score .num {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--t1);
+            line-height: 1;
+        }
+        .overall-score .denom {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--t4);
+        }
+
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--t3);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 32px 0 16px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .section-header.green { border-color: var(--bar-green); }
+        .section-header.red { border-color: var(--bar-red); }
+
+        .score-row { margin-bottom: 20px; }
+        .score-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .score-row-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--t1);
+        }
+        .score-row-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--t3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .score-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bar-track);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .score-bar-fill.green { background: var(--bar-green); }
+        .score-bar-fill.gold { background: var(--bar-gold); }
+        .score-bar-fill.red { background: var(--bar-red); }
+        .score-num {
+            font-size: 16px;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: right;
+        }
+        .score-num.green { color: var(--bar-green); }
+        .score-num.gold { color: var(--bar-gold); }
+        .score-num.red { color: var(--bar-red); }
+        .score-analysis {
+            font-size: 12px;
+            color: var(--t2);
+            line-height: 1.5;
+        }
+
+        .ig-summary {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .ig-mindset-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+        }
+        .ig-overall { font-size: 14px; font-weight: 700; color: var(--t2); }
+        .ig-overall span { font-size: 20px; font-weight: 800; color: var(--t1); }
+        .ig-quote {
+            border-left: 3px solid var(--border-dark);
+            padding-left: 16px;
+            margin: 12px 0 20px;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--t2);
+            line-height: 1.6;
+        }
+
+        .inspire-block { margin: 12px 0; }
+        .inspire-num { font-size: 28px; font-weight: 800; }
+        .inspire-num.positive { color: var(--bar-green); }
+        .inspire-num.negative { color: var(--bar-red); }
+
+        .inspire-attrs { margin: 10px 0 6px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .inspire-attrs .attr-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+        .inspire-attrs.negative .attr-label { color: var(--bar-red); }
+        .inspire-attrs.positive .attr-label { color: var(--bar-green); }
+        .attr-tag { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 8px; }
+        .attr-tag.negative { background: rgba(220,38,38,0.08); color: #DC2626; }
+        .attr-tag.positive { background: rgba(22,163,74,0.08); color: #16A34A; }
+        .inspire-source { font-size: 10px; color: var(--t4); margin-top: 8px; }
+
+        .thesis-text {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .source-ref {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            vertical-align: super;
+            line-height: 0;
+            margin-left: 1px;
+        }
+        .sources-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .sources-list li {
+            font-size: 11px;
+            color: var(--t2);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .sources-list li .src-num {
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .kv-list {
+            list-style: none;
+            counter-reset: item;
+            margin: 8px 0;
+        }
+        .kv-list li {
+            counter-increment: item;
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding-left: 28px;
+            position: relative;
+        }
+        .kv-list li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+            color: var(--t1);
+        }
+
+        .report-footer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--t4);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            transition: background 0.15s;
+        }
+        .back-link:hover { background: var(--accent-soft); }
+
+        /* Company Profile */
+        .profile-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .profile-desc {
+            font-size: 13px;
+            color: var(--t2);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+        .profile-detail-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .profile-detail-link:hover {
+            text-decoration: underline;
+        }
+
+        hr.section-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        @media (max-width: 640px) {
+            .page { padding: 24px 20px; }
+            body.embedded .page { padding: 12px 10px; }
+            .stock-name { font-size: 24px; }
+            .stock-name-full { font-size: 16px; display: block; margin-left: 0; margin-top: 4px; }
+            .overall-score .num { font-size: 36px; }
+            .header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .pdf-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pdf-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-dark);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pdf-logo {
+            display: none;
+            text-align: center;
+            padding: 16px 0 16px;
+            margin-bottom: 20px;
+        }
+        .pdf-logo img { height: 64px; }
+        .pdf-section {
+            background: #FFFFFF;
+            padding: 12px 48px 40px;
+            max-width: 1100px;
+        }
+        .pdf-section .pdf-logo { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease; }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+<!-- PAGE 1: Company Profile + Excellence Evaluation -->
+<div class="page fade-in">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+    <div class="top-bar no-print">
+        <a href="index.html" class="back-link" style="margin-bottom:0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Screener
+        </a>
+        <a class="pdf-btn" href="docx/INTR_IOWN_Report.docx" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export Word
+        </a>
+        <button class="pdf-btn" onclick="openChart('INTR')" style="cursor:pointer;border:none;font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Chart
+        </button>
+    </div>
+
+    <div class="stock-header">
+        <div class="stock-name">
+            INTR
+            <span class="stock-name-full">Inter & Co, Inc.</span>
+        </div>
+        <div class="stock-meta">
+            <span>GROWTH SLEEVE</span>
+            <span class="sep">&middot;</span>
+            <span>2026-09-05</span>
+            <span class="sep">&middot;</span>
+            <span class="inspire-score ">Inspire: 29</span>
+            <span class="sep">&middot;</span>
+            <span class="mindset-label">INFINITE</span>
+        </div>
+        <div class="header-row">
+            <span class="rec-badge hold">HOLD</span>
+            <div class="overall-score">
+                <span class="num">70</span><span class="denom"> / 100</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">Company Profile</div>
+    <div class="profile-meta">
+        <span>Financial Services</span>
+        <span class="sep">&middot;</span><span>Digital Banking</span>
+        <span class="sep">&middot;</span><span>NASDAQ</span>
+        <span class="sep">&middot;</span><span>Brazil</span>
+    </div>
+    
+    <div class="profile-desc">Inter & Co, Inc. is Brazil's largest digital bank and a leading Latin American fintech, operating a financial super app that provides banking, payments, investments, insurance, and marketplace services to 45.3 million clients. Founded in 1994 as Intermedium, the company was transformed into a 100% digital bank under CEO Joao Vitor Menin beginning in 2015, pioneering the first digital checking account in Latin America. Listed on NASDAQ in 2022. Q2 2026 delivered record net income of R$421M (+34% YoY) with ROE reaching 16.3%, marking 13 consecutive quarters of net income growth. Total assets surpassed R$100B for the first time.</div>
+    
+    <div class="profile-meta" style="margin-top: 10px;">
+        
+        <span class="sep">&middot;</span><a class="profile-detail-link" href="https://www.inter.co" target="_blank" rel="noopener">www.inter.co</a>
+    </div>
+    
+
+    <div class="section-header green">Excellence Evaluation &mdash; Think Like an Owner (50%)</div>
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Innovation</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 80%"></div>
+        </div>
+        <span class="score-num green">8</span>
+    </div>
+    <div class="score-analysis">Track Record (3/3): Inter &amp; Co executed one of the most successful digital banking transformations in Latin American history. Under CEO Joao Vitor Menin (appointed 2015), the company pivoted from a traditional regional bank into Brazil&#39;s first 100% digital bank and pioneered the financial super app model in Latin America <span class="source-ref">[3]</span>. The NASDAQ migration in 2022, U.S. market expansion to Miami, and evolution from single-product digital account to full super app (banking, credit, investments, insurance, marketplace) represent multiple transformative pivots that redefined the company. Client base grew from a regional footprint to 45.3M active clients <span class="source-ref">[1]</span>. AI Deployment (1/2): Inter&#39;s super app leverages AI solutions for customer engagement, sales conversions, and monetization, though specific revenue or savings figures attributable to AI were not quantified <span class="source-ref">[3]</span>. The platform&#39;s recommendation engine and personalized product offerings utilize machine learning. Market Share (2/2): Inter is Brazil&#39;s largest digital bank by client count with 45.3 million clients and surpassed R$100B in total assets for the first time in Q2 2026 <span class="source-ref">[1]</span>. The company added 4.4 million new active clients in 2025 alone — more than 3x the Brazilian market growth rate — with credit portfolio expanding 36% YoY <span class="source-ref">[2]</span>. Product Pipeline (1/2): Continued expansion of the super app with credit products (private payroll loans, mortgages, credit cards), global payments platform via U.S. operations, and insurance offerings. The company&#39;s &#39;Rule of 50&#39; framework (targeting ROE + net income growth &gt; 50%) provides strategic product development guidance <span class="source-ref">[1]</span>. R&amp;D Intensity (1/1): As a digital-native fintech, Inter&#39;s technology investment as a percentage of operating costs is above traditional banking peers. The company builds and operates its own technology platform rather than relying on legacy core banking systems.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Inspiration</span>
+        <span class="score-row-label">DEVELOPING</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 40%"></div>
+        </div>
+        <span class="score-num gold">4</span>
+    </div>
+    <div class="score-analysis">Mission Floor (3/4): Joao Vitor Menin&#39;s vision — democratizing financial services in Brazil and Latin America through digital innovation — is specific, deeply held, and validated by a decade of consistent execution <span class="source-ref">[3]</span>. Menin joined the family bank at 25, was made CEO at 32, and transformed it into Latin America&#39;s first digital bank. He is widely recognized as the &#39;Father of Digital Banking&#39; in Brazil. The purpose has shaped every strategic decision, from the full digital pivot to NASDAQ listing to U.S. expansion. However, the cause has not yet survived a major crisis or leadership transition — Menin has been the singular driving force. Community Impact (1/2): Inter&#39;s business model inherently serves community impact through financial inclusion — providing free digital banking, investment access, and credit to millions of previously underbanked Brazilians. The 45.3M client base includes significant low-income and first-time banking customers <span class="source-ref">[1]</span>. However, no specific charitable programs or foundation activities beyond the business model were identified. Employee Retention (0/2): No specific employee retention data, turnover rates, or tenure information is publicly available for Inter &amp; Co. Insider Buying (0/2): No evidence of meaningful net insider buying at market prices. The Menin family controls the company through MFB Investimentos, but this represents founding ownership rather than conviction purchases.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Infrastructure</span>
+        <span class="score-row-label">STRONG</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 90%"></div>
+        </div>
+        <span class="score-num green">9</span>
+    </div>
+    <div class="score-analysis">Mechanically scored on available metrics with nearly all dimensions performing at or near target. Forward P/E of 12.70 is well below the 20x target (scoring 1.0), and PEG of 0.31 is exceptionally attractive versus the 1.0 target (scoring 1.0 at 2x weight) <span class="source-ref">[4]</span>. Revenue growth of ~30% YoY substantially exceeds the 10% target, and estimated 5-year revenue CAGR of ~30%+ reflects sustained hypergrowth from digital banking adoption <span class="source-ref">[2]</span>. Profit margin of ~21% exceeds the 20% target <span class="source-ref">[4]</span>. ROE of 13.27% is approaching but below the 15% target (scoring 0.89 at 2x weight), expected to reach 16.3% in the current quarter trajectory <span class="source-ref">[1]</span>. The primary drag is D/E of 148%, which is elevated versus the 70% target (scoring 0.66) but reflects normal leverage for a banking institution where deposits are classified as liabilities rather than excessive borrowing <span class="source-ref">[4]</span>. The stock easily clears the liquidity floor at ~$29.7M daily dollar volume ($5.59 x 5.32M avg volume).</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 2: Finite vs Infinite Game -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header green">Finite vs Infinite Game &mdash; Sinek (25%)</div>
+
+    <div class="ig-summary">
+        <span>Mindset:</span>
+        <span class="ig-mindset-label">INFINITE</span>
+        <span class="ig-overall">Overall: <span>8</span> /10</span>
+    </div>
+
+    <div class="ig-quote">Inter &amp; Co is a strong infinite game player, driven by CEO Joao Vitor Menin&#39;s decade-long commitment to democratizing financial services in Brazil through digital innovation. The company has demonstrated existential flexibility (traditional bank to digital super app), courage to lead (NASDAQ migration, U.S. expansion), and a genuine Just Cause that has been validated by 10+ years of consistent execution. The primary limitation is that the cause has not been tested through crisis or leadership succession — Menin has been the singular visionary, and the organization&#39;s ability to sustain infinite thinking beyond him is unproven.</div>
+
+    
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Just Cause</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 70%"></div>
+        </div>
+        <span class="score-num green">7</span>
+    </div>
+    <div class="score-analysis">Just Cause (2/3): Inter&#39;s cause — democratizing financial services in Latin America through digital innovation — is genuine, distinctive, and partially validated by a decade of execution <span class="source-ref">[3]</span>. Menin transformed a traditional family bank into Brazil&#39;s largest digital bank, creating the first 100% digital checking account in Latin America and building a super app serving 45.3M clients including millions of previously underbanked citizens <span class="source-ref">[1]</span>. The cause has shaped strategic decisions (full digital pivot, sacrificing traditional banking revenue, NASDAQ migration). However, it has not been tested through a major financial crisis, competitive displacement, or leadership transition. Menin has been the sole driver — the cause&#39;s durability beyond him is unproven.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Trusting Teams</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">Trusting Teams (1/2): Inter operates a growing organization that has scaled from a regional bank to a 45.3M-client digital platform while maintaining 13 consecutive quarters of net income growth <span class="source-ref">[1]</span>. The company successfully executed the NASDAQ migration, U.S. expansion, and super app evolution — all requiring significant organizational trust and execution capability. However, no specific employee sentiment data, turnover metrics, or cultural evidence is available. The rapid growth phase may strain organizational trust if not carefully managed.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Worthy Rivals</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Worthy Rivals (1/1): Inter competes with Nubank (the other major Brazilian digital bank), traditional banks like Itau and Bradesco, and global fintech players. The company&#39;s competitive posture emphasizes differentiation and self-improvement rather than destroying rivals — the super app model was built to serve customers better, not to &#39;beat Nubank&#39; <span class="source-ref">[3]</span>. Menin&#39;s public communications focus on Inter&#39;s unique value proposition (financial super app vs. single-product competitors) while acknowledging the competitive dynamics that push the industry forward.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Existential Flexibility</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Existential Flexibility (2/2): Inter &amp; Co is a textbook example of existential flexibility. The company fundamentally reinvented itself from a traditional regional bank (Intermedium, founded 1994) into Brazil&#39;s first 100% digital bank and Latin America&#39;s leading financial super app <span class="source-ref">[3]</span>. This transformation required abandoning the traditional banking model — branch infrastructure, legacy systems, relationship-based lending — in favor of a digital-first platform that initially carried higher costs and uncertain returns. The NASDAQ migration from the Brazilian B3 exchange in 2022 was a second existential pivot, redomiciling the company to access U.S. capital markets and enable global expansion.</div>
+</div>
+
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">Courage to Lead</span>
+        
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill green" style="width: 100%"></div>
+        </div>
+        <span class="score-num green">10</span>
+    </div>
+    <div class="score-analysis">Courage to Lead (2/2): Menin has demonstrated a pattern of courageous leadership decisions. Transforming a profitable traditional family bank into a digital-first platform required sacrificing established revenue streams and investing heavily in technology with uncertain payoff <span class="source-ref">[3]</span>. The NASDAQ migration in 2022 was a costly, complex corporate reorganization that most Brazilian banks would never attempt. The U.S. expansion to Miami — entering the world&#39;s most competitive financial services market — required accepting short-term losses for long-term strategic positioning. The &#39;Rule of 50&#39; framework (ROE + growth &gt; 50%) explicitly codifies the balance between short-term profitability and long-term growth, rejecting the easy path of optimizing one at the expense of the other <span class="source-ref">[1]</span>.</div>
+</div>
+
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 3: Investment Thesis + Key Catalysts + Key Risks -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Investment Thesis</div>
+    <div class="thesis-text">Inter &amp; Co at 12.70x forward earnings and 0.31 PEG offers a rare combination of hypergrowth and value in emerging market fintech. Q2 2026 delivered record net income of R$421M (+34% YoY) with ROE reaching 16.3% — the 13th consecutive quarter of net income growth — while the client base reached 45.3M and total assets surpassed R$100B for the first time <span class="source-ref">[1]</span>. The credit portfolio expanded 36% YoY (3x the Brazilian market growth rate), demonstrating the super app&#39;s ability to cross-sell financial products at scale <span class="source-ref">[2]</span>. At $5.59 per share, the stock trades 46% below the consensus analyst target of $8.75 (10 analysts, &#39;Buy&#39; average) and near its 52-week low of $5.04, suggesting the market is underpricing the growth trajectory. The &#39;Rule of 50&#39; framework targets sustainable ROE + growth above 50%, providing a disciplined path to compounding returns.</div>
+    <div class="thesis-text">The bear case centers on emerging market risk, currency exposure, and concentration in a single economy. Inter is denominated in BRL but trades in USD — the stock has declined from $10.36 to $5.59 over the past year despite record operational results, largely due to BRL depreciation against USD and Brazilian macroeconomic uncertainty <span class="source-ref">[4]</span>. The D/E ratio of 148% reflects standard banking leverage but amplifies any credit quality deterioration in the Brazilian consumer portfolio. ROE of 13.27% (trailing) is still below the 15% target despite strong quarterly trajectory, and the company&#39;s net interest margin faces pressure from competitive pricing in Brazilian digital banking. The single-founder dependency on CEO Menin represents key-man risk — the company&#39;s infinite game characteristics are tied to his leadership. Regulatory risk from Brazil&#39;s Central Bank could constrain growth if credit quality deteriorates in the next economic downturn. The Inspire Impact Score of 29 (ALIGNED) provides modest faith-based appeal through financial inclusion.</div>
+
+    <div class="section-header green">Key Catalysts</div>
+    <ol class="kv-list">
+        
+        <li>ROE trajectory toward 20%+ — Q2 2026 reached 16.3% and the company targets &#39;Rule of 50&#39; (ROE + growth &gt; 50%), which at 30%+ growth implies accelerating ROE that would re-rate the stock toward fintech peers trading at 3-5x book <span class="source-ref">[1]</span></li>
+        
+        <li>U.S. market expansion via Miami operations — Inter&#39;s global payments platform and U.S. banking license provide optionality to serve the large Brazilian diaspora and broader Latin American remittance market <span class="source-ref">[3]</span></li>
+        
+        <li>Credit portfolio growth of 36% YoY driven by private payroll loans, mortgages, and credit cards — continued cross-sell penetration of the 45.3M client base provides years of high-quality credit growth runway <span class="source-ref">[2]</span></li>
+        
+    </ol>
+
+    <div class="section-header red">Key Risks</div>
+    <ol class="kv-list">
+        
+        <li>BRL/USD currency risk — the stock has declined ~46% from its 52-week high despite record operational results, driven by Brazilian Real depreciation and macroeconomic uncertainty that compress USD-denominated returns <span class="source-ref">[4]</span></li>
+        
+        <li>Brazilian consumer credit quality risk — the 36% YoY credit portfolio growth in a higher interest rate environment could produce elevated non-performing loans if Brazil&#39;s economy weakens, amplified by 148% D/E leverage <span class="source-ref">[2]</span></li>
+        
+        <li>Key-man risk with CEO Joao Vitor Menin — the company&#39;s digital transformation, strategic vision, and infinite game characteristics are fundamentally tied to a single founder-CEO with no apparent succession plan <span class="source-ref">[3]</span></li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+<!-- PAGE 4: AI Resilience + Faith Alignment -->
+<div class="page page-break">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">AI Resilience (25%)</div>
+    
+<div class="score-row">
+    <div class="score-row-header">
+        <span class="score-row-title">AI Resilience</span>
+        <span class="score-row-label">MODERATE</span>
+    </div>
+    <div class="score-bar-wrap">
+        <div class="score-bar">
+            <div class="score-bar-fill gold" style="width: 60%"></div>
+        </div>
+        <span class="score-num gold">6</span>
+    </div>
+    <div class="score-analysis">AI Risk Protection (5/9): Inter &amp; Co operates in digital banking and fintech, a sector with meaningful AI exposure. AI-native financial services competitors could automate lending decisions, customer service, financial advisory, and product recommendations — all core to Inter&#39;s super app value proposition. Neobank competitors globally (Nubank, Revolut) are aggressively deploying AI for credit underwriting, fraud detection, and personalized financial guidance. However, Inter is protected by several moats: Brazilian banking regulation (Central Bank licensing requirements), massive client data moat (45.3M clients generating proprietary behavioral data), established brand and distribution, and network effects in the super app ecosystem <span class="source-ref">[1]</span>. The regulated nature of banking creates barriers that pure AI companies cannot easily bypass. AI is as much enabler as threat — Inter can deploy AI to improve its own operations and client experience. AI Opportunity (1/1): Inter actively generates revenue through AI-enhanced features in its super app, including personalized product recommendations, credit scoring models, and conversion optimization that leverage machine learning across 45.3M client interactions <span class="source-ref">[3]</span>. While AI revenue is not separately quantified, it is embedded in the platform&#39;s growth trajectory.</div>
+</div>
+
+
+    <div class="section-header red">Faith Alignment &mdash; Inspire Insight</div>
+    <div class="inspire-block">
+        <span>Inspire Impact Score:</span>
+        <span class="inspire-num positive">
+            29
+        </span>
+        
+        
+        <div class="inspire-attrs positive">
+            <span class="attr-label">Positive:</span>
+            
+            <span class="attr-tag positive">Product Access and Affordability</span>
+            
+        </div>
+        
+        
+        
+        <div class="inspire-source">Source: Inspire Insight</div>
+        
+    </div>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- PAGE 5: Resources -->
+<div class="page page-break resources-page">
+    <div class="pdf-logo"><img src="https://richacarson.github.io/Dashboard/iown-logo.png" alt="IOWN"></div>
+
+    <div class="section-header">Resources</div>
+    <ol class="sources-list">
+        
+        <li><span class="src-num">1.</span> Inter & Co Q2 2026 Earnings Release — Record net income R$421M (+34% YoY), ROE 16.3%, net revenue growth 32% YoY, 45.3M clients, total assets surpassed R$100B, 13 consecutive quarters of net income growth, SEC Form 6-K, 2026</li>
+        
+        <li><span class="src-num">2.</span> Inter & Co Full Year 2025 Results — Revenue R$5.98B (+30% YoY), net income R$1.312B (+45%), credit portfolio +36% YoY, 4.4M new active clients, ROE 13.8%, GlobeNewsWire, February 2026</li>
+        
+        <li><span class="src-num">3.</span> Joao Vitor Menin Leadership Profile — Global CEO since 2015, transformed traditional bank into Brazil's largest digital bank, 'Father of Digital Banking' in Latin America, NASDAQ migration 2022, U.S. expansion, AS/COA BRAVO Leadership, Miami Today, CSQ, 2024-2026</li>
+        
+        <li><span class="src-num">4.</span> StockAnalysis, GuruFocus, MacroTrends — INTR stock price $5.59, Forward PE 12.70, PEG 0.31, ROE 13.27%, D/E 148%, market cap ~$2.5B, avg volume 5.32M, analyst target $8.75, accessed September 2026</li>
+        
+    </ol>
+
+    <div class="report-footer">Paradiem, LLC dba Intentional Ownership (&ldquo;IOWN&rdquo;) is a registered investment advisor. The information provided is for educational and informational purposes only and does not constitute investment advice.</div>
+</div>
+
+
+<!-- Fullscreen TradingView Chart Overlay -->
+<div id="chartOverlay" style="display:none;position:fixed;inset:0;z-index:10000;background:var(--bg);flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button onclick="closeChart()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div id="chartTitle" style="flex:1;font-size:15px;font-weight:800;color:var(--t1);"></div>
+        <input id="chartTickerInput" placeholder="Symbol" onkeydown="if(event.key==='Enter')changeChartSymbol()" style="width:80px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--t1);font-size:14px;font-weight:700;font-family:inherit;text-transform:uppercase;text-align:center;outline:none;" />
+        <button onclick="changeChartSymbol()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go</button>
+    </div>
+    <iframe id="chartFrame" style="flex:1;width:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+</div>
+
+<script>
+    function openChart(sym) {
+        var overlay = document.getElementById('chartOverlay');
+        var frame = document.getElementById('chartFrame');
+        var title = document.getElementById('chartTitle');
+        var input = document.getElementById('chartTickerInput');
+        sym = sym.toUpperCase().trim();
+        title.textContent = sym;
+        input.value = sym;
+        var bg = 'F5F5F0';
+        frame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv_screener_chart&symbol=' + sym
+            + '&interval=D&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=' + bg
+            + '&studies=%5B%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A50%7D%7D%2C%7B%22id%22%3A%22MASimple%40tv-basicstudies%22%2C%22inputs%22%3A%7B%22length%22%3A200%7D%7D%5D'
+            + '&theme=light&style=1&timezone=America%2FNew_York&withdateranges=1&showpopupbutton=0'
+            + '&enabled_features=%5B%22header_chart_type%22%2C%22header_indicators%22%2C%22header_screenshot%22%2C%22header_undo_redo%22%5D&disabled_features=[]&locale=en';
+        overlay.style.display = 'flex';
+    }
+    function closeChart() {
+        document.getElementById('chartOverlay').style.display = 'none';
+        document.getElementById('chartFrame').src = '';
+    }
+    function changeChartSymbol() {
+        var sym = document.getElementById('chartTickerInput').value.trim().toUpperCase();
+        if (sym) openChart(sym);
+    }
+</script>
+
+<script>
+    // Detect embedded mode and propagate
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var embedded = params.get('embed') === '1' || window.self !== window.top;
+        if (embedded) {
+            document.body.classList.add('embedded');
+            var backLink = document.querySelector('.back-link');
+            if (backLink) {
+                backLink.href = 'index.html?embed=1';
+            }
+        }
+    })();
+</script>
+</body>
+</html>
